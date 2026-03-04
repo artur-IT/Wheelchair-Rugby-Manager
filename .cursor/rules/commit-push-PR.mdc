@@ -1,0 +1,16 @@
+---
+description: Commit, push, PR workflow
+alwaysApply: false
+---
+
+When doing commit/push/PR:
+
+- Split changes into logical commits (max 3).
+- Write commit messages in Conventional Commits format (as in AGENTS.md). Use consistent scopes based on project modules/areas.
+- Prefer configuring commit lint to enforce Conventional Commits format.
+- Create a branch with a sensible name (feature/..., fix/..., chore/...).
+- Push to remote.
+- Create a PR with: Summary (2–3 sentences), Changes (bullet points), Testing (how to test).
+- Use git and gh CLI.
+
+When modifying features: update relevant documentation (e.g. /docs), keep README in sync, maintain CHANGELOG if the project uses it (see AGENTS.md).

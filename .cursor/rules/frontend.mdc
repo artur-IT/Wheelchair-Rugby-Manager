@@ -1,8 +1,9 @@
 ---
-description: 
+description: Frontend rules for Astro and React, Material UI, accessibility.
 globs: *.tsx,*.astro
 alwaysApply: false
 ---
+
 ## Frontend
 
 ### General Guidelines
@@ -12,19 +13,16 @@ alwaysApply: false
 
 ### Guidelines for Styling
 
-#### Tailwind
-
-- Use the @layer directive to organize styles into components, utilities, and base layers
-- Use arbitrary values with square brackets (e.g., w-[123px]) for precise one-off designs
-- Implement the Tailwind configuration file for customizing theme, plugins, and variants
-- Leverage the theme() function in CSS for accessing Tailwind theme values
-- Implement dark mode with the dark: variant
-- Use responsive variants (sm:, md:, lg:, etc.) for adaptive designs
-- Leverage state variants (hover:, focus-visible:, active:, etc.) for interactive elements
+- Use Material UI for styling
+- Use global.css for styling
 
 ### Guidelines for Accessibility
 
+- use MUI a11y features
+
 #### ARIA Best Practices
+
+First use MUI solutions if possible then:
 
 - Use ARIA landmarks to identify regions of the page (main, navigation, search, etc.)
 - Apply appropriate ARIA roles to custom interface elements that lack semantic HTML equivalents
@@ -35,3 +33,14 @@ alwaysApply: false
 - Use aria-describedby to associate descriptive text with form inputs or complex elements
 - Implement aria-current for indicating the current item in a set, navigation, or process
 - Avoid redundant ARIA that duplicates the semantics of native HTML elements
+
+#### Mobile accessibility
+
+First use MUI solutions if possible then:
+
+- Ensure touch targets are at least 44×44 px for comfortable use on mobile
+- Use proper viewport configuration (pinch-to-zoom, scaling)
+- Design layouts that work in portrait and landscape without losing content
+- Ensure sufficient spacing between interactive elements to avoid accidental taps
+- Design forms to work well with on-screen keyboards and autocomplete
+- Prefer alternatives to complex gestures that need fine motor control

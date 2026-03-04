@@ -1,36 +1,41 @@
 ---
-description: 
-globs: 
+description: General rules for the whole project, always applied together with other rules!
+globs:
 alwaysApply: true
 ---
-# AI Rules for {app-name}
 
-{project-description}
+## Tech stack
 
-## Tech Stack
+- **Frontend**: HTML5, CSS3, JavaScript, TypeScript 5, React 19.2, Astro 5
+- **Backend**: Node.js, Express, TypeScript
+- **Routing**: Astro
+- **Fetching API**: Tanstack Query
+- **Forms**: React Hook Form + Zod (na backendzie do walidacji requestów)
+- **Authentication**: OAuth 2.0 + OpenID Connect (OIDC)
+  - **Hashing passwords**: Argon2
+- **Style**: Material UI + global.css
+- **ESLint + Prettier**
+- **Builder**: Vite
+- **Database**: PostgreSQL + Prisma (ORM)
+- **Test**: Vitest, React Testing Library (Playwright mentioned in rules but not primary)
+- **Hosting**: 1Free.eu
 
-- Astro 5
-- TypeScript 5
-- React 19
-- Tailwind 4
-- Shadcn/ui
+## Project structure
 
-## Project Structure
+Follow this layout when adding or changing code. When you change the structure, update this section and `.cursor/rules` if needed.
 
-When introducing changes to the project, always follow the directory structure below:
-
-- `./src` - source code
+- `./src` - Source code
 - `./src/layouts` - Astro layouts
 - `./src/pages` - Astro pages
 - `./src/pages/api` - API endpoints
 - `./src/middleware/index.ts` - Astro middleware
-- `./src/db` - Supabase clients and types
-- `./src/types.ts` - Shared types for backend and frontend (Entities, DTOs)
-- `./src/components` - Client-side components written in Astro (static) and React (dynamic)
-- `./src/components/ui` - Client-side components from Shadcn/ui
-- `./src/lib` - Services and helpers 
-- `./src/assets` - static internal assets
-- `./public` - public assets
+- `./src/types.ts` - Shared types (entities, DTOs) for backend and frontend
+- `./src/components` - Client components (Astro static, React dynamic)
+- `./src/components/hooks` - Custom hooks
+- `./src/components/ui` - ui components
+- `./src/lib` - Services and helpers
+- `./src/assets` - Static internal assets
+- `./public` - Public assets
 
 When modifying the directory structure, always update this section.
 
@@ -47,3 +52,29 @@ When modifying the directory structure, always update this section.
 - Use guard clauses to handle preconditions and invalid states early.
 - Implement proper error logging and user-friendly error messages.
 - Consider using custom error types or error factories for consistent error handling.
+- Don't add libraries without permission.
+- Do not create files in folders that are not in the structure (see AGENTS.md).
+- Always use async/await.
+- Always generate only minimal length code.
+- Always generate code implementation solutions according to this order: HTML5, JavaScript, React.
+
+### Coding conventions
+
+- **Imports:** Use absolute paths (e.g. `@/components`, `@/lib`) instead of relative (`../components`).
+- **Commits:** Conventional Commits — `feat:`, `fix:`, `docs:`, `test:`, `refactor:`, `style:`.
+- **Async:** Prefer `async/await`.
+- **Code size:** Generate minimal length code.
+- **Implementation order:** Prefer HTML5 → JavaScript → React when applicable.
+- **Libraries:** Do not add libraries without permission.
+
+### No time estimates
+
+- **NEVER** provide time estimates (e.g. "30 min", "2h").
+- Time estimates are imprecise and misleading.
+- Instead, focus on outlining the steps to complete, not the expected duration.
+
+### No numbering in plans
+
+- **NEVER** use numbering in plans (e.g. "1.", "2.", "3." or "1.1", "1.2").
+- Adding something in the middle forces you to renumber the entire plan.
+- Use bullet points (-) or headings without numbers instead.
