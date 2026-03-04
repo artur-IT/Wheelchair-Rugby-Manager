@@ -1,12 +1,44 @@
 ---
-description: 
-globs: src/db/*.ts,src/middleware/*.ts,src/lib/*.ts
+description: Backend rules for Astro API routes + Express (TS), Prisma/Postgres, OIDC auth, Zod validation, Argon2 hashing.
+globs: src/pages/api/**/*.ts,src/middleware*.ts,src/middleware/**/*.ts,src/lib/**/*.ts,src/server/**/*.ts,prisma/**/*,src/types.ts
 alwaysApply: false
 ---
-### Backend and Database
+### Backend (Node.js + Express + TypeScript) and Database (PostgreSQL + Prisma)
 
-- Use Supabase for backend services, including authentication and database interactions.
-- Follow Supabase guidelines for security and performance.
-- Use Zod schemas to validate data exchanged with the backend.
-- Use supabase from context.locals in Astro routes instead of importing supabaseClient directly
-- Use SupabaseClient type from `src/db/supabase.client.ts`, not from `@supabase/supabase-js`
+- Use **TypeScript** for all backend code (no `any` unless there is a clear, unavoidable reason).
+- Keep **API routes thin**: parse + validate input, call a service function, return a response. Put business logic in `src/lib/**`.
+- Prefer **shared DTO/types** in `src/types.ts` for request/response bodies used by both frontend and backend.
+- Always use **async/await**. Avoid mixing callbacks and promises.
+
+### API design (Astro routes and/or Express handlers)
+
+- Validate all external input at the boundary using **Zod**:
+  - Use `safeParse` (or `safeParseAsync`) and return **400** for invalid payloads.
+  - Never trust `req.body`, `req.query`, headers, or cookies without validation.
+- Return correct **HTTP status codes** and a consistent JSON shape for errors (do not leak stack traces to the client).
+- Use early returns for errors (guard clauses) and keep the happy path last.
+
+### Auth (OAuth 2.0 + OpenID Connect)
+
+- Treat OIDC tokens as sensitive secrets.
+- Prefer storing auth/session in **httpOnly cookies** (secure in production, `SameSite` set intentionally).
+- Centralize auth logic (token verification, user extraction) in one place (middleware / helper in `src/lib/**`), so routes don’t duplicate it.
+- Never log raw access tokens, ID tokens, refresh tokens, or full authorization headers.
+
+### Passwords (Argon2)
+
+- Never store or log plaintext passwords.
+- Hash passwords using **Argon2** (use a modern configuration; verify with constant-time comparisons where applicable).
+
+### Prisma + PostgreSQL
+
+- Prefer Prisma Client for database access (avoid raw SQL unless necessary).
+- Use a **single Prisma client instance** (singleton) to avoid exhausting DB connections in dev/hot reload.
+- Use transactions where a multi-step write must be atomic.
+- Handle Prisma errors and map them to safe API responses (e.g. unique constraint → 409).
+
+### Middleware and security
+
+- Put cross-cutting concerns in middleware (auth, request id, basic rate-limit hooks if present).
+- Never commit secrets; read them from environment variables.
+- Be explicit about CORS and cookie settings when dealing with auth flows.

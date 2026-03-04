@@ -14,30 +14,64 @@
 
 ## 🟩 Etap 0 — Definicja problemu (bez kodu)
 
-- [ ] **Jedno zdanie o projekcie**: „Buduję X dla Y, żeby Z.”
-- [ ] **Użytkownicy**: kto korzysta (1–2 persony).
-- [ ] **3 główne scenariusze (use-case)**: co user robi najczęściej?
-- [ ] **Zakres ‘NIE robimy’ (anti-scope)**: 5–15 punktów.
-- [ ] **Kryterium sukcesu**: po czym poznasz, że projekt ma sens? (np. działa 1 flow end-to-end)
+- [ x ] **Jedno zdanie o projekcie**: BUDUJĘ 'Menadżera sezonu rugby na wózkach' DLA osoby, która będzie organizować turnieje, ŻEBY mieć całą organizację turnieju w 1 miejscu.”
+- [ x ] **Użytkownicy**: kto korzysta? (1 osoba).
+- [ x ] **3 główne scenariusze (use-case)**: co user robi najczęściej?
+  - logowanie
+  - Ustawienia główne dla całego sezonu,
+  - Tworzenie turnieju (CRUD):
+  - Podgląd turnieju,
+- [ x ] **Zakres ‘NIE robimy’ (anti-scope)**: 5–15 punktów.
+- [ x ] **Kryterium sukcesu**: po czym poznasz, że projekt ma sens? (np. działa 1 flow end-to-end)
+  - działa MVP (wyświetla przykładowe mockowane dane)
 
-**Done when**: masz 1–2 akapity opisu + listę MVP + listę poza zakresem.  
+**Done when**: masz 1–2 akapity opisu + listę MVP + listę poza zakresem.
 **Nie rób jeszcze**: wyboru bazy/ORM/hostingu „bo modne” — bez MVP to zgadywanie.
 
 ---
 
 ## 🟩 Etap 1 — MVP i “mapa produktu”
 
-- [ ] **MVP: 3–7 funkcji max** (w punktach).
-- [ ] **1 user flow**: od wejścia do “wow, działa”.
-- [ ] **Minimalny model danych**: lista encji + relacje.
-- [ ] **Wymagania niefunkcjonalne (must-have)**:
-  - [ ] auth (tak/nie, jaki typ)
-  - [ ] RWD (tak)
-  - [ ] a11y basics (tak)
-  - [ ] SEO (jeśli publiczna strona)
-  - [ ] prywatność/RODO (jeśli dane osobowe)
+- [ x ] **MVP: 3–7 funkcji max** (w punktach).
+  1. **Logowanie**
+     - **Cel**: użytkownik może wejść do aplikacji i wraca do niej bez ponownego logowania (sesja).
+     - **Must-have (MVP)**:
+       - logowanie na PIN
+       - wylogowanie
+       - ochrona podstron “po zalogowaniu” (bez sesji → przekierowanie do logowania)
+     - **Poza zakresem (na później)**: reset hasła, 2FA, logowanie społecznościowe, role/uprawnienia, audyt logowań.
 
-**Done when**: umiesz opisać MVP w 60 sekund i wiesz jakie dane musisz zapisać.  
+  2. **Ustawienia główne dla całego sezonu**
+     - **Cel**: ustalasz “ramy” sezonu, które będą używane w turniejach.
+     - **Must-have (MVP)**:
+       - jeden ekran ustawień sezonu
+       - zapis + odczyt ustawień (persistencja)
+       - minimum pól: nazwa sezonu (opcjonalnie: rok / opis)
+     - **Poza zakresem (na później)**: historia zmian, wiele sezonów naraz, uprawnienia do edycji, rozbudowane walidacje.
+
+  3. **Tworzenie turnieju (CRUD)**
+     - **Cel**: dodasz/edytujesz/usuniesz turniej i widzisz go na liście.
+     - **Must-have (MVP)**:
+       - lista turniejów
+       - dodanie turnieju (formularz z minimum: nazwa + data)
+       - edycja turnieju
+       - usunięcie turnieju z potwierdzeniem
+     - **Poza zakresem (na później)**: import/eksport, duplikowanie, zaawansowane filtrowanie, workflow statusów, rozbudowane pola.
+
+  4. **Podgląd turnieju**
+     - **Cel**: wejdziesz w szczegóły turnieju i zobaczysz podstawowe dane.
+     - **Must-have (MVP)**:
+       - ekran szczegółów turnieju
+       - wyświetlenie podstawowych pól (np. nazwa, data)
+       - nawigacja: powrót do listy / przejście do edycji
+     - **Poza zakresem (na później)**: publiczny link, generowanie PDF, statystyki, udostępnianie, “ładne raporty”.
+
+- [ x ] **1 user flow**: od wejścia do “wow, działa”.
+- [ ] **Minimalny model danych**: lista encji + relacje.
+- [ x ] **Wymagania niefunkcjonalne (must-have)**:
+  - [ x ] RWD
+
+**Done when**: umiesz opisać MVP w 60 sekund i wiesz jakie dane musisz zapisać.
 **Nie rób jeszcze**: 200 tasków — na razie planujesz tylko najbliższy etap.
 
 ---
@@ -46,15 +80,15 @@
 
 Wybierz tylko rzeczy, które trudno zmienić później:
 
-- [ ] **Typ aplikacji**: web / mobile / desktop.
-- [ ] **Forma fullstack**: monorepo (często najlepszy start) vs osobne repo.
-- [ ] **Framework**: np. Next.js (dla fullstack web).
-- [ ] **Baza**: Postgres (uniwersalna) lub inna, jeśli masz powód.
-- [ ] **ORM / DB layer**: Prisma / Drizzle / SQL (jeden wybór).
-- [ ] **Auth**: gotowiec (np. Auth.js) vs własny.
-- [ ] **Hosting**: gdzie deployujesz app i DB.
+- [ x ] **Typ aplikacji**: web / mobile / desktop - DECYZJA: Wszystkie platformy
+- [ x ] **Forma fullstack**: monorepo (często najlepszy start) vs osobne repo - DEZYCJA: Monorepo
+- [ x ] **Framework**: np. Next.js (dla fullstack web) - DEZYCJA: Next.js
+- [ x ] **Baza**: Postgres (uniwersalna) lub inna, jeśli masz powód - DEZYCJA: Postgres
+- [ x ] **ORM / DB layer**: Prisma / Drizzle / SQL (jeden wybór) - DEZYCJA: Prisma
+- [ x ] **Auth**: gotowiec (np. Auth.js) vs własny - DEZYCJA: OAuth 2.0 + OpenID Connect (OIDC)
+- [ x ] **Hosting**: gdzie deployujesz app i DB - DEZYCJA: 1Free.eu (VPS)
 
-**Done when**: masz listę 5–8 decyzji + krótkie “dlaczego”.  
+**Done when**: masz listę 5–8 decyzji + krótkie “dlaczego”.
 **Nie rób jeszcze**: mikroserwisów, CQRS, event-driven — dopóki nie masz skali i realnych problemów.
 
 ---
@@ -107,20 +141,18 @@ Deliverables:
 ### Polecane narzędzia do automatycznego generowania UI
 
 - **Kod UI (React/Next) z gotowych komponentów**: v0 (Vercel) + często shadcn/ui jako baza komponentów.
-- **Makiety / wireframe / prototyp**: Figma.
-- **Figma → kod (szybki start, potem poprawiasz)**: Locofy albo Anima.
 - **No-code szybki wygląd (często lepszy do landingów)**: Framer / Webflow.
+- **Google AI Studio** - najlepsze narzędzie do generowania szablonu strony web z dobrym kodem i strukturą plików + ładny design.
 
 ### Szybka zasada wyboru (żeby nie myśleć za każdym razem)
 
 - Jeśli chcesz **jak najszybciej kod w repo i działające ekrany MVP** → **v0 + biblioteka komponentów**.
 - Jeśli chcesz najpierw **poukładać UX bez walki z CSS** → **Figma (wireframe)**.
-- Jeśli masz już Figma i chcesz **startowy kod do dalszego ręcznego uporządkowania** → **Locofy/Anima**, ale traktuj wynik jak “szkic”.
 
 ### Co generujesz / co robisz z wynikiem
 
-- [ ] Wygeneruj: layout (topbar/sidebar), podstawowe komponenty, stany (loading/empty/error), tokeny (CSS variables).
-- [ ] Dopasuj do **1 flow MVP** (wystarczą 1–2 ekrany).
+- [ x ] Wygeneruj: layout (topbar/sidebar), podstawowe komponenty, stany (loading/empty/error), tokeny (CSS variables).
+- [ x ] Dopasuj do **1 flow MVP** (wystarczą 1–2 ekrany).
 
 **Done when**: masz spójny “wygląd” i gotowy szkielet pod pierwszy pion MVP.
 
@@ -141,19 +173,15 @@ Deliverables:
 
 ## 🟨 Etap 3 — Repo i standard jakości (bez nadmiaru)
 
-- [ ] Utwórz repo / wybierz boilerplate dopasowany do Etapu 2.
-- [ ] Minimum jakości:
-  - [ ] TypeScript (jeśli web)
-  - [ ] Prettier
-  - [ ] ESLint
-  - [ ] skrypty: `dev`, `build`, `lint`, `test` (test może być później, ale skrypt warto mieć)
-- [ ] Minimum plików:
+- [ x ] Utwórz repo / wybierz boilerplate dopasowany do Etapu 2 - DEZYCJA: 10xDevs Astro starter
+- [ x ] Minimum plików:
   - [ ] `README.md` (co to jest + jak odpalić)
-  - [ ] `.env.example`
-  - [ ] `.gitignore`
-  - [ ] `LICENSE` (opcjonalnie)
+  - [ x ] `.env.example`
+  - [ x ] `.gitignore`
+  - [ -] `LICENSE` (opcjonalnie)
+- [ ] Zaimportuj wygenerowany szablon aplikacji do projektu
 
-**Done when**: projekt odpala się lokalnie w 1 komendzie i ma spójne formatowanie.  
+**Done when**: projekt odpala się lokalnie w 1 komendzie i ma spójne formatowanie.
 **Nie rób jeszcze**: 15 narzędzi naraz (Storybook, Cypress, Sentry, Terraform…) — dodasz, gdy realnie potrzebujesz.
 
 ---
@@ -169,22 +197,22 @@ Deliverables:
 - [ ] Konwencje: nazwy plików, komponentów, endpointów.
 - [ ] Zaplanuj jedną ścieżkę: **UI → API → DB → UI**.
 
-**Done when**: wiesz gdzie dodać ekran/endpoint/model bez myślenia.  
+**Done when**: wiesz gdzie dodać ekran/endpoint/model bez myślenia.
 **Nie rób jeszcze**: “idealnej” struktury pod przyszłe feature’y, których nie ma w MVP.
 
 ---
 
 ## 🟦 Etap 5 — GitHub Projects i pierwsze taski
 
-- [ ] Utwórz GitHub Project.
-- [ ] Kolumny: Backlog / Next / In Progress / Done.
+- [ x ] Utwórz GitHub Project.
+- [ x ] Kolumny: Backlog / Next / In Progress / Done.
 - [ ] Dodaj 10–25 tasków maks na najbliższy etap.
-- [ ] Priorytety:
-  - [ ] **P0**: musi być, żeby flow działał
-  - [ ] **P1**: poprawia jakość, ale nie blokuje
-  - [ ] **P2+**: dodatki
+- [ x ] Priorytety:
+  - [ x ] **P0**: musi być, żeby flow działał
+  - [ x ] **P1**: poprawia jakość, ale nie blokuje
+  - [ x ] **P2+**: dodatki
 
-**Done when**: masz jasne “co robię przez najbliższe dni”.  
+**Done when**: masz jasne “co robię przez najbliższe dni”.
 **Nie rób jeszcze**: planowania sprintów na miesiąc — zmienisz zdanie po 1–2 dniach budowania.
 
 ---
@@ -196,7 +224,7 @@ Deliverables:
 - [ ] DB zapis/odczyt
 - [ ] Obsługa błędów (minimum: komunikat + log)
 
-**Done when**: da się przejść flow od początku do końca bez ręcznego “grzebania w bazie”.  
+**Done when**: da się przejść flow od początku do końca bez ręcznego “grzebania w bazie”.
 **Nie rób jeszcze**: “final” UI, dopóki nie masz działającej logiki i danych.
 
 ---
@@ -215,7 +243,7 @@ Teraz dopinasz rzeczy, które naprawdę zaczną oszczędzać czas:
   - [ ] `ARCHITECTURE.md`: warstwy + przepływy
   - [ ] `DECISIONS.md`: krótkie decyzje “co i dlaczego”
 
-**Done when**: widzisz powtarzalne problemy i te pliki realnie oszczędzają czas.  
+**Done when**: widzisz powtarzalne problemy i te pliki realnie oszczędzają czas.
 **Dlaczego nie wcześniej**: na starcie nie wiesz jeszcze, co będzie powtarzalne — łatwo zrobić “martwe” zasady.
 
 ---
@@ -223,13 +251,14 @@ Teraz dopinasz rzeczy, które naprawdę zaczną oszczędzać czas:
 ## 🧩 Uniwersalny wzór? Tak — z wyjątkami
 
 To jest uniwersalne, bo idzie po ryzykach:
-1) sens produktu → 2) trudne decyzje → 3) działający pion → 4) optymalizacja procesu.
+
+1. sens produktu → 2) trudne decyzje → 3) działający pion → 4) optymalizacja procesu.
 
 **Wyjątki**:
+
 - twarde wymagania (compliance, bezpieczeństwo, enterprise integracje) → Etap 2/4 robisz wcześniej i dokładniej,
 - mini-projekty na 1–2 dni → skracasz Etapy 2/4/7 do minimum.
 
 ## 🧠 Szybka ściąga: “Co teraz?”
 
 Jeśli utkniesz: **wróć do 1 flow end-to-end** i zapytaj: “co mnie blokuje, żeby to działało?”.
-

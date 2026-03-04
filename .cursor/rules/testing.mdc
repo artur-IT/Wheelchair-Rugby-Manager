@@ -1,0 +1,10 @@
+---
+description: Testing — Vitest, RTL, Playwright where and how to add tests
+alwaysApply: false
+---
+
+- Use the test stack from AGENTS.md (e.g. Vitest, React Testing Library for components).
+- Where: Unit tests for services and utilities; React Testing Library for components.
+- Each new component must include at least one test file in the same folder, named like the component with `.test.tsx` extension.
+- Never mock unnecessarily; only mock when needed (e.g. network requests).
+- Add only the minimum necessary tests.
