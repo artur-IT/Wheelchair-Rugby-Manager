@@ -1,6 +1,6 @@
 import { defineMiddleware } from "astro:middleware";
 
-const PUBLIC_PATHS = new Set(["/login", "/api/login", "/api/logout"]);
+const PUBLIC_PATHS = new Set(["/", "/api/login", "/api/logout"]);
 
 function isLikelyAssetPath(pathname: string) {
   return (
@@ -27,7 +27,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   const session = cookies.get("session")?.value;
   if (!session) {
-    return redirect("/login");
+    return redirect("/?login=1");
   }
 
   return next();

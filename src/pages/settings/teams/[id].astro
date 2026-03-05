@@ -1,0 +1,11 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import TeamDetails from "@/components/TeamDetails";
+
+const { id } = Astro.params;
+if (!id) return Astro.redirect("/settings");
+---
+
+<Layout title="Szczegóły drużyny">
+  <TeamDetails id={id} client:load />
+</Layout>

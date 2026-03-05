@@ -1,4 +1,0 @@
----
-alwaysApply: false
----
-- remove unused functions, variables, components, exports

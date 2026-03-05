@@ -1,0 +1,14 @@
+---
+alwaysApply: false
+---
+
+- Refactor your code to make it more readable, modular and maintainable.
+- functions that have only 1 line of code should be replaced with arrows and written in 1 line.
+- always apply the principles of SOLID, DRY, KISS, YAGNI, KISS.
+- javascript compatible, among others with ES8, ES9, ES11, ES12, ES2022, ES2023
+- css or MUI using solutions from actual versions
+- use HTML 5 tags, solutions and functionalities from actual versions
+- remove too obvious comments, leave only those that are needed to understand the code and with the names of the code sections.
+- if the code is longer than 200 lines, consider dividing it into smaller functions and propose a solution in the form of hooks, components, modules, classes, etc. Ask for consent.
+- remove unused imports, functions, exports and variables
+- remove all console.log and leave only those needed for debugging.

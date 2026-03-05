@@ -1,0 +1,11 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import TournamentDetails from "@/components/TournamentDetails";
+
+const { id } = Astro.params;
+if (!id) return Astro.redirect("/tournaments");
+---
+
+<Layout title="Szczegóły turnieju">
+  <TournamentDetails id={id} client:load />
+</Layout>
