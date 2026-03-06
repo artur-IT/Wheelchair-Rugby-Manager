@@ -221,7 +221,7 @@ Deliverables:
 
 - [ x ] UI dla 1 flow (nawet brzydki, byle działał)
 - [ x ] API dla tego flow
-- [ ] DB zapis/odczyt
+- [ x ] DB zapis/odczyt
 - [ x ] Obsługa błędów (minimum: komunikat + log)
 
 **Done when**: da się przejść flow od początku do końca bez ręcznego “grzebania w bazie”.

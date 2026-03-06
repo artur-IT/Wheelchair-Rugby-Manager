@@ -3,11 +3,31 @@ generator client {
   output   = "../generated/prisma"
 }
 
+generator erd {
+  provider = "prisma-erd-generator"
+  output   = "./ERD.svg"
+}
+
 datasource db {
   provider = "postgresql"
 }
 
 // ─── Phase 1: MVP ────────────────────────────────────────────────────────────
+
+model User {
+  id          String       @id @default(cuid())
+  name        String
+  email       String       @unique
+  password    String
+  role        UserRole
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+enum UserRole {
+  COACH
+  ORGANIZER
+}
 
 model Season {
   id          String       @id @default(cuid())
@@ -63,7 +83,7 @@ model Tournament {
   updatedAt    DateTime               @updatedAt
   seasonId     String
   season       Season                 @relation(fields: [seasonId], references: [id], onDelete: Cascade)
-  venue        Venue?
+  venue        SportsHall?
   accommodation Accommodation?
   mealPlans    MealPlan[]
   teams        TournamentTeam[]
@@ -104,7 +124,7 @@ model Classifier {
 
 // ─── Phase 2: Tournament details ─────────────────────────────────────────────
 
-model Venue {
+model SportsHall {
   id           String     @id @default(cuid())
   name         String
   address      String?
@@ -129,6 +149,7 @@ model Accommodation {
 enum MealLocation {
   HALL
   HOTEL
+  OTHER
 }
 
 model MealPlan {
@@ -191,9 +212,10 @@ model Match {
 }
 
 enum RefereeRole {
-  FLOOR_1
-  FLOOR_2
-  TABLE
+  COURT_1
+  COURT_2
+  TABLE_CLOCK
+  TABLE_PENALTY
 }
 
 model RefereeAssignment {
