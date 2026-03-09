@@ -1,8 +1,27 @@
--- CreateEnum
-CREATE TYPE "MealLocation" AS ENUM ('HALL', 'HOTEL');
+-- CreateSchema
+CREATE SCHEMA IF NOT EXISTS "public";
 
 -- CreateEnum
-CREATE TYPE "RefereeRole" AS ENUM ('FLOOR_1', 'FLOOR_2', 'TABLE');
+CREATE TYPE "UserRole" AS ENUM ('COACH', 'ORGANIZER');
+
+-- CreateEnum
+CREATE TYPE "MealLocation" AS ENUM ('HALL', 'HOTEL', 'OTHER');
+
+-- CreateEnum
+CREATE TYPE "RefereeRole" AS ENUM ('COURT_1', 'COURT_2', 'TABLE_CLOCK', 'TABLE_PENALTY');
+
+-- CreateTable
+CREATE TABLE "User" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "password" TEXT NOT NULL,
+    "role" "UserRole" NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "User_pkey" PRIMARY KEY ("id")
+);
 
 -- CreateTable
 CREATE TABLE "Season" (
@@ -30,8 +49,21 @@ CREATE TABLE "Team" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "seasonId" TEXT NOT NULL,
+    "refereeId" TEXT,
 
     CONSTRAINT "Team_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Staff" (
+    "id" TEXT NOT NULL,
+    "firstName" TEXT NOT NULL,
+    "lastName" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "teamId" TEXT NOT NULL,
+
+    CONSTRAINT "Staff_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -90,7 +122,7 @@ CREATE TABLE "Classifier" (
 );
 
 -- CreateTable
-CREATE TABLE "Venue" (
+CREATE TABLE "SportsHall" (
     "id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "address" TEXT,
@@ -99,7 +131,7 @@ CREATE TABLE "Venue" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "tournamentId" TEXT NOT NULL,
 
-    CONSTRAINT "Venue_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "SportsHall_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -152,6 +184,22 @@ CREATE TABLE "TournamentClassifier" (
 );
 
 -- CreateTable
+CREATE TABLE "TournamentPlayer" (
+    "tournamentId" TEXT NOT NULL,
+    "playerId" TEXT NOT NULL,
+
+    CONSTRAINT "TournamentPlayer_pkey" PRIMARY KEY ("tournamentId","playerId")
+);
+
+-- CreateTable
+CREATE TABLE "TournamentStaff" (
+    "tournamentId" TEXT NOT NULL,
+    "staffId" TEXT NOT NULL,
+
+    CONSTRAINT "TournamentStaff_pkey" PRIMARY KEY ("tournamentId","staffId")
+);
+
+-- CreateTable
 CREATE TABLE "Match" (
     "id" TEXT NOT NULL,
     "scheduledAt" TIMESTAMP(3) NOT NULL,
@@ -179,6 +227,19 @@ CREATE TABLE "RefereeAssignment" (
 );
 
 -- CreateTable
+CREATE TABLE "ClassificationExam" (
+    "id" TEXT NOT NULL,
+    "notes" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "tournamentId" TEXT NOT NULL,
+    "classifierId" TEXT NOT NULL,
+    "playerId" TEXT NOT NULL,
+
+    CONSTRAINT "ClassificationExam_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "Volunteer" (
     "id" TEXT NOT NULL,
     "firstName" TEXT NOT NULL,
@@ -192,16 +253,22 @@ CREATE TABLE "Volunteer" (
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Venue_tournamentId_key" ON "Venue"("tournamentId");
-
--- CreateIndex
-CREATE UNIQUE INDEX "Accommodation_tournamentId_key" ON "Accommodation"("tournamentId");
+CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "RefereeAssignment_matchId_refereeId_key" ON "RefereeAssignment"("matchId", "refereeId");
 
+-- CreateIndex
+CREATE UNIQUE INDEX "ClassificationExam_tournamentId_classifierId_playerId_key" ON "ClassificationExam"("tournamentId", "classifierId", "playerId");
+
 -- AddForeignKey
 ALTER TABLE "Team" ADD CONSTRAINT "Team_seasonId_fkey" FOREIGN KEY ("seasonId") REFERENCES "Season"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Team" ADD CONSTRAINT "Team_refereeId_fkey" FOREIGN KEY ("refereeId") REFERENCES "Referee"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Staff" ADD CONSTRAINT "Staff_teamId_fkey" FOREIGN KEY ("teamId") REFERENCES "Team"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Player" ADD CONSTRAINT "Player_teamId_fkey" FOREIGN KEY ("teamId") REFERENCES "Team"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -216,7 +283,7 @@ ALTER TABLE "Referee" ADD CONSTRAINT "Referee_seasonId_fkey" FOREIGN KEY ("seaso
 ALTER TABLE "Classifier" ADD CONSTRAINT "Classifier_seasonId_fkey" FOREIGN KEY ("seasonId") REFERENCES "Season"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Venue" ADD CONSTRAINT "Venue_tournamentId_fkey" FOREIGN KEY ("tournamentId") REFERENCES "Tournament"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "SportsHall" ADD CONSTRAINT "SportsHall_tournamentId_fkey" FOREIGN KEY ("tournamentId") REFERENCES "Tournament"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Accommodation" ADD CONSTRAINT "Accommodation_tournamentId_fkey" FOREIGN KEY ("tournamentId") REFERENCES "Tournament"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -243,6 +310,18 @@ ALTER TABLE "TournamentClassifier" ADD CONSTRAINT "TournamentClassifier_tourname
 ALTER TABLE "TournamentClassifier" ADD CONSTRAINT "TournamentClassifier_classifierId_fkey" FOREIGN KEY ("classifierId") REFERENCES "Classifier"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "TournamentPlayer" ADD CONSTRAINT "TournamentPlayer_tournamentId_fkey" FOREIGN KEY ("tournamentId") REFERENCES "Tournament"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "TournamentPlayer" ADD CONSTRAINT "TournamentPlayer_playerId_fkey" FOREIGN KEY ("playerId") REFERENCES "Player"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "TournamentStaff" ADD CONSTRAINT "TournamentStaff_tournamentId_fkey" FOREIGN KEY ("tournamentId") REFERENCES "Tournament"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "TournamentStaff" ADD CONSTRAINT "TournamentStaff_staffId_fkey" FOREIGN KEY ("staffId") REFERENCES "Staff"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "Match" ADD CONSTRAINT "Match_tournamentId_fkey" FOREIGN KEY ("tournamentId") REFERENCES "Tournament"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -256,6 +335,15 @@ ALTER TABLE "RefereeAssignment" ADD CONSTRAINT "RefereeAssignment_matchId_fkey" 
 
 -- AddForeignKey
 ALTER TABLE "RefereeAssignment" ADD CONSTRAINT "RefereeAssignment_refereeId_fkey" FOREIGN KEY ("refereeId") REFERENCES "Referee"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ClassificationExam" ADD CONSTRAINT "ClassificationExam_tournamentId_fkey" FOREIGN KEY ("tournamentId") REFERENCES "Tournament"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ClassificationExam" ADD CONSTRAINT "ClassificationExam_classifierId_fkey" FOREIGN KEY ("classifierId") REFERENCES "Classifier"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ClassificationExam" ADD CONSTRAINT "ClassificationExam_playerId_fkey" FOREIGN KEY ("playerId") REFERENCES "Player"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Volunteer" ADD CONSTRAINT "Volunteer_tournamentId_fkey" FOREIGN KEY ("tournamentId") REFERENCES "Tournament"("id") ON DELETE CASCADE ON UPDATE CASCADE;

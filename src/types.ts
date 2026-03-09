@@ -1,4 +1,4 @@
-export type Role = "ADMIN" | "ORGANIZER";
+export type Role = "COACH" | "ORGANIZER";
 
 export interface ContactPerson {
   firstName: string;

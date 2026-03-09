@@ -34,3 +34,45 @@ P: Praca
 - konfiguracja rules i AGENTS.md :T
 - realizacja MVP:
   - sprawdzenie nawigacji (wszędzie, buttony, powroty) :P
+
+---
+
+### DB - opis relacji między modelami
+
+1 sezon posiada: drużyny, sędziowie, klasyfikatorzy.
+
+Turnieje są tworzone tylko na bazie ustawień sezonu.
+Jeśli w ustawieniach sezonu nie ma dostepnych danych (np. zawodnika, sędziego) to nie mozna go dodać do turnieju.
+Każdy nowy turniej to nowy zestaw danych z ustawień sezonu.
+Turniej może być edytowany w trakcie sezonu.
+
+1 drużyna posiada: kilku zawodników, 1 trenera, 1 sędziego.
+1 drużyna może być w kilku turniejach.
+1 drużyna w 1 turnieju może być dodana tylko 1 raz.
+1 drużyna może rozegrać kilka meczy w 1 turnieju.
+
+1 sędzia może być w kilku turniejach.
+1 sędzia może sędziować wiele meczy w tym samym turnieju.
+Sędzia w 1 meczu może pełnić 1 funkcję (boiskowy lub stolikowy).
+
+1 turniej - user dodaje (system pobiera/kopiuje) z ustawień sezonu: drużyny, sędziowie, klasyfikatorzy
+1 turniej może mieć wiele meczy.
+1 turniej może mieć wiele sędziów.
+1 turniej może mieć wiele klasyfikatorów.
+1 turniej może mieć wiele wolontariuszy.
+1 turniej może mieć kilka hoteli.
+1 turniej może mieć kilka hal sportowych.
+1 turniej może mieć kilka planów wyżywienia.
+
+1 mecz posiada: 2 drużyny, 2 sędziów boiskowych i 2 stolikowych (w sumie 4 sędziów).
+
+Każdy zawodnik należy tylko do 1 drużyny.
+
+Klasyfikatorzy są przypisywani tylko do turnieju.
+Klasyfikatorzy badają wybranych zawodników w turnieju.
+
+---
+
+### GitHub Gists
+
+robić modelem: Sonnet 4.6

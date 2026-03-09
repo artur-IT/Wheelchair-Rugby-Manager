@@ -37,6 +37,7 @@ model Season {
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   teams       Team[]
+  coaches     Coach[]
   referees    Referee[]
   classifiers Classifier[]
   tournaments Tournament[]
@@ -51,27 +52,44 @@ model Team {
   contactLastName  String?
   contactEmail     String?
   contactPhone     String?
-  coachName        String?
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
   seasonId         String
   season           Season           @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  coachId          String?
+  coach            Coach?           @relation(fields: [coachId], references: [id], onDelete: SetNull)
+  refereeId        String?
+  referee          Referee?         @relation(fields: [refereeId], references: [id], onDelete: SetNull)
   players          Player[]
+  staff            Staff[]
   tournaments      TournamentTeam[]
-  matchesAsTeamA   Match[]          @relation("TeamA")
-  matchesAsTeamB   Match[]          @relation("TeamB")
+  matchesAsTeamA   Match[] @relation("TeamA")
+  matchesAsTeamB   Match[] @relation("TeamB")
+}
+
+model Staff {
+  id          String   @id @default(cuid())
+  firstName   String
+  lastName    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  teamId      String
+  team        Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  tournaments TournamentStaff[]
 }
 
 model Player {
-  id             String   @id @default(cuid())
-  firstName      String
-  lastName       String
-  number         Int?
-  classification Float?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  teamId         String
-  team           Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  id                  String               @id @default(cuid())
+  firstName           String
+  lastName            String
+  number              Int?
+  classification      Float?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  teamId              String
+  team                Team                 @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  classificationExams ClassificationExam[]
+  tournaments         TournamentPlayer[]
 }
 
 model Tournament {
@@ -83,17 +101,33 @@ model Tournament {
   updatedAt    DateTime               @updatedAt
   seasonId     String
   season       Season                 @relation(fields: [seasonId], references: [id], onDelete: Cascade)
-  venue        SportsHall?
-  accommodation Accommodation?
+  venues        SportsHall[]
+  accommodations Accommodation[]
   mealPlans    MealPlan[]
   teams        TournamentTeam[]
   referees     TournamentReferee[]
   classifiers  TournamentClassifier[]
-  matches      Match[]
-  volunteers   Volunteer[]
+  matches              Match[]
+  classificationExams  ClassificationExam[]
+  volunteers           Volunteer[]
+  players              TournamentPlayer[]
+  staffMembers         TournamentStaff[]
 }
 
 // ─── Phase 2: Season details ──────────────────────────────────────────────────
+
+model Coach {
+  id        String   @id @default(cuid())
+  firstName String
+  lastName  String
+  email     String?
+  phone     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  seasonId  String
+  season    Season   @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  teams     Team[]
+}
 
 model Referee {
   id          String              @id @default(cuid())
@@ -105,21 +139,23 @@ model Referee {
   updatedAt   DateTime            @updatedAt
   seasonId    String
   season      Season              @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  teams       Team[]
   tournaments TournamentReferee[]
   assignments RefereeAssignment[]
 }
 
 model Classifier {
-  id          String                 @id @default(cuid())
-  firstName   String
-  lastName    String
-  email       String?
-  phone       String?
-  createdAt   DateTime               @default(now())
-  updatedAt   DateTime               @updatedAt
-  seasonId    String
-  season      Season                 @relation(fields: [seasonId], references: [id], onDelete: Cascade)
-  tournaments TournamentClassifier[]
+  id                  String                 @id @default(cuid())
+  firstName           String
+  lastName            String
+  email               String?
+  phone               String?
+  createdAt           DateTime               @default(now())
+  updatedAt           DateTime               @updatedAt
+  seasonId            String
+  season              Season                 @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  tournaments         TournamentClassifier[]
+  classificationExams ClassificationExam[]
 }
 
 // ─── Phase 2: Tournament details ─────────────────────────────────────────────
@@ -131,7 +167,7 @@ model SportsHall {
   notes        String?
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
-  tournamentId String     @unique
+  tournamentId String
   tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
 }
 
@@ -142,7 +178,7 @@ model Accommodation {
   notes        String?
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
-  tournamentId String     @unique
+  tournamentId String
   tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
 }
 
@@ -191,6 +227,26 @@ model TournamentClassifier {
   @@id([tournamentId, classifierId])
 }
 
+// Tournament-specific player roster (subset of team's season roster)
+model TournamentPlayer {
+  tournamentId String
+  playerId     String
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  player       Player     @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@id([tournamentId, playerId])
+}
+
+// Tournament-specific staff roster (subset of team's season staff)
+model TournamentStaff {
+  tournamentId String
+  staffId      String
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  staff        Staff      @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  @@id([tournamentId, staffId])
+}
+
 // ─── Phase 2: Matches & scheduling ───────────────────────────────────────────
 
 model Match {
@@ -212,8 +268,8 @@ model Match {
 }
 
 enum RefereeRole {
-  COURT_1
-  COURT_2
+  REFEREE_1
+  REFEREE_2
   TABLE_CLOCK
   TABLE_PENALTY
 }
@@ -227,6 +283,23 @@ model RefereeAssignment {
   referee   Referee     @relation(fields: [refereeId], references: [id])
 
   @@unique([matchId, refereeId])
+  @@unique([matchId, role])
+}
+
+// Classifier examines a player during a tournament
+model ClassificationExam {
+  id           String     @id @default(cuid())
+  notes        String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  tournamentId String
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  classifierId String
+  classifier   Classifier @relation(fields: [classifierId], references: [id])
+  playerId     String
+  player       Player     @relation(fields: [playerId], references: [id])
+
+  @@unique([tournamentId, classifierId, playerId])
 }
 
 model Volunteer {
