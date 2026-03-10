@@ -2,7 +2,6 @@ import { render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import SettingsPage from "./SettingsPage";
-import { MOCK_TEAMS } from "@/mockData";
 
 // Stub fetch so SeasonsManager doesn't crash (no real server in tests)
 beforeEach(() => {
@@ -21,10 +20,9 @@ describe("SettingsPage", () => {
     await screen.findByText(/Brak sezonu/i);
   });
 
-  it("shows teams list on default tab", async () => {
+  it("shows season hint on default tab when no season is selected", async () => {
     render(<SettingsPage />);
-    expect(screen.getByText(MOCK_TEAMS[0].name)).toBeInTheDocument();
-    expect(screen.getByText(MOCK_TEAMS[1].name)).toBeInTheDocument();
+    expect(screen.getByText("Wybierz sezon, aby zobaczyć drużyny.")).toBeInTheDocument();
     await screen.findByText(/Brak sezonu/i);
   });
 

@@ -1,8 +1,10 @@
+import { useEffect, useState } from "react";
 import { MapPin } from "lucide-react";
-import { Box, Typography, Button, Paper, Link as MuiLink } from "@mui/material";
+import { Box, Typography, Button, Paper, Link as MuiLink, CircularProgress, Alert } from "@mui/material";
 import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
 import AppShell from "@/components/AppShell/AppShell";
-import { MOCK_TOURNAMENTS, MOCK_TEAMS, MOCK_REFEREES, MOCK_CLASSIFIERS } from "@/mockData";
+import { MOCK_TOURNAMENTS, MOCK_REFEREES, MOCK_CLASSIFIERS } from "@/mockData";
+import type { Team } from "@/types";
 
 interface TournamentDetailsProps {
   id: string;
@@ -20,10 +22,43 @@ export default function TournamentDetails({ id }: TournamentDetailsProps) {
 
 function TournamentDetailsContent({ id }: TournamentDetailsProps) {
   const tournament = MOCK_TOURNAMENTS.find((t) => t.id === id);
+  const [teamsFromApi, setTeamsFromApi] = useState<Team[]>([]);
+  const [teamsLoading, setTeamsLoading] = useState(true);
+  const [teamsError, setTeamsError] = useState<string | null>(null);
+
+  // Fetch all teams so we can resolve team IDs to names (when tournament.teams are IDs)
+  useEffect(() => {
+    if (!tournament) return;
+    const controller = new AbortController();
+    async function fetchTeams() {
+      setTeamsLoading(true);
+      setTeamsError(null);
+      try {
+        const res = await fetch("/api/teams", { signal: controller.signal });
+        if (!res.ok) throw new Error("Nie udało się pobrać drużyn");
+        const data: Team[] = await res.json();
+        setTeamsFromApi(data);
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        setTeamsError(err instanceof Error ? err.message : "Błąd pobierania drużyn");
+      } finally {
+        if (!controller.signal.aborted) setTeamsLoading(false);
+      }
+    }
+    fetchTeams();
+    return () => controller.abort();
+  }, [tournament]);
 
   if (!tournament) {
     return <Typography>Nie znaleziono turnieju.</Typography>;
   }
+
+  // Support both team IDs (string[]) and full Team[] from API
+  const teamIdsOrObjects = (tournament.teams ?? []) as (string | Team)[];
+  const resolvedTeams: (Team | null)[] = teamIdsOrObjects.map((t) =>
+    typeof t === "string" ? (teamsFromApi.find((x) => x.id === t) ?? null) : (t as Team)
+  );
+  const teamsToShow = resolvedTeams.filter((t): t is Team => t != null);
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
@@ -189,12 +224,23 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
             <Typography variant="h6" sx={{ fontWeight: "bold", mb: 2 }}>
               Drużyny
             </Typography>
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-              {tournament.teams.map((tid) => {
-                const team = MOCK_TEAMS.find((t) => t.id === tid);
-                return (
+            {teamsError ? (
+              <Alert severity="error" sx={{ py: 0 }}>
+                {teamsError}
+              </Alert>
+            ) : teamsLoading ? (
+              <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
+                <CircularProgress size={24} />
+              </Box>
+            ) : teamsToShow.length === 0 ? (
+              <Typography variant="body2" color="textSecondary">
+                Brak przypisanych drużyn.
+              </Typography>
+            ) : (
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                {teamsToShow.map((team) => (
                   <Box
-                    key={tid}
+                    key={team.id}
                     sx={{
                       display: "flex",
                       alignItems: "center",
@@ -219,13 +265,13 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
                         color: "primary.main",
                       }}
                     >
-                      {team?.name[0]}
+                      {team.name[0] ?? "?"}
                     </Box>
-                    <Typography sx={{ fontWeight: 500 }}>{team?.name}</Typography>
+                    <Typography sx={{ fontWeight: 500 }}>{team.name}</Typography>
                   </Box>
-                );
-              })}
-            </Box>
+                ))}
+              </Box>
+            )}
           </Paper>
 
           <Paper sx={{ p: 3, borderRadius: 3 }}>
@@ -246,13 +292,13 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
                 >
                   Sędziowie
                 </Typography>
-                {tournament.referees.map((rid) => {
-                  const r = MOCK_REFEREES.find((x) => x.id === rid);
-                  return (
-                    <Typography key={rid} variant="body2" sx={{ fontWeight: 500 }}>
-                      {r?.firstName} {r?.lastName}
+                {tournament.referees.map((refOrId) => {
+                  const r = typeof refOrId === "string" ? MOCK_REFEREES.find((x) => x.id === refOrId) : refOrId;
+                  return r ? (
+                    <Typography key={r.id} variant="body2" sx={{ fontWeight: 500 }}>
+                      {r.firstName} {r.lastName}
                     </Typography>
-                  );
+                  ) : null;
                 })}
               </Box>
               <Box>
@@ -268,13 +314,13 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
                 >
                   Klasyfikatorzy
                 </Typography>
-                {tournament.classifiers.map((cid) => {
-                  const c = MOCK_CLASSIFIERS.find((x) => x.id === cid);
-                  return (
-                    <Typography key={cid} variant="body2" sx={{ fontWeight: 500 }}>
-                      {c?.firstName} {c?.lastName}
+                {tournament.classifiers.map((clsOrId) => {
+                  const c = typeof clsOrId === "string" ? MOCK_CLASSIFIERS.find((x) => x.id === clsOrId) : clsOrId;
+                  return c ? (
+                    <Typography key={c.id} variant="body2" sx={{ fontWeight: 500 }}>
+                      {c.firstName} {c.lastName}
                     </Typography>
-                  );
+                  ) : null;
                 })}
               </Box>
             </Box>

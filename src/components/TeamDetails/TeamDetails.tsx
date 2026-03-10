@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import {
   Box,
   Typography,
@@ -11,10 +12,12 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  CircularProgress,
+  Alert,
 } from "@mui/material";
 import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
 import AppShell from "@/components/AppShell/AppShell";
-import { MOCK_TEAMS } from "@/mockData";
+import type { Team } from "@/types";
 
 interface TeamDetailsProps {
   id: string;
@@ -31,11 +34,53 @@ export default function TeamDetails({ id }: TeamDetailsProps) {
 }
 
 function TeamDetailsContent({ id }: TeamDetailsProps) {
-  const team = MOCK_TEAMS.find((t) => t.id === id);
+  const [team, setTeam] = useState<Team | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    async function fetchTeam() {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await fetch("/api/teams", { signal: controller.signal });
+        if (!res.ok) throw new Error("Nie udało się pobrać drużyn");
+        const data: Team[] = await res.json();
+        const foundTeam = data.find((item) => item.id === id) ?? null;
+        setTeam(foundTeam);
+      } catch (fetchError) {
+        if (controller.signal.aborted) return;
+        setError(fetchError instanceof Error ? fetchError.message : "Wystąpił błąd pobierania");
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
+      }
+    }
+
+    fetchTeam();
+
+    return () => controller.abort();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return <Alert severity="error">{error}</Alert>;
+  }
 
   if (!team) {
     return <Typography>Nie znaleziono drużyny.</Typography>;
   }
+
+  const players = team.players ?? [];
+  const staff = team.staff ?? [];
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
@@ -65,7 +110,7 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
           <Typography variant="h3" sx={{ fontWeight: 900 }}>
             {team.name}
           </Typography>
-          <Typography color="textSecondary">{team.address}</Typography>
+          <Typography color="textSecondary">{team.address ?? "Brak adresu"}</Typography>
         </Box>
         <Box sx={{ display: "flex", gap: 1.5 }}>
           <Button variant="outlined" color="error" sx={{ borderRadius: 4, fontWeight: "bold" }}>
@@ -113,13 +158,13 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {team.players.map((p) => (
+                  {players.map((p) => (
                     <TableRow key={p.id} hover>
                       <TableCell>
                         {p.firstName} {p.lastName}
                       </TableCell>
                       <TableCell>
-                        <Chip label={p.classification.toFixed(1)} size="small" variant="outlined" />
+                        <Chip label={p.classification?.toFixed(1) ?? "-"} size="small" variant="outlined" />
                       </TableCell>
                       <TableCell align="right">
                         <Button size="small" color="primary">
@@ -143,13 +188,13 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
               Kontakt
             </Typography>
             <Typography sx={{ fontWeight: "bold" }}>
-              {team.contactPerson.firstName} {team.contactPerson.lastName}
+              {team.contactFirstName ?? "Brak"} {team.contactLastName ?? "danych"}
             </Typography>
             <Typography variant="body2" color="textSecondary">
-              {team.contactPerson.email}
+              {team.contactEmail ?? "Brak emaila"}
             </Typography>
             <Typography variant="body2" color="textSecondary">
-              {team.contactPerson.phone}
+              {team.contactPhone ?? "Brak telefonu"}
             </Typography>
           </Paper>
 
@@ -172,7 +217,7 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
                   Trener
                 </Typography>
                 <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                  {team.coach ? `${team.coach.firstName} ${team.coach.lastName}` : "Nie przypisano"}
+                  {team.coachId ? `ID: ${team.coachId}` : "Nie przypisano"}
                 </Typography>
               </Box>
               <Box>
@@ -188,8 +233,8 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
                 >
                   Staff
                 </Typography>
-                {team.staff.length > 0 ? (
-                  team.staff.map((s) => (
+                {staff.length > 0 ? (
+                  staff.map((s) => (
                     <Typography key={s.id} variant="body2" sx={{ fontWeight: 500 }}>
                       {s.firstName} {s.lastName}
                     </Typography>
