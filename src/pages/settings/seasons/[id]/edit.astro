@@ -1,0 +1,11 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import SeasonForm from "@/components/SeasonForm";
+
+const { id } = Astro.params;
+if (!id) return Astro.redirect("/settings");
+---
+
+<Layout title="Edytuj sezon">
+  <SeasonForm id={id} client:load />
+</Layout>

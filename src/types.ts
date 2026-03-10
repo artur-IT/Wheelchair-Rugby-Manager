@@ -129,6 +129,12 @@ export interface Volunteer {
 
 // ─── DTOs ────────────────────────────────────────────────────────────────────
 
+export interface CreateSeasonDto {
+  name: string;
+  year: number;
+  description?: string;
+}
+
 export interface CreateTeamDto {
   name: string;
   address?: string;

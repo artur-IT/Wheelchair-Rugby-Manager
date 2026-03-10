@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { ReactElement } from "react";
-import { Users, UserCircle, ChevronRight } from "lucide-react";
+import { Users, UserCircle, ChevronRight, Pencil } from "lucide-react";
 import {
   Box,
   Button,
@@ -19,7 +19,21 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  Alert,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  CircularProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from "@mui/material";
+import type { SelectChangeEvent } from "@mui/material";
+import { Trash2 } from "lucide-react";
+import type { Season } from "@/types";
 import ThemeRegistry from "@/components/ThemeRegistry";
 import AppShell from "@/components/AppShell";
 import { MOCK_TEAMS, MOCK_REFEREES, MOCK_CLASSIFIERS, MOCK_VOLUNTEERS } from "@/mockData";
@@ -40,6 +54,130 @@ function StyledTab({ label, value, icon }: { label: string; value: string; icon:
   return <Tab label={label} value={value} icon={icon} iconPosition="start" />;
 }
 
+function SeasonsManager() {
+  const [seasons, setSeasons] = useState<Season[]>([]);
+  const [selectedId, setSelectedId] = useState<string>("");
+  const [loaded, setLoaded] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch all seasons on mount
+  useEffect(() => {
+    fetch("/api/seasons")
+      .then((r) => r.json())
+      .then((data: Season[]) => {
+        setSeasons(data);
+        if (data.length > 0) setSelectedId(data[0].id);
+      })
+      .catch(() => setError("Nie udało się pobrać sezonów"))
+      .finally(() => setLoaded(true));
+  }, []);
+
+  const handleDeleteConfirmed = async () => {
+    setConfirmOpen(false);
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/seasons/${selectedId}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Nie udało się usunąć sezonu");
+      const updated = seasons.filter((s) => s.id !== selectedId);
+      setSeasons(updated);
+      setSelectedId(updated[0]?.id ?? "");
+      setError(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Błąd usuwania");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const selectedSeason = seasons.find((s) => s.id === selectedId);
+
+  if (!loaded) return <CircularProgress size={20} sx={{ mb: 3 }} />;
+
+  if (seasons.length === 0) {
+    return (
+      <Alert
+        severity="warning"
+        sx={{ mb: 3 }}
+        action={
+          <Button color="inherit" size="small" component="a" href="/settings/seasons/new">
+            Utwórz sezon
+          </Button>
+        }
+      >
+        Brak sezonu — dodaj drużyny dopiero po utworzeniu sezonu.
+      </Alert>
+    );
+  }
+
+  return (
+    <>
+      <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3, flexWrap: "wrap" }}>
+        {/* Season selector */}
+        <FormControl size="small" sx={{ minWidth: 240 }}>
+          <InputLabel>Sezon</InputLabel>
+          <Select label="Sezon" value={selectedId} onChange={(e: SelectChangeEvent) => setSelectedId(e.target.value)}>
+            {seasons.map((s) => (
+              <MenuItem key={s.id} value={s.id}>
+                {s.name}
+                {s.year ? ` (${s.year})` : ""}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+
+        {/* Edit selected season */}
+        <IconButton
+          component="a"
+          href={`/settings/seasons/${selectedId}/edit`}
+          disabled={!selectedId}
+          title="Edytuj sezon"
+        >
+          <Pencil size={18} />
+        </IconButton>
+
+        {/* Delete selected season — opens confirmation modal */}
+        <IconButton
+          color="error"
+          onClick={() => setConfirmOpen(true)}
+          disabled={deleting || !selectedId}
+          title="Usuń sezon"
+        >
+          {deleting ? <CircularProgress size={20} /> : <Trash2 size={18} />}
+        </IconButton>
+
+        {/* Add new season */}
+        <Button variant="outlined" size="small" component="a" href="/settings/seasons/new">
+          + Nowy sezon
+        </Button>
+
+        {error && (
+          <Alert severity="error" sx={{ py: 0 }}>
+            {error}
+          </Alert>
+        )}
+      </Box>
+
+      {/* Delete confirmation dialog */}
+      <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>Usuń sezon</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Czy na pewno chcesz usunąć sezon <strong>{selectedSeason?.name}</strong>? Tej operacji nie można cofnąć.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmOpen(false)}>Anuluj</Button>
+          <Button color="error" variant="contained" onClick={handleDeleteConfirmed}>
+            Usuń
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </>
+  );
+}
+
 function SettingsContent() {
   const [activeTab, setActiveTab] = useState<TabValue>("teams");
 
@@ -51,6 +189,7 @@ function SettingsContent() {
         </Typography>
         <Typography color="textSecondary">Zarządzaj globalnymi danymi ligi.</Typography>
       </Box>
+      <SeasonsManager />
 
       <Paper sx={{ borderRadius: 3 }}>
         <Tabs value={activeTab} onChange={(_, v: TabValue) => setActiveTab(v)} variant="fullWidth">

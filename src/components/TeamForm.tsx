@@ -2,9 +2,26 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod/v4";
-import { Box, Button, Grid, TextField, Typography, Paper, Divider, Alert, CircularProgress } from "@mui/material";
+import {
+  Box,
+  Button,
+  Grid,
+  TextField,
+  Typography,
+  Paper,
+  Divider,
+  Alert,
+  CircularProgress,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  FormHelperText,
+} from "@mui/material";
+import type { SelectChangeEvent } from "@mui/material";
 import ThemeRegistry from "@/components/ThemeRegistry";
 import AppShell from "@/components/AppShell";
+import type { Season } from "@/types";
 
 // Validation schema matching the API contract
 const teamSchema = z.object({
@@ -30,8 +47,9 @@ export default function TeamForm() {
 
 function TeamFormContent() {
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [seasonId, setSeasonId] = useState<string | null>(null);
-  const [loadingSeasonId, setLoadingSeasonId] = useState(true);
+  const [seasons, setSeasons] = useState<Season[]>([]);
+  const [seasonId, setSeasonId] = useState<string>("");
+  const [loadingSeasons, setLoadingSeasons] = useState(true);
 
   const {
     register,
@@ -40,28 +58,29 @@ function TeamFormContent() {
     // Zod 4.3 types incompatible with @hookform/resolvers — runtime works correctly
   } = useForm<TeamFormValues>({ resolver: zodResolver(teamSchema as never) });
 
-  // Fetch the latest season to associate the team with
+  // Fetch all seasons so user can pick one
   useEffect(() => {
-    async function fetchSeason() {
+    async function fetchSeasons() {
       try {
         const res = await fetch("/api/seasons");
         if (!res.ok) throw new Error("Nie udało się pobrać sezonów");
-        const seasons = await res.json();
-        if (seasons.length > 0) setSeasonId(seasons[0].id);
+        const data: Season[] = await res.json();
+        setSeasons(data);
+        if (data.length > 0) setSeasonId(data[0].id);
       } catch {
-        setSubmitError("Nie udało się pobrać sezonu. Upewnij się, że istnieje co najmniej jeden sezon.");
+        setSubmitError("Nie udało się pobrać sezonów. Upewnij się, że istnieje co najmniej jeden sezon.");
       } finally {
-        setLoadingSeasonId(false);
+        setLoadingSeasons(false);
       }
     }
-    fetchSeason();
+    fetchSeasons();
   }, []);
 
   const onSubmit = async (data: TeamFormValues) => {
     setSubmitError(null);
 
     if (!seasonId) {
-      setSubmitError("Brak aktywnego sezonu. Utwórz sezon przed dodaniem drużyny.");
+      setSubmitError("Wybierz sezon przed zapisaniem drużyny.");
       return;
     }
 
@@ -83,7 +102,7 @@ function TeamFormContent() {
     }
   };
 
-  if (loadingSeasonId) {
+  if (loadingSeasons) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
         <CircularProgress />
@@ -104,6 +123,24 @@ function TeamFormContent() {
       )}
 
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
+        {/* Season selector */}
+        <FormControl fullWidth sx={{ mb: 3 }} error={seasons.length === 0}>
+          <InputLabel>Sezon</InputLabel>
+          <Select label="Sezon" value={seasonId} onChange={(e: SelectChangeEvent) => setSeasonId(e.target.value)}>
+            {seasons.map((s) => (
+              <MenuItem key={s.id} value={s.id}>
+                {s.name}
+                {s.year ? ` (${s.year})` : ""}
+              </MenuItem>
+            ))}
+          </Select>
+          {seasons.length === 0 && (
+            <FormHelperText>
+              Brak sezonów — <a href="/settings/seasons/new">utwórz sezon</a>
+            </FormHelperText>
+          )}
+        </FormControl>
+
         <Grid container spacing={2} sx={{ mb: 3 }}>
           <Grid size={{ xs: 12, sm: 6 }}>
             <TextField
@@ -174,7 +211,13 @@ function TeamFormContent() {
           <Button variant="outlined" fullWidth component="a" href="/settings">
             Anuluj
           </Button>
-          <Button variant="contained" color="success" type="submit" fullWidth disabled={isSubmitting || !seasonId}>
+          <Button
+            variant="contained"
+            color="success"
+            type="submit"
+            fullWidth
+            disabled={isSubmitting || !seasonId || seasons.length === 0}
+          >
             {isSubmitting ? <CircularProgress size={24} /> : "Zapisz Drużynę"}
           </Button>
         </Box>
