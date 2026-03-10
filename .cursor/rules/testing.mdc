@@ -8,3 +8,4 @@ alwaysApply: false
 - Each new component must include at least one test file in the same folder, named like the component with `.test.tsx` extension.
 - Never mock unnecessarily; only mock when needed (e.g. network requests).
 - Add only the minimum necessary tests.
+- Do not add very simple smoke tests.

@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import SettingsPage from "./SettingsPage";
 import { MOCK_TEAMS } from "@/mockData";
@@ -7,6 +7,10 @@ import { MOCK_TEAMS } from "@/mockData";
 // Stub fetch so SeasonsManager doesn't crash (no real server in tests)
 beforeEach(() => {
   vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => [] }));
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
 });
 
 describe("SettingsPage", () => {

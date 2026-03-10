@@ -5,11 +5,13 @@ import CloseIcon from "@mui/icons-material/Close";
 interface Props {
   open: boolean;
   onClose: () => void;
+  onLoginSuccess?: () => void;
 }
 
-export default function LoginModal({ open, onClose }: Props) {
+export default function LoginModal({ open, onClose, onLoginSuccess }: Props) {
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(false);
+  const handleLoginSuccess = onLoginSuccess ?? (() => (window.location.href = "/dashboard"));
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -25,7 +27,8 @@ export default function LoginModal({ open, onClose }: Props) {
       const data = await res.json();
 
       if (data.ok) {
-        window.location.href = "/dashboard";
+        setLoading(false);
+        handleLoginSuccess();
         return;
       }
     } catch {
@@ -60,7 +63,6 @@ export default function LoginModal({ open, onClose }: Props) {
             autoComplete="current-password"
             required
             fullWidth
-            autoFocus
             sx={{ mb: 2 }}
           />
           <Button type="submit" variant="contained" fullWidth disabled={loading}>
