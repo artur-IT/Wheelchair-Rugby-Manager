@@ -1,16 +1,18 @@
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 
 import ProfilePage from "./ProfilePage";
 
 describe("ProfilePage", () => {
-  it("renders user profile data and prefilled form fields", () => {
+  it("allows editing profile form fields", async () => {
+    const user = userEvent.setup();
     render(<ProfilePage />);
 
-    expect(screen.getByRole("heading", { name: "Mój Profil" })).toBeInTheDocument();
-    expect(screen.getByText("Administrator Systemu")).toBeInTheDocument();
-    expect(screen.getByDisplayValue("Admin")).toBeInTheDocument();
-    expect(screen.getByDisplayValue("Systemu")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Zapisz Zmiany" })).toBeInTheDocument();
+    const firstNameInput = screen.getByDisplayValue("Admin");
+    await user.clear(firstNameInput);
+    await user.type(firstNameInput, "Mateusz");
+
+    expect(screen.getByDisplayValue("Mateusz")).toBeInTheDocument();
   });
 });

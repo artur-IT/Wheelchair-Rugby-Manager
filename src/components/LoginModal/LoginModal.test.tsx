@@ -48,6 +48,7 @@ describe("LoginModal", () => {
 
     expect(screen.getByRole("button", { name: "Logowanie…" })).toBeDisabled();
     resolveLogin?.({ json: async () => ({ ok: true }) });
+    await screen.findByRole("button", { name: "Zaloguj" });
   });
 
   it("submits login request and does not show error on success", async () => {
@@ -67,5 +68,17 @@ describe("LoginModal", () => {
     );
     expect(onLoginSuccess).toHaveBeenCalledTimes(1);
     expect(screen.queryByText("Błędny PIN / hasło. Spróbuj ponownie.")).not.toBeInTheDocument();
+  });
+
+  it("re-enables submit button after successful login with custom callback", async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ json: async () => ({ ok: true }) }));
+
+    render(<LoginModal open onClose={vi.fn()} onLoginSuccess={vi.fn()} />);
+
+    await user.type(screen.getByLabelText(/PIN/i), "1234");
+    await user.click(screen.getByRole("button", { name: "Zaloguj" }));
+
+    expect(await screen.findByRole("button", { name: "Zaloguj" })).not.toBeDisabled();
   });
 });

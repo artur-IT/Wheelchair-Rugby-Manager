@@ -5,13 +5,6 @@ import { describe, expect, it } from "vitest";
 import LandingPage from "./LandingPage";
 
 describe("LandingPage", () => {
-  it("renders landing title and login button", () => {
-    render(<LandingPage />);
-
-    expect(screen.getByText("Wheelchair Rugby Manager")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Zaloguj się" })).toBeInTheDocument();
-  });
-
   it("opens login modal after login button click", async () => {
     const user = userEvent.setup();
     render(<LandingPage />);

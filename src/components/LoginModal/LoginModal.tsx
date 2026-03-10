@@ -27,6 +27,7 @@ export default function LoginModal({ open, onClose, onLoginSuccess }: Props) {
       const data = await res.json();
 
       if (data.ok) {
+        setLoading(false);
         handleLoginSuccess();
         return;
       }
