@@ -19,8 +19,8 @@ import {
   FormHelperText,
 } from "@mui/material";
 import type { SelectChangeEvent } from "@mui/material";
-import ThemeRegistry from "@/components/ThemeRegistry";
-import AppShell from "@/components/AppShell";
+import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
+import AppShell from "@/components/AppShell/AppShell";
 import type { Season } from "@/types";
 
 // Validation schema matching the API contract

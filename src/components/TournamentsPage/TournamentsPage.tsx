@@ -1,8 +1,8 @@
 import { Plus, Calendar, MapPin } from "lucide-react";
 import { motion } from "motion/react";
 import { Box, Button, Grid, Card, CardContent, Typography, Chip } from "@mui/material";
-import ThemeRegistry from "@/components/ThemeRegistry";
-import AppShell from "@/components/AppShell";
+import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
+import AppShell from "@/components/AppShell/AppShell";
 import { MOCK_TOURNAMENTS } from "@/mockData";
 
 export default function TournamentsPage() {

@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import { Trophy } from "lucide-react";
 import { motion } from "motion/react";
 import { Button, Grid, Card, CardContent, Box, Typography } from "@mui/material";
-import ThemeRegistry from "@/components/ThemeRegistry";
-import LoginModal from "@/components/LoginModal";
+import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
+import LoginModal from "@/components/LoginModal/LoginModal";
 
 const FEATURES = [
   {

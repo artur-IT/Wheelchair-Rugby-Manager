@@ -1,6 +1,6 @@
 import { Box, Button, Grid, TextField, Typography, Paper, Divider } from "@mui/material";
-import ThemeRegistry from "@/components/ThemeRegistry";
-import AppShell from "@/components/AppShell";
+import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
+import AppShell from "@/components/AppShell/AppShell";
 
 export default function TournamentForm() {
   return (

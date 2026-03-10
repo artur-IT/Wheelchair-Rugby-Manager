@@ -1,7 +1,7 @@
 import { MapPin } from "lucide-react";
 import { Box, Typography, Button, Paper, Link as MuiLink } from "@mui/material";
-import ThemeRegistry from "@/components/ThemeRegistry";
-import AppShell from "@/components/AppShell";
+import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
+import AppShell from "@/components/AppShell/AppShell";
 import { MOCK_TOURNAMENTS, MOCK_TEAMS, MOCK_REFEREES, MOCK_CLASSIFIERS } from "@/mockData";
 
 interface TournamentDetailsProps {

@@ -1,7 +1,7 @@
 import { UserCircle } from "lucide-react";
 import { Box, Button, Grid, TextField, Typography, Paper, Avatar } from "@mui/material";
-import ThemeRegistry from "@/components/ThemeRegistry";
-import AppShell from "@/components/AppShell";
+import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
+import AppShell from "@/components/AppShell/AppShell";
 
 export default function ProfilePage() {
   return (

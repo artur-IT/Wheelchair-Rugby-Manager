@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { Trophy, Users, UserCircle, Calendar, ChevronRight, Plus } from "lucide-react";
 import { Box, Button, Grid, Card, CardContent, Typography, Chip } from "@mui/material";
-import ThemeRegistry from "@/components/ThemeRegistry";
-import AppShell from "@/components/AppShell";
+import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
+import AppShell from "@/components/AppShell/AppShell";
 import { useDefaultSeason } from "@/components/hooks/useDefaultSeason";
 import type { Season } from "@/types";
 import { MOCK_TEAMS, MOCK_TOURNAMENTS, MOCK_REFEREES, MOCK_VOLUNTEERS } from "@/mockData";

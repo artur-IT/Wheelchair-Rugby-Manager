@@ -35,8 +35,8 @@ import type { SelectChangeEvent } from "@mui/material";
 import { Trash2 } from "lucide-react";
 import type { Season } from "@/types";
 import { useDefaultSeason } from "@/components/hooks/useDefaultSeason";
-import ThemeRegistry from "@/components/ThemeRegistry";
-import AppShell from "@/components/AppShell";
+import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
+import AppShell from "@/components/AppShell/AppShell";
 import { MOCK_TEAMS, MOCK_REFEREES, MOCK_CLASSIFIERS, MOCK_VOLUNTEERS } from "@/mockData";
 
 type TabValue = "teams" | "referees" | "classifiers" | "volunteers";
