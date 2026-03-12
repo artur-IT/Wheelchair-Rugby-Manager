@@ -30,7 +30,6 @@ import type { Season } from "@/types";
 const teamSchema = z.object({
   name: z.string().min(1, "Nazwa drużyny jest wymagana"),
   address: z.string().min(1, "Adres jest wymagany"),
-  logoUrl: z.union([z.string().url("Nieprawidłowy adres URL"), z.literal("")]).optional(),
   contactFirstName: z.string().min(1, "Imię jest wymagane"),
   contactLastName: z.string().min(1, "Nazwisko jest wymagane"),
   contactEmail: z.string().email("Nieprawidłowy adres email"),
@@ -203,8 +202,8 @@ function TeamFormContent() {
           contactEmail: data.contactEmail,
           contactPhone: data.contactPhone,
           seasonId,
-          coachId: data.coachId?.trim() || undefined,
-          refereeId: data.refereeId?.trim() || undefined,
+          coachId,
+          refereeId,
           staff:
             data.staffFirstName?.trim() && data.staffLastName?.trim()
               ? [{ firstName: data.staffFirstName.trim(), lastName: data.staffLastName.trim() }]
