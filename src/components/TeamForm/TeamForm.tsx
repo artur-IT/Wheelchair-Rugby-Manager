@@ -623,7 +623,7 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
                 fullWidth
                 size="small"
                 type="number"
-                inputProps={{ min: 0, step: 0.5 }}
+                inputProps={{ min: 0.5, max: 4.0, step: 0.5, inputMode: "decimal" }}
                 label="Klasyfikacja"
                 value={p.classification}
                 onChange={(e) => updatePlayer(p.id, "classification", e.target.value)}
@@ -634,7 +634,7 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
                 fullWidth
                 size="small"
                 type="number"
-                inputProps={{ min: 1 }}
+                inputProps={{ min: 1, max: 99, inputMode: "numeric" }}
                 label="Numer"
                 value={p.number}
                 onChange={(e) => updatePlayer(p.id, "number", e.target.value)}

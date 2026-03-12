@@ -6,12 +6,12 @@ import { getTeamById, updateTeam } from "@/lib/teams";
 const UpdateTeamSchema = z
   .object({
     name: z.string().min(1, "Nazwa drużyny jest wymagana"),
-    address: z.string().min(1, "Adres jest wymagany"),
+    address: z.string().min(1, "Adres jest wymagany").optional(),
     logoUrl: z.union([z.string().url("Nieprawidłowy adres URL"), z.literal("")]).optional(),
-    contactFirstName: z.string().min(1, "Imię jest wymagane"),
-    contactLastName: z.string().min(1, "Nazwisko jest wymagane"),
-    contactEmail: z.string().email("Nieprawidłowy email"),
-    contactPhone: z.string().min(1, "Telefon jest wymagany"),
+    contactFirstName: z.string().min(1, "Imię jest wymagane").optional(),
+    contactLastName: z.string().min(1, "Nazwisko jest wymagane").optional(),
+    contactEmail: z.string().email("Nieprawidłowy email").optional(),
+    contactPhone: z.string().min(1, "Telefon jest wymagany").optional(),
     seasonId: z.string().optional(),
     coachId: z.string().optional(),
     refereeId: z.string().optional(),
