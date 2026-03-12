@@ -36,6 +36,7 @@ export interface Team {
   coachId?: string;
   refereeId?: string;
   coach?: Person | null;
+  referee?: Person | null;
   players?: Player[];
   staff?: Staff[];
 }
@@ -156,6 +157,9 @@ export interface CreateTeamDto {
   staff?: { firstName: string; lastName: string }[];
   players?: { firstName: string; lastName: string; classification?: number; number?: number }[];
 }
+
+/** Same shape as create; seasonId can be omitted (server keeps existing). */
+export type UpdateTeamDto = Omit<CreateTeamDto, "seasonId"> & { seasonId?: string };
 
 export interface CreateCoachDto {
   firstName: string;

@@ -14,10 +14,37 @@ import {
   TableRow,
   CircularProgress,
   Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
 } from "@mui/material";
 import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
 import AppShell from "@/components/AppShell/AppShell";
-import type { Team } from "@/types";
+import { TeamFormContent } from "@/components/TeamForm/TeamForm";
+import type { Team, Player } from "@/types";
+
+/** Build PUT /api/teams/:id body from team and new players list (ids omitted; backend replaces all players). */
+function buildTeamUpdateBody(
+  team: Team,
+  players: { firstName: string; lastName: string; classification?: number; number?: number }[]
+) {
+  return {
+    name: team.name,
+    address: team.address,
+    logoUrl: team.logoUrl ?? undefined,
+    contactFirstName: team.contactFirstName,
+    contactLastName: team.contactLastName,
+    contactEmail: team.contactEmail,
+    contactPhone: team.contactPhone,
+    seasonId: team.seasonId,
+    coachId: team.coachId ?? undefined,
+    refereeId: team.refereeId ?? undefined,
+    staff: (team.staff ?? []).map((s) => ({ firstName: s.firstName, lastName: s.lastName })),
+    players,
+  };
+}
 
 interface TeamDetailsProps {
   id: string;
@@ -37,7 +64,19 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
   const [team, setTeam] = useState<Team | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editingPlayer, setEditingPlayer] = useState<Player | null>(null);
+  const [deleteConfirmPlayer, setDeleteConfirmPlayer] = useState<Player | null>(null);
+  const [playerActionLoading, setPlayerActionLoading] = useState(false);
+  const [playerActionError, setPlayerActionError] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<{
+    firstName: string;
+    lastName: string;
+    classification: string;
+    number: string;
+  } | null>(null);
 
+  // Fetch current team from DB (single team by id)
   useEffect(() => {
     const controller = new AbortController();
 
@@ -45,11 +84,16 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch("/api/teams", { signal: controller.signal });
-        if (!res.ok) throw new Error("Nie udało się pobrać drużyn");
-        const data: Team[] = await res.json();
-        const foundTeam = data.find((item) => item.id === id) ?? null;
-        setTeam(foundTeam);
+        const res = await fetch(`/api/teams/${id}`, { signal: controller.signal });
+        if (!res.ok) {
+          if (res.status === 404) {
+            setTeam(null);
+            return;
+          }
+          throw new Error("Nie udało się pobrać drużyny");
+        }
+        const data: Team = await res.json();
+        setTeam(data);
       } catch (fetchError) {
         if (controller.signal.aborted) return;
         setError(fetchError instanceof Error ? fetchError.message : "Wystąpił błąd pobierania");
@@ -62,6 +106,19 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
 
     return () => controller.abort();
   }, [id]);
+
+  useEffect(() => {
+    if (editingPlayer) {
+      setEditForm({
+        firstName: editingPlayer.firstName,
+        lastName: editingPlayer.lastName,
+        classification: editingPlayer.classification != null ? String(editingPlayer.classification) : "",
+        number: editingPlayer.number != null ? String(editingPlayer.number) : "",
+      });
+    } else {
+      setEditForm(null);
+    }
+  }, [editingPlayer]);
 
   if (loading) {
     return (
@@ -81,6 +138,110 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
 
   const players = team.players ?? [];
   const staff = team.staff ?? [];
+
+  const handleEditClick = () => setEditOpen(true);
+
+  const handleEditClose = () => setEditOpen(false);
+
+  const handleEditSaved = (updated: Team) => {
+    setTeam(updated);
+    setEditOpen(false);
+  };
+
+  // const handleEditPlayer = (player: Player) => setEditingPlayer(player); good old code (before Code Rabbit)
+  const handleEditPlayer = (player: Player) => {
+    setEditingPlayer(player);
+    setEditForm({
+      firstName: player.firstName,
+      lastName: player.lastName,
+      classification: player.classification != null ? String(player.classification) : "",
+      number: player.number != null ? String(player.number) : "",
+    });
+  };
+
+  const handleEditPlayerClose = () => {
+    setEditingPlayer(null);
+    setPlayerActionError(null);
+  };
+
+  const handleDeletePlayerClick = (player: Player) => setDeleteConfirmPlayer(player);
+  const handleDeleteConfirmClose = () => {
+    setDeleteConfirmPlayer(null);
+    setPlayerActionError(null);
+  };
+
+  const updateTeamPlayers = async (
+    playersPayload: { firstName: string; lastName: string; classification?: number; number?: number }[]
+  ) => {
+    if (!team) return;
+    setPlayerActionLoading(true);
+    setPlayerActionError(null);
+    try {
+      const res = await fetch(`/api/teams/${team.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(buildTeamUpdateBody(team, playersPayload)),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => null);
+        // Zod flatten() puts field errors in fieldErrors, generic in formErrors
+        const fieldErrors = err?.error?.fieldErrors;
+        const firstFieldError = fieldErrors ? Object.values(fieldErrors).flat()[0] : undefined;
+        throw new Error(
+          firstFieldError ?? err?.error?.formErrors?.[0] ?? err?.error ?? "Nie udało się zaktualizować drużyny"
+        );
+      }
+      const updated: Team = await res.json();
+      setTeam(updated);
+      setEditingPlayer(null);
+      setDeleteConfirmPlayer(null);
+    } catch (e) {
+      setPlayerActionError(e instanceof Error ? e.message : "Wystąpił błąd");
+    } finally {
+      setPlayerActionLoading(false);
+    }
+  };
+
+  const handleEditPlayerSave = async () => {
+    if (!team || !editingPlayer || !editForm) return;
+    const firstName = editForm.firstName.trim();
+    const lastName = editForm.lastName.trim();
+    if (!firstName || !lastName) {
+      setPlayerActionError("Imię i nazwisko są wymagane");
+      return;
+    }
+    const classification =
+      editForm.classification.trim() !== "" && !Number.isNaN(Number(editForm.classification))
+        ? Number(editForm.classification)
+        : undefined;
+    const number =
+      editForm.number.trim() !== "" && !Number.isNaN(Number(editForm.number)) ? Number(editForm.number) : undefined;
+    const playersPayload = (team.players ?? []).map((p) =>
+      p.id === editingPlayer.id
+        ? { firstName, lastName, classification, number }
+        : {
+            firstName: p.firstName,
+            lastName: p.lastName,
+            // Prisma returns null for optional DB fields; Zod .optional() accepts only undefined
+            classification: p.classification ?? undefined,
+            number: p.number ?? undefined,
+          }
+    );
+    await updateTeamPlayers(playersPayload);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!team || !deleteConfirmPlayer) return;
+    const playersPayload = (team.players ?? [])
+      .filter((p) => p.id !== deleteConfirmPlayer.id)
+      .map((p) => ({
+        firstName: p.firstName,
+        lastName: p.lastName,
+        classification: p.classification ?? undefined,
+        number: p.number ?? undefined,
+      }));
+    await updateTeamPlayers(playersPayload);
+  };
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
@@ -116,11 +277,97 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
           <Button variant="outlined" color="error" sx={{ borderRadius: 4, fontWeight: "bold" }}>
             Usuń Drużynę
           </Button>
-          <Button variant="contained" sx={{ borderRadius: 4, fontWeight: "bold" }}>
+          <Button variant="contained" sx={{ borderRadius: 4, fontWeight: "bold" }} onClick={handleEditClick}>
             Edytuj Dane
           </Button>
         </Box>
       </Box>
+
+      <Dialog open={editOpen} onClose={handleEditClose} maxWidth="md" fullWidth>
+        <DialogContent sx={{ overflow: "auto", maxHeight: "90vh", p: 0 }}>
+          <TeamFormContent mode="edit" initialTeam={team} onSuccess={handleEditSaved} onCancel={handleEditClose} />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!editingPlayer} onClose={handleEditPlayerClose} maxWidth="xs" fullWidth>
+        <DialogTitle>Edytuj zawodnika</DialogTitle>
+        <DialogContent>
+          {playerActionError && (
+            <Alert severity="error" sx={{ mt: 1, mb: 1 }}>
+              {playerActionError}
+            </Alert>
+          )}
+          {editForm && (
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1 }}>
+              <TextField
+                label="Imię"
+                value={editForm.firstName}
+                onChange={(e) => setEditForm((f) => (f ? { ...f, firstName: e.target.value } : f))}
+                required
+                fullWidth
+                size="small"
+              />
+              <TextField
+                label="Nazwisko"
+                value={editForm.lastName}
+                onChange={(e) => setEditForm((f) => (f ? { ...f, lastName: e.target.value } : f))}
+                required
+                fullWidth
+                size="small"
+              />
+              <TextField
+                label="Klasyfikacja"
+                type="number"
+                inputProps={{ step: 0.5, min: 0.5, max: 4.0, inputMode: "decimal" }}
+                value={editForm.classification}
+                onChange={(e) => setEditForm((f) => (f ? { ...f, classification: e.target.value } : f))}
+                fullWidth
+                size="small"
+              />
+              <TextField
+                label="Numer"
+                type="number"
+                inputProps={{ min: 1, max: 99, inputMode: "numeric" }}
+                value={editForm.number}
+                onChange={(e) => setEditForm((f) => (f ? { ...f, number: e.target.value } : f))}
+                fullWidth
+                size="small"
+              />
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleEditPlayerClose} disabled={playerActionLoading}>
+            Anuluj
+          </Button>
+          <Button variant="contained" onClick={handleEditPlayerSave} disabled={playerActionLoading || !editForm}>
+            {playerActionLoading ? <CircularProgress size={24} /> : "Zapisz"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={!!deleteConfirmPlayer} onClose={handleDeleteConfirmClose}>
+        <DialogTitle>Usuń zawodnika</DialogTitle>
+        <DialogContent>
+          {playerActionError && (
+            <Alert severity="error" sx={{ mt: 1, mb: 1 }}>
+              {playerActionError}
+            </Alert>
+          )}
+          <Typography>
+            Czy na pewno chcesz usunąć
+            {deleteConfirmPlayer ? ` ${deleteConfirmPlayer.firstName} ${deleteConfirmPlayer.lastName}` : ""} z drużyny?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDeleteConfirmClose} disabled={playerActionLoading}>
+            Anuluj
+          </Button>
+          <Button color="error" variant="contained" onClick={handleDeleteConfirm} disabled={playerActionLoading}>
+            {playerActionLoading ? <CircularProgress size={24} /> : "Usuń"}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Box
         sx={{
@@ -152,30 +399,37 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
                   <TableRow sx={{ bgcolor: "grey.100" }}>
                     <TableCell sx={{ fontWeight: "bold" }}>Imię i Nazwisko</TableCell>
                     <TableCell sx={{ fontWeight: "bold" }}>Klasyfikacja</TableCell>
-                    <TableCell align="right" sx={{ fontWeight: "bold" }}>
-                      Akcje
-                    </TableCell>
+                    <TableCell sx={{ fontWeight: "bold" }}>Numer</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {players.map((p) => (
-                    <TableRow key={p.id} hover>
-                      <TableCell>
-                        {p.firstName} {p.lastName}
-                      </TableCell>
-                      <TableCell>
-                        <Chip label={p.classification?.toFixed(1) ?? "-"} size="small" variant="outlined" />
-                      </TableCell>
-                      <TableCell align="right">
-                        <Button size="small" color="primary">
-                          Edytuj
-                        </Button>
-                        <Button size="small" color="error">
-                          Usuń
-                        </Button>
+                  {players.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={3} align="center" sx={{ py: 4, color: "text.secondary" }}>
+                        Brak zawodników w drużynie. Kliknij „Dodaj Zawodnika”, aby dodać.
                       </TableCell>
                     </TableRow>
-                  ))}
+                  ) : (
+                    players.map((p) => (
+                      <TableRow key={p.id} hover>
+                        <TableCell>
+                          {p.firstName} {p.lastName}
+                        </TableCell>
+                        <TableCell>
+                          <Chip label={p.classification?.toFixed(1) ?? "-"} size="small" variant="outlined" />
+                        </TableCell>
+                        <TableCell>{p.number ?? "Nie podano"}</TableCell>
+                        <TableCell align="right">
+                          <Button size="small" color="primary" onClick={() => handleEditPlayer(p)}>
+                            Edytuj
+                          </Button>
+                          <Button size="small" color="error" onClick={() => handleDeletePlayerClick(p)}>
+                            Usuń
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </TableContainer>
@@ -217,18 +471,14 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
                   Trener
                 </Typography>
                 <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                  {team.coachId ? `ID: ${team.coachId}` : "Nie przypisano"}
+                  {team.coach ? `${team.coach.firstName} ${team.coach.lastName}` : "Nie przypisano"}
                 </Typography>
-                {team.coach && (team.coach.email || team.coach.phone) && (
-                  <>
-                    <Typography variant="caption" color="textSecondary" display="block">
-                      {team.coach.email ?? ""}
-                    </Typography>
-                    <Typography variant="caption" color="textSecondary" display="block">
-                      {team.coach.phone ?? `Tel: ${team.coach.phone}`}
-                    </Typography>
-                  </>
-                )}
+                <Typography variant="caption" color="textSecondary" display="block">
+                  {`Email: ${team.coach?.email ?? "Nie podano emaila"}`}
+                </Typography>
+                <Typography variant="caption" color="textSecondary" display="block">
+                  {`Tel.: ${team.coach?.phone ?? "Nie podano telefonu"}`}
+                </Typography>
               </Box>
               <Box>
                 <Typography
@@ -270,7 +520,7 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
                   Sędzia
                 </Typography>
                 <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                  {/* {team.referee ? `${team.referee.firstName} ${team.referee.lastName}` : "Nie przypisano"} */}
+                  {team.referee ? `${team.referee.firstName} ${team.referee.lastName}` : "Nie przypisano"}
                 </Typography>
               </Box>
             </Box>
