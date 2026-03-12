@@ -395,7 +395,7 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
                 <TableBody>
                   {players.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={4} align="center" sx={{ py: 4, color: "text.secondary" }}>
+                      <TableCell colSpan={3} align="center" sx={{ py: 4, color: "text.secondary" }}>
                         Brak zawodników w drużynie. Kliknij „Dodaj Zawodnika”, aby dodać.
                       </TableCell>
                     </TableRow>
@@ -510,7 +510,7 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
                   Sędzia
                 </Typography>
                 <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                  {team.referee?.firstName} {team.referee?.lastName}
+                  {team.referee?.firstName} {team.referee?.lastName ?? "Nie podano"}
                 </Typography>
               </Box>
             </Box>
