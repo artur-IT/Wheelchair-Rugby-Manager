@@ -14,9 +14,12 @@ import {
   TableRow,
   CircularProgress,
   Alert,
+  Dialog,
+  DialogContent,
 } from "@mui/material";
 import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
 import AppShell from "@/components/AppShell/AppShell";
+import { TeamFormContent } from "@/components/TeamForm/TeamForm";
 import type { Team } from "@/types";
 
 interface TeamDetailsProps {
@@ -37,7 +40,9 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
   const [team, setTeam] = useState<Team | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
 
+  // Fetch current team from DB (single team by id)
   useEffect(() => {
     const controller = new AbortController();
 
@@ -45,11 +50,16 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch("/api/teams", { signal: controller.signal });
-        if (!res.ok) throw new Error("Nie udało się pobrać drużyn");
-        const data: Team[] = await res.json();
-        const foundTeam = data.find((item) => item.id === id) ?? null;
-        setTeam(foundTeam);
+        const res = await fetch(`/api/teams/${id}`, { signal: controller.signal });
+        if (!res.ok) {
+          if (res.status === 404) {
+            setTeam(null);
+            return;
+          }
+          throw new Error("Nie udało się pobrać drużyny");
+        }
+        const data: Team = await res.json();
+        setTeam(data);
       } catch (fetchError) {
         if (controller.signal.aborted) return;
         setError(fetchError instanceof Error ? fetchError.message : "Wystąpił błąd pobierania");
@@ -81,6 +91,15 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
 
   const players = team.players ?? [];
   const staff = team.staff ?? [];
+
+  const handleEditClick = () => setEditOpen(true);
+
+  const handleEditClose = () => setEditOpen(false);
+
+  const handleEditSaved = (updated: Team) => {
+    setTeam(updated);
+    setEditOpen(false);
+  };
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
@@ -116,11 +135,17 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
           <Button variant="outlined" color="error" sx={{ borderRadius: 4, fontWeight: "bold" }}>
             Usuń Drużynę
           </Button>
-          <Button variant="contained" sx={{ borderRadius: 4, fontWeight: "bold" }}>
+          <Button variant="contained" sx={{ borderRadius: 4, fontWeight: "bold" }} onClick={handleEditClick}>
             Edytuj Dane
           </Button>
         </Box>
       </Box>
+
+      <Dialog open={editOpen} onClose={handleEditClose} maxWidth="md" fullWidth>
+        <DialogContent sx={{ overflow: "auto", maxHeight: "90vh", p: 0 }}>
+          <TeamFormContent mode="edit" initialTeam={team} onSuccess={handleEditSaved} onCancel={handleEditClose} />
+        </DialogContent>
+      </Dialog>
 
       <Box
         sx={{
@@ -152,30 +177,37 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
                   <TableRow sx={{ bgcolor: "grey.100" }}>
                     <TableCell sx={{ fontWeight: "bold" }}>Imię i Nazwisko</TableCell>
                     <TableCell sx={{ fontWeight: "bold" }}>Klasyfikacja</TableCell>
-                    <TableCell align="right" sx={{ fontWeight: "bold" }}>
-                      Akcje
-                    </TableCell>
+                    <TableCell sx={{ fontWeight: "bold" }}>Numer</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {players.map((p) => (
-                    <TableRow key={p.id} hover>
-                      <TableCell>
-                        {p.firstName} {p.lastName}
-                      </TableCell>
-                      <TableCell>
-                        <Chip label={p.classification?.toFixed(1) ?? "-"} size="small" variant="outlined" />
-                      </TableCell>
-                      <TableCell align="right">
-                        <Button size="small" color="primary">
-                          Edytuj
-                        </Button>
-                        <Button size="small" color="error">
-                          Usuń
-                        </Button>
+                  {players.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={4} align="center" sx={{ py: 4, color: "text.secondary" }}>
+                        Brak zawodników w drużynie. Kliknij „Dodaj Zawodnika”, aby dodać.
                       </TableCell>
                     </TableRow>
-                  ))}
+                  ) : (
+                    players.map((p) => (
+                      <TableRow key={p.id} hover>
+                        <TableCell>
+                          {p.firstName} {p.lastName}
+                        </TableCell>
+                        <TableCell>
+                          <Chip label={p.classification?.toFixed(1) ?? "-"} size="small" variant="outlined" />
+                        </TableCell>
+                        <TableCell>{p.number ?? "Nie podano"}</TableCell>
+                        <TableCell align="right">
+                          <Button size="small" color="primary">
+                            Edytuj
+                          </Button>
+                          <Button size="small" color="error">
+                            Usuń
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </TableContainer>
@@ -217,18 +249,14 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
                   Trener
                 </Typography>
                 <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                  {team.coachId ? `ID: ${team.coachId}` : "Nie przypisano"}
+                  {team.coach ? `${team.coach.firstName} ${team.coach.lastName}` : "Nie przypisano"}
                 </Typography>
-                {team.coach && (team.coach.email || team.coach.phone) && (
-                  <>
-                    <Typography variant="caption" color="textSecondary" display="block">
-                      {team.coach.email ?? ""}
-                    </Typography>
-                    <Typography variant="caption" color="textSecondary" display="block">
-                      {team.coach.phone ?? `Tel: ${team.coach.phone}`}
-                    </Typography>
-                  </>
-                )}
+                <Typography variant="caption" color="textSecondary" display="block">
+                  {`Email: ${team.coach?.email ?? "Nie podano emaila"}`}
+                </Typography>
+                <Typography variant="caption" color="textSecondary" display="block">
+                  {`Tel.: ${team.coach?.phone ?? "Nie podano telefonu"}`}
+                </Typography>
               </Box>
               <Box>
                 <Typography
