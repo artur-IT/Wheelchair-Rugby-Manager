@@ -219,6 +219,16 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
                 <Typography variant="body2" sx={{ fontWeight: 500 }}>
                   {team.coachId ? `ID: ${team.coachId}` : "Nie przypisano"}
                 </Typography>
+                {team.coach && (team.coach.email || team.coach.phone) && (
+                  <>
+                    <Typography variant="caption" color="textSecondary" display="block">
+                      {team.coach.email ?? ""}
+                    </Typography>
+                    <Typography variant="caption" color="textSecondary" display="block">
+                      {team.coach.phone ?? `Tel: ${team.coach.phone}`}
+                    </Typography>
+                  </>
+                )}
               </Box>
               <Box>
                 <Typography
@@ -244,6 +254,24 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
                     Brak personelu
                   </Typography>
                 )}
+              </Box>
+
+              <Box>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    fontWeight: "bold",
+                    textTransform: "uppercase",
+                    color: "text.secondary",
+                    mb: 0.5,
+                    display: "block",
+                  }}
+                >
+                  Sędzia
+                </Typography>
+                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                  {/* {team.referee ? `${team.referee.firstName} ${team.referee.lastName}` : "Nie przypisano"} */}
+                </Typography>
               </Box>
             </Box>
           </Paper>

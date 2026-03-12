@@ -16,12 +16,34 @@ const CreateTeamSchema = z
     seasonId: z.string().min(1, "SeasonId jest wymagany"),
     coachId: z.string().optional(),
     refereeId: z.string().optional(),
+    staff: z.array(z.object({ firstName: z.string().min(1), lastName: z.string().min(1) })).optional(),
+    players: z
+      .array(
+        z.object({
+          firstName: z.string().min(1, "Imię jest wymagane"),
+          lastName: z.string().min(1, "Nazwisko jest wymagane"),
+          classification: z
+            .union([z.number(), z.string().transform((s) => (s === "" ? undefined : Number(s)))])
+            .optional(),
+          number: z
+            .union([z.number().int().positive(), z.string().transform((s) => (s === "" ? undefined : Number(s)))])
+            .optional(),
+        })
+      )
+      .optional(),
   })
   .transform((o) => ({
     ...o,
     logoUrl: (o.logoUrl?.trim() || undefined) as string | undefined,
     coachId: o.coachId?.trim() || undefined,
     refereeId: o.refereeId?.trim() || undefined,
+    players: o.players?.map((p) => ({
+      firstName: p.firstName.trim(),
+      lastName: p.lastName.trim(),
+      classification:
+        typeof p.classification === "number" && !Number.isNaN(p.classification) ? p.classification : undefined,
+      number: typeof p.number === "number" && !Number.isNaN(p.number) ? Math.floor(p.number) : undefined,
+    })),
   }));
 
 export const GET: APIRoute = async ({ url }) => {
@@ -30,7 +52,7 @@ export const GET: APIRoute = async ({ url }) => {
   const teams = await prisma.team.findMany({
     where: seasonId ? { seasonId } : undefined,
     orderBy: { createdAt: "desc" },
-    include: { players: true },
+    include: { players: true, staff: true, coach: true },
   });
 
   return json(teams);

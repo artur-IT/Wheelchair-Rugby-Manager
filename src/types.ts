@@ -35,6 +35,7 @@ export interface Team {
   seasonId: string;
   coachId?: string;
   refereeId?: string;
+  coach?: Person | null;
   players?: Player[];
   staff?: Staff[];
 }
@@ -152,6 +153,8 @@ export interface CreateTeamDto {
   seasonId: string;
   coachId?: string;
   refereeId?: string;
+  staff?: { firstName: string; lastName: string }[];
+  players?: { firstName: string; lastName: string; classification?: number; number?: number }[];
 }
 
 export interface CreateCoachDto {

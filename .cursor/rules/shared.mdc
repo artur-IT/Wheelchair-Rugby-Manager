@@ -59,6 +59,7 @@ When modifying the directory structure, always update this section.
 - Always generate only minimal length code.
 - Always generate code implementation solutions according to this order: HTML5, JavaScript, React.
 - Always add short comment to new code sections if function is not very simple and obvious and not self-explanatory.
+- Suggest two or three ways to solve the problem and briefly explain why you chose the solution you did.
 - If add new function, always add a minimum of necessary tests for it according to the rules in `.cursor/rules/testing.mdc`.
 
 ### Coding conventions

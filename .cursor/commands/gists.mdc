@@ -2,4 +2,6 @@
 alwaysApply: false
 ---
 
-GitHub Gist -> Daily Notes: dodaj bardzo krótkie, na wzór już istniejących dzisiejsze podsumowanie dnia. Jeśli dzisiaj jest piątek lub sobota, to stwórz krótkie podsumowanie tygodnia.
+Połącz się z moim GitHub Gist, wejdź w Daily Notes i na wzór już istniejących podsumowań dnia oraz na podstawie commitów w repozytorium dodaj kolejne bardzo krótkie podsumowanie dnia. Jeśli dzisiaj jest piątek lub sobota, to stwórz krótkie podsumowanie tygodnia.
+
+Token do GitHub Gist jest w .env file.
