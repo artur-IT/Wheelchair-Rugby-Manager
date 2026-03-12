@@ -73,6 +73,6 @@ Klasyfikatorzy badają wybranych zawodników w turnieju.
 
 ---
 
-### GitHub Gists
+### GitHub Gists (odkrycie projektu!)
 
 Daily Notes robić modelem: Sonnet 4.6 lub Auto

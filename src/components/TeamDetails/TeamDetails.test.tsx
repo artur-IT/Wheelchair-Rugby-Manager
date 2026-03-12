@@ -1,13 +1,20 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import TeamDetails from "./TeamDetails";
 
+beforeEach(() => {
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => [] }));
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+
 describe("TeamDetails", () => {
-  it("shows not found message for unknown team id", () => {
+  it("shows not found message for unknown team id", async () => {
     render(<TeamDetails id="missing-team-id" />);
 
-    expect(screen.getByText("Nie znaleziono drużyny.")).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "Warsaw Dragons" })).not.toBeInTheDocument();
+    expect(await screen.findByText("Nie znaleziono drużyny.")).toBeInTheDocument();
   });
 });

@@ -13,7 +13,7 @@ export interface Person {
   firstName: string;
   lastName: string;
   email?: string;
-  phone?: string;
+  phone?: number | null;
 }
 
 export interface Season {
@@ -84,6 +84,12 @@ export interface MealPlan {
 export interface Tournament {
   id: string;
   name: string;
+  venue?: SportsHall;
+  accommodation?: Accommodation;
+  teams: Team[];
+  referees: Person[];
+  classifiers: Person[];
+  volunteers?: Person[];
   startDate: string;
   endDate?: string;
   seasonId: string;
@@ -139,6 +145,7 @@ export interface CreateSeasonDto {
 export interface CreateTeamDto {
   name: string;
   address?: string;
+  logoUrl?: string;
   contactFirstName?: string;
   contactLastName?: string;
   contactEmail?: string;

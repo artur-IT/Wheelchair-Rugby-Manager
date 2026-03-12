@@ -30,6 +30,7 @@ import type { Season } from "@/types";
 const teamSchema = z.object({
   name: z.string().min(1, "Nazwa drużyny jest wymagana"),
   address: z.string().min(1, "Adres jest wymagany"),
+  logoUrl: z.union([z.string().url("Nieprawidłowy adres URL"), z.literal("")]).optional(),
   contactFirstName: z.string().min(1, "Imię jest wymagane"),
   contactLastName: z.string().min(1, "Nazwisko jest wymagane"),
   contactEmail: z.string().email("Nieprawidłowy adres email"),
@@ -104,7 +105,6 @@ function TeamFormContent() {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-    // Zod 4.3 types incompatible with @hookform/resolvers — runtime works correctly
   } = useForm<TeamFormValues>({ resolver: zodResolver(teamSchema as never) });
 
   // Fetch all seasons so user can pick one
@@ -133,7 +133,64 @@ function TeamFormContent() {
       return;
     }
 
+    let coachId: string | undefined = data.coachId?.trim() || undefined;
+    let refereeId: string | undefined = data.refereeId?.trim() || undefined;
+
     try {
+      // Create coach if "new" mode and required fields present
+      if (data.coachFirstName && data.coachLastName) {
+        const fn = (data.coachFirstName ?? "").trim();
+        const ln = (data.coachLastName ?? "").trim();
+        if (!fn || !ln) {
+          setSubmitError("Imię i nazwisko trenera są wymagane przy dodawaniu nowego trenera.");
+          return;
+        }
+        const coachRes = await fetch("/api/coaches", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            firstName: fn,
+            lastName: ln,
+            email: (data.coachEmail ?? "").trim() || undefined,
+            phone: (data.coachPhone ?? "").trim() || undefined,
+            seasonId,
+          }),
+        });
+        if (!coachRes.ok) {
+          const err = await coachRes.json().catch(() => null);
+          throw new Error(err?.error?.formErrors?.[0] ?? "Nie udało się dodać trenera");
+        }
+        const createdCoach = await coachRes.json();
+        coachId = createdCoach.id;
+      }
+
+      // Create referee if "new" mode and required fields present
+      if (data.refereeFirstName && data.refereeLastName) {
+        const fn = (data.refereeFirstName ?? "").trim();
+        const ln = (data.refereeLastName ?? "").trim();
+        if (!fn || !ln) {
+          setSubmitError("Imię i nazwisko sędziego są wymagane przy dodawaniu nowego sędziego.");
+          return;
+        }
+        const refereeRes = await fetch("/api/referees", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            firstName: fn,
+            lastName: ln,
+            email: (data.refereeEmail ?? "").trim() || undefined,
+            phone: (data.refereePhone ?? "").trim() || undefined,
+            seasonId,
+          }),
+        });
+        if (!refereeRes.ok) {
+          const err = await refereeRes.json().catch(() => null);
+          throw new Error(err?.error?.formErrors?.[0] ?? "Nie udało się dodać sędziego");
+        }
+        const createdReferee = await refereeRes.json();
+        refereeId = createdReferee.id;
+      }
+
       const res = await fetch("/api/teams", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

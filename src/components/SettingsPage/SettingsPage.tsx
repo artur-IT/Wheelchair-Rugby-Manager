@@ -33,11 +33,11 @@ import {
 } from "@mui/material";
 import type { SelectChangeEvent } from "@mui/material";
 import { Trash2 } from "lucide-react";
-import type { Season } from "@/types";
+import type { Season, Team } from "@/types";
 import { useDefaultSeason } from "@/components/hooks/useDefaultSeason";
 import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
 import AppShell from "@/components/AppShell/AppShell";
-import { MOCK_TEAMS, MOCK_REFEREES, MOCK_CLASSIFIERS, MOCK_VOLUNTEERS } from "@/mockData";
+import { MOCK_REFEREES, MOCK_CLASSIFIERS, MOCK_VOLUNTEERS } from "@/mockData";
 
 type TabValue = "teams" | "referees" | "classifiers" | "volunteers";
 
@@ -55,7 +55,7 @@ function StyledTab({ label, value, icon }: { label: string; value: string; icon:
   return <Tab label={label} value={value} icon={icon} iconPosition="start" />;
 }
 
-function SeasonsManager() {
+function SeasonsManager({ onSeasonChange }: { onSeasonChange: (seasonId: string) => void }) {
   const [seasons, setSeasons] = useState<Season[]>([]);
   const [selectedId, setSelectedId] = useState<string>("");
   const [loaded, setLoaded] = useState(false);
@@ -96,6 +96,10 @@ function SeasonsManager() {
   };
 
   const selectedSeason = seasons.find((s) => s.id === selectedId);
+
+  useEffect(() => {
+    onSeasonChange(selectedId);
+  }, [onSeasonChange, selectedId]);
 
   if (!loaded) return <CircularProgress size={20} sx={{ mb: 3 }} />;
 
@@ -194,6 +198,7 @@ function SeasonsManager() {
 
 function SettingsContent() {
   const [activeTab, setActiveTab] = useState<TabValue>("teams");
+  const [selectedSeasonId, setSelectedSeasonId] = useState("");
 
   return (
     <Box>
@@ -203,7 +208,7 @@ function SettingsContent() {
         </Typography>
         <Typography color="textSecondary">Zarządzaj globalnymi danymi ligi.</Typography>
       </Box>
-      <SeasonsManager />
+      <SeasonsManager onSeasonChange={setSelectedSeasonId} />
 
       <Paper sx={{ borderRadius: 3 }}>
         <Tabs value={activeTab} onChange={(_, v: TabValue) => setActiveTab(v)} variant="fullWidth">
@@ -213,7 +218,7 @@ function SettingsContent() {
         </Tabs>
 
         <CardContent sx={{ minHeight: 400 }}>
-          {activeTab === "teams" && <TeamsTab />}
+          {activeTab === "teams" && <TeamsTab seasonId={selectedSeasonId} />}
           {activeTab !== "teams" && <PersonnelTab activeTab={activeTab} />}
         </CardContent>
       </Paper>
@@ -221,7 +226,78 @@ function SettingsContent() {
   );
 }
 
-function TeamsTab() {
+function TeamsTab({ seasonId }: { seasonId: string }) {
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [loadingTeams, setLoadingTeams] = useState(true);
+  const [teamsError, setTeamsError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!seasonId) {
+      setTeams([]);
+      setLoadingTeams(false);
+      setTeamsError(null);
+      return;
+    }
+
+    const controller = new AbortController();
+
+    async function fetchTeams() {
+      setLoadingTeams(true);
+      setTeamsError(null);
+      try {
+        const res = await fetch(`/api/teams?seasonId=${encodeURIComponent(seasonId)}`, { signal: controller.signal });
+        if (!res.ok) throw new Error("Nie udało się pobrać drużyn");
+        const data: Team[] = await res.json();
+        setTeams(data);
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        setTeamsError(error instanceof Error ? error.message : "Wystąpił błąd podczas pobierania drużyn");
+      } finally {
+        if (!controller.signal.aborted) setLoadingTeams(false);
+      }
+    }
+
+    fetchTeams();
+
+    return () => controller.abort();
+  }, [seasonId]);
+
+  if (!seasonId) {
+    return (
+      <Alert severity="info" sx={{ mb: 2 }}>
+        Wybierz sezon, aby zobaczyć drużyny.
+      </Alert>
+    );
+  }
+
+  if (loadingTeams) {
+    return (
+      <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+        <CircularProgress size={24} />
+      </Box>
+    );
+  }
+
+  if (teamsError) {
+    return <Alert severity="error">{teamsError}</Alert>;
+  }
+
+  if (teams.length === 0) {
+    return (
+      <Alert
+        severity="info"
+        sx={{ mb: 2 }}
+        action={
+          <Button component="a" href="/settings/teams/new" color="inherit" size="small">
+            Dodaj drużynę
+          </Button>
+        }
+      >
+        Brak drużyn. Dodaj pierwszą drużynę, aby zobaczyć ją na liście.
+      </Alert>
+    );
+  }
+
   return (
     <Box>
       <Box
@@ -240,7 +316,7 @@ function TeamsTab() {
         </Button>
       </Box>
       <Grid container spacing={2}>
-        {MOCK_TEAMS.map((team) => (
+        {teams.map((team) => (
           <Grid size={{ xs: 12, sm: 6 }} key={team.id}>
             <Card
               sx={{
@@ -251,11 +327,11 @@ function TeamsTab() {
               }}
             >
               <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                <Avatar sx={{ bgcolor: "primary.main" }}>{team.name[0]}</Avatar>
+                <Avatar sx={{ bgcolor: "primary.main" }}>{team.name[0] ?? "?"}</Avatar>
                 <Box>
                   <Typography sx={{ fontWeight: "bold" }}>{team.name}</Typography>
                   <Typography variant="caption" color="textSecondary">
-                    {team.players.length} zawodników
+                    {team.players?.length ?? 0} zawodników
                   </Typography>
                 </Box>
               </Box>

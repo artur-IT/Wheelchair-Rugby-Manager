@@ -5,34 +5,31 @@ import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
 import AppShell from "@/components/AppShell/AppShell";
 import { useDefaultSeason } from "@/components/hooks/useDefaultSeason";
 import type { Season } from "@/types";
-import { MOCK_TEAMS, MOCK_TOURNAMENTS, MOCK_REFEREES, MOCK_VOLUNTEERS } from "@/mockData";
+import { MOCK_TOURNAMENTS, MOCK_REFEREES, MOCK_VOLUNTEERS } from "@/mockData";
 
-const STATS = [
-  {
-    label: "Turnieje",
-    value: MOCK_TOURNAMENTS.length,
-    icon: Trophy,
-    color: "#3b82f6",
-  },
-  {
-    label: "Drużyny",
-    value: MOCK_TEAMS.length,
-    icon: Users,
-    color: "#10b981",
-  },
-  {
-    label: "Sędziowie",
-    value: MOCK_REFEREES.length,
-    icon: UserCircle,
-    color: "#f59e0b",
-  },
-  {
-    label: "Wolontariusze",
-    value: MOCK_VOLUNTEERS.length,
-    icon: UserCircle,
-    color: "#8b5cf6",
-  },
-];
+function useStats(seasonId: string | null) {
+  const [teamsCount, setTeamsCount] = useState<number>(0);
+
+  useEffect(() => {
+    if (!seasonId) {
+      setTeamsCount(0);
+      return;
+    }
+    const controller = new AbortController();
+    fetch(`/api/teams?seasonId=${encodeURIComponent(seasonId)}`, { signal: controller.signal })
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data: unknown[]) => setTeamsCount(Array.isArray(data) ? data.length : 0))
+      .catch(() => setTeamsCount(0));
+    return () => controller.abort();
+  }, [seasonId]);
+
+  return [
+    { label: "Turnieje", value: MOCK_TOURNAMENTS.length, icon: Trophy, color: "#3b82f6" },
+    { label: "Drużyny", value: teamsCount, icon: Users, color: "#10b981" },
+    { label: "Sędziowie", value: MOCK_REFEREES.length, icon: UserCircle, color: "#f59e0b" },
+    { label: "Wolontariusze", value: MOCK_VOLUNTEERS.length, icon: UserCircle, color: "#8b5cf6" },
+  ] as const;
+}
 
 export default function Dashboard() {
   return (
@@ -47,6 +44,7 @@ export default function Dashboard() {
 function DashboardContent() {
   const { defaultSeasonId } = useDefaultSeason();
   const [defaultSeason, setDefaultSeason] = useState<Season | null>(null);
+  const stats = useStats(defaultSeasonId);
 
   // Load default season name when defaultSeasonId is set
   useEffect(() => {
@@ -89,7 +87,7 @@ function DashboardContent() {
       </Box>
 
       <Grid container spacing={3}>
-        {STATS.map((stat, i) => (
+        {stats.map((stat, i) => (
           <Grid size={{ xs: 12, sm: 6, md: 3 }} key={i}>
             <Card sx={{ borderRadius: 3 }}>
               <CardContent sx={{ display: "flex", alignItems: "center", gap: 2 }}>
