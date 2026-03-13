@@ -34,7 +34,7 @@ const teamSchema = z.object({
   contactLastName: z.string().min(1, "Nazwisko jest wymagane"),
   contactEmail: z.string().email("Nieprawidłowy adres email"),
   contactPhone: z.string().min(1, "Telefon jest wymagany"),
-  websiteUrl: z.string().optional(),
+  websiteUrl: z.string().url("Nieprawidłowy adres URL").optional().or(z.literal("")),
   coachId: z.string().optional(),
   refereeId: z.string().optional(),
   coachFirstName: z.string().min(1, "Imię trenera jest wymagane"),

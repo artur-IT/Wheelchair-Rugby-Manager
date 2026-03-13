@@ -89,4 +89,14 @@ Daily Notes robić modelem: Sonnet 4.6 lub Auto
 
 ### Prisma i PostgreSQL:
 
-**\*Uwaga dla przyszłości: po zmianach w prisma/schema**. prisma trzeba zawsze ponownie uruchomić pnpm prisma generate --generator client oraz zrestartować serwer, żeby kod Astro/Node używał zaktualizowanego klienta.\*
+**\*Uwaga dla przyszłości: po zmianach w prisma/schema**:
+
+1. Zastosuj migrację: `pnpm prisma migrate dev` (development) lub `pnpm prisma db push` (prototyping)
+2. Wygeneruj klienta: `pnpm prisma generate`
+3. Zrestartuj serwer
+
+Dzięki temu kod Astro/Node będzie używał zaktualizowanego klienta i schematu bazy danych.\*
+
+---
+
+Code Rabbit do code review p;o commitach, ALE przed zatwierdzeniem PR.

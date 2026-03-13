@@ -2,6 +2,7 @@ import type { APIRoute } from "astro";
 import { z } from "zod";
 import { json } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "generated/prisma/client";
 
 const CreateClassifierSchema = z
   .object({
@@ -35,6 +36,19 @@ export const POST: APIRoute = async ({ request }) => {
   const parsed = CreateClassifierSchema.safeParse(body);
   if (!parsed.success) return json({ error: parsed.error.flatten() }, 400);
 
-  const classifier = await prisma.classifier.create({ data: parsed.data });
-  return json(classifier, 201);
+  try {
+    const classifier = await prisma.classifier.create({ data: parsed.data });
+    return json(classifier, 201);
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === "P2003") {
+        return json({ error: "Invalid seasonId" }, 400);
+      }
+      if (error.code === "P2002") {
+        return json({ error: "Classifier already exists" }, 409);
+      }
+    }
+    console.error("Failed to create classifier:", error);
+    return json({ error: "Failed to create classifier" }, 500);
+  }
 };

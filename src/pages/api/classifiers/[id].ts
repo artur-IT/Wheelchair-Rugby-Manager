@@ -9,16 +9,16 @@ function isNotFound(error: unknown) {
 
 const UpdatePersonSchema = z
   .object({
-    firstName: z.string().min(1, "Imię jest wymagane"),
-    lastName: z.string().min(1, "Nazwisko jest wymagane"),
+    firstName: z.string().trim().min(1, "Imię jest wymagane"),
+    lastName: z.string().trim().min(1, "Nazwisko jest wymagane"),
     email: z.union([z.string().email("Nieprawidłowy email"), z.literal("")]).optional(),
     phone: z.string().optional(),
   })
   .transform((payload) => ({
-    firstName: payload.firstName.trim(),
-    lastName: payload.lastName.trim(),
-    email: (payload.email?.trim() || undefined) as string | undefined,
-    phone: (payload.phone?.trim() || undefined) as string | undefined,
+    firstName: payload.firstName,
+    lastName: payload.lastName,
+    email: payload.email?.trim() || undefined,
+    phone: payload.phone?.trim() || undefined,
   }));
 
 export const PATCH: APIRoute = async ({ params, request }) => {

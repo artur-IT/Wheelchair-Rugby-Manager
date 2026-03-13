@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import type { ChangeEvent, ReactElement } from "react";
+import { forwardRef, useState, useEffect } from "react";
+import type { ChangeEvent } from "react";
 import { Users, UserCircle, ChevronRight, Pencil, Star } from "lucide-react";
 import {
   Box,
@@ -32,9 +32,9 @@ import {
   DialogActions,
   TextField,
 } from "@mui/material";
-import type { SelectChangeEvent } from "@mui/material";
+import type { SelectChangeEvent, TabProps } from "@mui/material";
 import { Trash2 } from "lucide-react";
-import type { Season, Team, Person, CreateRefereeDto, CreateClassifierDto } from "@/types";
+import type { Season, Team, Person } from "@/types";
 import { useDefaultSeason } from "@/components/hooks/useDefaultSeason";
 import ConfirmationDialog from "@/components/ui/ConfirmationDialog";
 import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
@@ -70,19 +70,11 @@ export default function SettingsPage() {
   );
 }
 
-function StyledTab({
-  label,
-  value,
-  icon,
-  onClick,
-}: {
-  label: string;
-  value: string;
-  icon: ReactElement;
-  onClick?: () => void;
-}) {
-  return <Tab label={label} value={value} icon={icon} iconPosition="start" onClick={onClick} />;
-}
+const StyledTab = forwardRef<HTMLAnchorElement, TabProps>((props, ref) => (
+  <Tab ref={ref} component="a" iconPosition="start" {...props} />
+));
+
+StyledTab.displayName = "StyledTab";
 
 function SeasonsManager({ onSeasonChange }: { onSeasonChange: (seasonId: string) => void }) {
   const [seasons, setSeasons] = useState<Season[]>([]);
@@ -239,19 +231,9 @@ function SettingsContent() {
 
       <Paper sx={{ borderRadius: 3 }}>
         <Tabs value={activeTab} onChange={(_, v: TabValue) => setActiveTab(v)} variant="fullWidth">
-          <StyledTab label="Drużyny" value="teams" icon={<Users size={18} />} onClick={() => setActiveTab("teams")} />
-          <StyledTab
-            label="Sędziowie"
-            value="referees"
-            icon={<UserCircle size={18} />}
-            onClick={() => setActiveTab("referees")}
-          />
-          <StyledTab
-            label="Klasyfikatorzy"
-            value="classifiers"
-            icon={<UserCircle size={18} />}
-            onClick={() => setActiveTab("classifiers")}
-          />
+          <StyledTab label="Drużyny" value="teams" icon={<Users size={18} />} />
+          <StyledTab label="Sędziowie" value="referees" icon={<UserCircle size={18} />} />
+          <StyledTab label="Klasyfikatorzy" value="classifiers" icon={<UserCircle size={18} />} />
         </Tabs>
 
         <CardContent sx={{ minHeight: 400 }}>
@@ -402,8 +384,92 @@ interface PersonnelTableProps {
   deletingId?: string | null;
 }
 
-function RefereesTab({ seasonId }: { seasonId: string }) {
-  const [referees, setReferees] = useState<Person[]>([]);
+interface PersonnelConfig {
+  apiEndpoint: string;
+  title: string;
+  noSeasonMessage: string;
+  emptyMessage: string;
+  emptyActionLabel: string;
+  dialogTitles: {
+    add: string;
+    edit: string;
+  };
+  deleteDialogTitle: string;
+  messages: {
+    loadError: string;
+    loadFallback: string;
+    createError: string;
+    createFallback: string;
+    updateError: string;
+    updateFallback: string;
+    deleteError: string;
+    deleteFallback: string;
+  };
+}
+
+const REFEREES_CONFIG: PersonnelConfig = {
+  apiEndpoint: "/api/referees",
+  title: "Sędziowie",
+  noSeasonMessage: "Wybierz sezon, aby zarządzać sędziami.",
+  emptyMessage: "Brak zapisanych sędziów. Dodaj pierwszego sędziego, aby rozdzielać mecze.",
+  emptyActionLabel: "Dodaj Sędziego",
+  dialogTitles: {
+    add: "Dodaj Sędziego",
+    edit: "Edytuj Sędziego",
+  },
+  deleteDialogTitle: "Usuń sędziego",
+  messages: {
+    loadError: "Nie udało się pobrać sędziów",
+    loadFallback: "Wystąpił błąd podczas pobierania sędziów",
+    createError: "Nie udało się dodać sędziego",
+    createFallback: "Wystąpił błąd podczas zapisu sędziego",
+    updateError: "Nie udało się zaktualizować sędziego",
+    updateFallback: "Wystąpił błąd podczas zapisu sędziego",
+    deleteError: "Nie udało się usunąć sędziego",
+    deleteFallback: "Wystąpił błąd podczas usuwania",
+  },
+};
+
+const CLASSIFIERS_CONFIG: PersonnelConfig = {
+  apiEndpoint: "/api/classifiers",
+  title: "Klasyfikatorzy",
+  noSeasonMessage: "Wybierz sezon, aby zarządzać klasyfikatorami.",
+  emptyMessage: "Brak zapisanych klasyfikatorów. Dodaj pierwszą osobę, aby uruchomić egzaminy.",
+  emptyActionLabel: "Dodaj Klasyfikatora",
+  dialogTitles: {
+    add: "Dodaj Klasyfikatora",
+    edit: "Edytuj Klasyfikatora",
+  },
+  deleteDialogTitle: "Usuń klasyfikatora",
+  messages: {
+    loadError: "Nie udało się pobrać klasyfikatorów",
+    loadFallback: "Wystąpił błąd podczas pobierania klasyfikatorów",
+    createError: "Nie udało się dodać klasyfikatora",
+    createFallback: "Wystąpił błąd podczas zapisu klasyfikatora",
+    updateError: "Nie udało się zaktualizować klasyfikatora",
+    updateFallback: "Wystąpił błąd podczas zapisu klasyfikatora",
+    deleteError: "Nie udało się usunąć klasyfikatora",
+    deleteFallback: "Wystąpił błąd podczas usuwania",
+  },
+};
+
+interface PersonnelTabProps {
+  seasonId: string;
+  config: PersonnelConfig;
+}
+
+function PersonnelTab({ seasonId, config }: PersonnelTabProps) {
+  const {
+    apiEndpoint,
+    title,
+    noSeasonMessage,
+    emptyMessage,
+    emptyActionLabel,
+    dialogTitles,
+    deleteDialogTitle,
+    messages,
+  } = config;
+  const [people, setPeople] = useState<Person[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -413,10 +479,9 @@ function RefereesTab({ seasonId }: { seasonId: string }) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Person | null>(null);
 
-  // Refresh referees whenever the selected season changes.
   useEffect(() => {
     if (!seasonId) {
-      setReferees([]);
+      setPeople([]);
       setError(null);
       setLoading(false);
       return;
@@ -424,28 +489,28 @@ function RefereesTab({ seasonId }: { seasonId: string }) {
 
     const controller = new AbortController();
 
-    async function loadReferees() {
+    async function loadPeople() {
       setLoading(true);
       setError(null);
       try {
-        const response = await fetch(`/api/referees?seasonId=${encodeURIComponent(seasonId)}`, {
+        const response = await fetch(`${apiEndpoint}?seasonId=${encodeURIComponent(seasonId)}`, {
           signal: controller.signal,
         });
-        if (!response.ok) throw new Error("Nie udało się pobrać sędziów");
+        if (!response.ok) throw new Error(messages.loadError);
         const data: Person[] = await response.json();
-        if (!controller.signal.aborted) setReferees(data);
+        if (!controller.signal.aborted) setPeople(data);
       } catch (loadError) {
         if (controller.signal.aborted) return;
-        setError(loadError instanceof Error ? loadError.message : "Wystąpił błąd podczas pobierania sędziów");
+        setError(loadError instanceof Error ? loadError.message : messages.loadFallback);
       } finally {
         if (!controller.signal.aborted) setLoading(false);
       }
     }
 
-    loadReferees();
+    loadPeople();
 
     return () => controller.abort();
-  }, [seasonId]);
+  }, [seasonId, apiEndpoint, messages.loadError, messages.loadFallback]);
 
   const handleAddClick = () => {
     setEditingPerson(null);
@@ -459,47 +524,45 @@ function RefereesTab({ seasonId }: { seasonId: string }) {
     setEditingPerson(null);
   };
 
-  const handleCreateReferee = async (payload: PersonFormPayload) => {
+  const handleCreatePerson = async (payload: PersonFormPayload) => {
     if (!seasonId) return;
     setSubmitting(true);
     setDialogError(null);
 
     try {
-      const requestBody: CreateRefereeDto = {
+      const requestBody = {
         firstName: payload.firstName,
         lastName: payload.lastName,
         email: payload.email,
         phone: payload.phone,
         seasonId,
       };
-      const response = await fetch("/api/referees", {
+      const response = await fetch(apiEndpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(requestBody),
       });
       if (!response.ok) {
-        const message = await extractErrorMessage(response, "Nie udało się dodać sędziego");
+        const message = await extractErrorMessage(response, messages.createError);
         throw new Error(message);
       }
       const created: Person = await response.json();
-      setReferees((current) => [created, ...current]);
+      setPeople((current) => [created, ...current]);
       setDialogOpen(false);
       setEditingPerson(null);
     } catch (submissionError) {
-      setDialogError(
-        submissionError instanceof Error ? submissionError.message : "Wystąpił błąd podczas zapisu sędziego"
-      );
+      setDialogError(submissionError instanceof Error ? submissionError.message : messages.createFallback);
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleUpdateReferee = async (id: string, payload: PersonFormPayload) => {
+  const handleUpdatePerson = async (id: string, payload: PersonFormPayload) => {
     setSubmitting(true);
     setDialogError(null);
 
     try {
-      const response = await fetch(`/api/referees/${id}`, {
+      const response = await fetch(`${apiEndpoint}/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -510,17 +573,15 @@ function RefereesTab({ seasonId }: { seasonId: string }) {
         }),
       });
       if (!response.ok) {
-        const message = await extractErrorMessage(response, "Nie udało się zaktualizować sędziego");
+        const message = await extractErrorMessage(response, messages.updateError);
         throw new Error(message);
       }
       const updated: Person = await response.json();
-      setReferees((current) => current.map((item) => (item.id === updated.id ? updated : item)));
+      setPeople((current) => current.map((item) => (item.id === updated.id ? updated : item)));
       setDialogOpen(false);
       setEditingPerson(null);
     } catch (submissionError) {
-      setDialogError(
-        submissionError instanceof Error ? submissionError.message : "Wystąpił błąd podczas zapisu sędziego"
-      );
+      setDialogError(submissionError instanceof Error ? submissionError.message : messages.updateFallback);
     } finally {
       setSubmitting(false);
     }
@@ -528,10 +589,10 @@ function RefereesTab({ seasonId }: { seasonId: string }) {
 
   const handleDialogSubmit = (payload: PersonFormPayload) => {
     if (editingPerson) {
-      void handleUpdateReferee(editingPerson.id, payload);
+      void handleUpdatePerson(editingPerson.id, payload);
       return;
     }
-    void handleCreateReferee(payload);
+    void handleCreatePerson(payload);
   };
 
   const handleEditClick = (person: Person) => {
@@ -540,23 +601,25 @@ function RefereesTab({ seasonId }: { seasonId: string }) {
     setDialogOpen(true);
   };
 
-  const handleDeleteReferee = (person: Person) => {
+  const handleDeleteClick = (person: Person) => {
     setDeleteTarget(person);
   };
 
-  const handleDeleteRefereeConfirmed = async () => {
+  const handleDeleteConfirmed = async () => {
     if (!deleteTarget) return;
     setDeletingId(deleteTarget.id);
     try {
-      const response = await fetch(`/api/referees/${deleteTarget.id}`, { method: "DELETE" });
+      const response = await fetch(`${apiEndpoint}/${deleteTarget.id}`, {
+        method: "DELETE",
+      });
       if (!response.ok) {
-        const message = await extractErrorMessage(response, "Nie udało się usunąć sędziego");
+        const message = await extractErrorMessage(response, messages.deleteError);
         throw new Error(message);
       }
-      setReferees((current) => current.filter((item) => item.id !== deleteTarget.id));
+      setPeople((current) => current.filter((item) => item.id !== deleteTarget.id));
       setDeleteTarget(null);
     } catch (deleteError) {
-      setError(deleteError instanceof Error ? deleteError.message : "Wystąpił błąd podczas usuwania");
+      setError(deleteError instanceof Error ? deleteError.message : messages.deleteFallback);
     } finally {
       setDeletingId(null);
     }
@@ -565,7 +628,7 @@ function RefereesTab({ seasonId }: { seasonId: string }) {
   if (!seasonId) {
     return (
       <Alert severity="info" sx={{ mb: 2 }}>
-        Wybierz sezon, aby zarządzać sędziami.
+        {noSeasonMessage}
       </Alert>
     );
   }
@@ -584,32 +647,32 @@ function RefereesTab({ seasonId }: { seasonId: string }) {
 
   return (
     <>
-      {referees.length === 0 && (
+      {people.length === 0 && (
         <Alert
           severity="info"
           sx={{ mb: 2 }}
           action={
             <Button color="inherit" size="small" onClick={handleAddClick}>
-              Dodaj Sędziego
+              {emptyActionLabel}
             </Button>
           }
         >
-          Brak zapisanych sędziów. Dodaj pierwszego sędziego, aby rozdzielać mecze.
+          {emptyMessage}
         </Alert>
       )}
       <PersonnelTable
-        title="Sędziowie"
-        data={referees}
+        title={title}
+        data={people}
         onAddClick={handleAddClick}
         onEdit={handleEditClick}
-        onDelete={handleDeleteReferee}
+        onDelete={handleDeleteClick}
         deletingId={deletingId}
       />
       <AddPersonDialog
         open={dialogOpen}
         loading={submitting}
         error={dialogError}
-        dialogTitle={editingPerson ? "Edytuj Sędziego" : "Dodaj Sędziego"}
+        dialogTitle={editingPerson ? dialogTitles.edit : dialogTitles.add}
         submitLabel={editingPerson ? "Aktualizuj" : "Zapisz"}
         initialValues={
           editingPerson
@@ -627,9 +690,9 @@ function RefereesTab({ seasonId }: { seasonId: string }) {
       <ConfirmationDialog
         open={Boolean(deleteTarget)}
         onClose={() => setDeleteTarget(null)}
-        onConfirm={handleDeleteRefereeConfirmed}
+        onConfirm={handleDeleteConfirmed}
         loading={deletingId === deleteTarget?.id}
-        title="Usuń sędziego"
+        title={deleteDialogTitle}
         description={
           <DialogContentText>
             Czy na pewno chcesz usunąć{" "}
@@ -642,250 +705,15 @@ function RefereesTab({ seasonId }: { seasonId: string }) {
       />
     </>
   );
+}
+
+function RefereesTab({ seasonId }: { seasonId: string }) {
+  return <PersonnelTab seasonId={seasonId} config={REFEREES_CONFIG} />;
 }
 
 function ClassifiersTab({ seasonId }: { seasonId: string }) {
-  const [classifiers, setClassifiers] = useState<Person[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [dialogError, setDialogError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
-  const [editingPerson, setEditingPerson] = useState<Person | null>(null);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<Person | null>(null);
-
-  // Refresh classifiers whenever the selected season changes.
-  useEffect(() => {
-    if (!seasonId) {
-      setClassifiers([]);
-      setError(null);
-      setLoading(false);
-      return;
-    }
-
-    const controller = new AbortController();
-
-    async function loadClassifiers() {
-      setLoading(true);
-      setError(null);
-      try {
-        const response = await fetch(`/api/classifiers?seasonId=${encodeURIComponent(seasonId)}`, {
-          signal: controller.signal,
-        });
-        if (!response.ok) throw new Error("Nie udało się pobrać klasyfikatorów");
-        const data: Person[] = await response.json();
-        if (!controller.signal.aborted) setClassifiers(data);
-      } catch (loadError) {
-        if (controller.signal.aborted) return;
-        setError(loadError instanceof Error ? loadError.message : "Wystąpił błąd podczas pobierania klasyfikatorów");
-      } finally {
-        if (!controller.signal.aborted) setLoading(false);
-      }
-    }
-
-    loadClassifiers();
-
-    return () => controller.abort();
-  }, [seasonId]);
-
-  const handleAddClick = () => {
-    setEditingPerson(null);
-    setDialogError(null);
-    setDialogOpen(true);
-  };
-
-  const handleDialogClose = () => {
-    setDialogOpen(false);
-    setDialogError(null);
-    setEditingPerson(null);
-  };
-
-  const handleCreateClassifier = async (payload: PersonFormPayload) => {
-    if (!seasonId) return;
-    setSubmitting(true);
-    setDialogError(null);
-
-    try {
-      const requestBody: CreateClassifierDto = {
-        firstName: payload.firstName,
-        lastName: payload.lastName,
-        email: payload.email,
-        phone: payload.phone,
-        seasonId,
-      };
-      const response = await fetch("/api/classifiers", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(requestBody),
-      });
-      if (!response.ok) {
-        const message = await extractErrorMessage(response, "Nie udało się dodać klasyfikatora");
-        throw new Error(message);
-      }
-      const created: Person = await response.json();
-      setClassifiers((current) => [created, ...current]);
-      setDialogOpen(false);
-      setEditingPerson(null);
-    } catch (submissionError) {
-      setDialogError(
-        submissionError instanceof Error ? submissionError.message : "Wystąpił błąd podczas zapisu klasyfikatora"
-      );
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleUpdateClassifier = async (id: string, payload: PersonFormPayload) => {
-    setSubmitting(true);
-    setDialogError(null);
-
-    try {
-      const response = await fetch(`/api/classifiers/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          firstName: payload.firstName,
-          lastName: payload.lastName,
-          email: payload.email,
-          phone: payload.phone,
-        }),
-      });
-      if (!response.ok) {
-        const message = await extractErrorMessage(response, "Nie udało się zaktualizować klasyfikatora");
-        throw new Error(message);
-      }
-      const updated: Person = await response.json();
-      setClassifiers((current) => current.map((item) => (item.id === updated.id ? updated : item)));
-      setDialogOpen(false);
-      setEditingPerson(null);
-    } catch (submissionError) {
-      setDialogError(
-        submissionError instanceof Error ? submissionError.message : "Wystąpił błąd podczas zapisu klasyfikatora"
-      );
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleDialogSubmit = (payload: PersonFormPayload) => {
-    if (editingPerson) {
-      void handleUpdateClassifier(editingPerson.id, payload);
-      return;
-    }
-    void handleCreateClassifier(payload);
-  };
-
-  const handleEditClick = (person: Person) => {
-    setEditingPerson(person);
-    setDialogError(null);
-    setDialogOpen(true);
-  };
-
-  const handleDeleteClassifier = (person: Person) => {
-    setDeleteTarget(person);
-  };
-
-  const handleDeleteClassifierConfirmed = async () => {
-    if (!deleteTarget) return;
-    setDeletingId(deleteTarget.id);
-    try {
-      const response = await fetch(`/api/classifiers/${deleteTarget.id}`, { method: "DELETE" });
-      if (!response.ok) {
-        const message = await extractErrorMessage(response, "Nie udało się usunąć klasyfikatora");
-        throw new Error(message);
-      }
-      setClassifiers((current) => current.filter((item) => item.id !== deleteTarget.id));
-      setDeleteTarget(null);
-    } catch (deleteError) {
-      setError(deleteError instanceof Error ? deleteError.message : "Wystąpił błąd podczas usuwania");
-    } finally {
-      setDeletingId(null);
-    }
-  };
-
-  if (!seasonId) {
-    return (
-      <Alert severity="info" sx={{ mb: 2 }}>
-        Wybierz sezon, aby zarządzać klasyfikatorami.
-      </Alert>
-    );
-  }
-
-  if (loading) {
-    return (
-      <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
-        <CircularProgress size={24} />
-      </Box>
-    );
-  }
-
-  if (error) {
-    return <Alert severity="error">{error}</Alert>;
-  }
-
-  return (
-    <>
-      {classifiers.length === 0 && (
-        <Alert
-          severity="info"
-          sx={{ mb: 2 }}
-          action={
-            <Button color="inherit" size="small" onClick={handleAddClick}>
-              Dodaj Klasyfikatora
-            </Button>
-          }
-        >
-          Brak zapisanych klasyfikatorów. Dodaj pierwszą osobę, aby uruchomić egzaminy.
-        </Alert>
-      )}
-      <PersonnelTable
-        title="Klasyfikatorzy"
-        data={classifiers}
-        onAddClick={handleAddClick}
-        onEdit={handleEditClick}
-        onDelete={handleDeleteClassifier}
-        deletingId={deletingId}
-      />
-      <AddPersonDialog
-        open={dialogOpen}
-        loading={submitting}
-        error={dialogError}
-        dialogTitle={editingPerson ? "Edytuj Klasyfikatora" : "Dodaj Klasyfikatora"}
-        submitLabel={editingPerson ? "Aktualizuj" : "Zapisz"}
-        initialValues={
-          editingPerson
-            ? {
-                firstName: editingPerson.firstName,
-                lastName: editingPerson.lastName,
-                email: editingPerson.email ?? "",
-                phone: editingPerson.phone ? String(editingPerson.phone) : "",
-              }
-            : undefined
-        }
-        onClose={handleDialogClose}
-        onSubmit={handleDialogSubmit}
-      />
-      <ConfirmationDialog
-        open={Boolean(deleteTarget)}
-        onClose={() => setDeleteTarget(null)}
-        onConfirm={handleDeleteClassifierConfirmed}
-        loading={deletingId === deleteTarget?.id}
-        title="Usuń klasyfikatora"
-        description={
-          <DialogContentText>
-            Czy na pewno chcesz usunąć{" "}
-            <strong>
-              {deleteTarget?.firstName} {deleteTarget?.lastName}
-            </strong>
-            ? Operacja jest nieodwracalna.
-          </DialogContentText>
-        }
-      />
-    </>
-  );
+  return <PersonnelTab seasonId={seasonId} config={CLASSIFIERS_CONFIG} />;
 }
-
 function PersonnelTable({ title, data, onAddClick, onEdit, onDelete, deletingId }: PersonnelTableProps) {
   return (
     <Box>

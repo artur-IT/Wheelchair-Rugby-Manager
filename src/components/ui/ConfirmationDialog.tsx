@@ -75,7 +75,7 @@ export default function ConfirmationDialog({
         >
           {loading ? (
             <>
-              <CircularProgress size={20} sx={{ mr: 1 }} />
+              <CircularProgress size={20} sx={{ mr: 1 }} aria-label="Ładowanie..." />
               {confirmLabel}
             </>
           ) : (
