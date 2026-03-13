@@ -39,7 +39,7 @@ export default function TeamNewPlayer({
   setNewPlayerForm,
 }: TeamNewPlayerProps) {
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
+    <Dialog open={open} onClose={playerActionLoading ? undefined : onClose} maxWidth="xs" fullWidth>
       <DialogTitle>Dodaj zawodnika</DialogTitle>
       <DialogContent>
         {playerActionError && (
@@ -78,7 +78,7 @@ export default function TeamNewPlayer({
                   inputProps={{ step: 0.5, min: 0.5, max: 4.0, inputMode: "decimal" }}
                   value={newPlayerForm.classification}
                   onChange={(e) =>
-                    setNewPlayerForm((form) => (form ? { ...form, classification: Number(e.target.value) } : form))
+                    setNewPlayerForm((form) => (form ? { ...form, classification: parseFloat(e.target.value) } : form))
                   }
                   fullWidth
                   size="small"
