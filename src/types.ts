@@ -13,7 +13,7 @@ export interface Person {
   firstName: string;
   lastName: string;
   email?: string;
-  phone?: number | null;
+  phone?: number | string | null;
 }
 
 export interface Season {
@@ -170,6 +170,14 @@ export interface CreateCoachDto {
 }
 
 export interface CreateRefereeDto {
+  firstName: string;
+  lastName: string;
+  email?: string;
+  phone?: string;
+  seasonId: string;
+}
+
+export interface CreateClassifierDto {
   firstName: string;
   lastName: string;
   email?: string;
