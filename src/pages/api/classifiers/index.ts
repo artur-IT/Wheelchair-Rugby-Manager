@@ -2,9 +2,9 @@ import type { APIRoute } from "astro";
 import { z } from "zod";
 import { json } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
-import { createReferee } from "@/lib/referees";
+import { Prisma } from "generated/prisma/client";
 
-const CreateRefereeSchema = z
+const CreateClassifierSchema = z
   .object({
     firstName: z.string().min(1, "Imię jest wymagane"),
     lastName: z.string().min(1, "Nazwisko jest wymagane"),
@@ -23,19 +23,32 @@ const CreateRefereeSchema = z
 export const GET: APIRoute = async ({ url }) => {
   const seasonId = url.searchParams.get("seasonId");
 
-  const referees = await prisma.referee.findMany({
+  const classifiers = await prisma.classifier.findMany({
     where: seasonId ? { seasonId } : undefined,
     orderBy: { createdAt: "desc" },
   });
 
-  return json(referees);
+  return json(classifiers);
 };
 
 export const POST: APIRoute = async ({ request }) => {
   const body = await request.json().catch(() => null);
-  const parsed = CreateRefereeSchema.safeParse(body);
+  const parsed = CreateClassifierSchema.safeParse(body);
   if (!parsed.success) return json({ error: parsed.error.flatten() }, 400);
 
-  const referee = await createReferee(parsed.data);
-  return json(referee, 201);
+  try {
+    const classifier = await prisma.classifier.create({ data: parsed.data });
+    return json(classifier, 201);
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === "P2003") {
+        return json({ error: "Invalid seasonId" }, 400);
+      }
+      if (error.code === "P2002") {
+        return json({ error: "Classifier already exists" }, 409);
+      }
+    }
+    console.error("Failed to create classifier:", error);
+    return json({ error: "Failed to create classifier" }, 500);
+  }
 };

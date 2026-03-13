@@ -8,7 +8,7 @@ const CreateTeamSchema = z
   .object({
     name: z.string().min(1, "Nazwa drużyny jest wymagana"),
     address: z.string().min(1, "Adres jest wymagany"),
-    logoUrl: z.union([z.string().url("Nieprawidłowy adres URL"), z.literal("")]).optional(),
+    websiteUrl: z.union([z.string().url("Nieprawidłowy adres URL"), z.literal("")]).optional(),
     contactFirstName: z.string().min(1, "Imię jest wymagane"),
     contactLastName: z.string().min(1, "Nazwisko jest wymagane"),
     contactEmail: z.string().email("Nieprawidłowy email"),
@@ -34,7 +34,7 @@ const CreateTeamSchema = z
   })
   .transform((o) => ({
     ...o,
-    logoUrl: (o.logoUrl?.trim() || undefined) as string | undefined,
+    websiteUrl: (o.websiteUrl?.trim() || undefined) as string | undefined,
     coachId: o.coachId?.trim() || undefined,
     refereeId: o.refereeId?.trim() || undefined,
     players: o.players?.map((p) => ({

@@ -13,7 +13,7 @@ export interface Person {
   firstName: string;
   lastName: string;
   email?: string;
-  phone?: number | null;
+  phone?: string | null;
 }
 
 export interface Season {
@@ -26,7 +26,7 @@ export interface Season {
 export interface Team {
   id: string;
   name: string;
-  logoUrl?: string;
+  websiteUrl?: string;
   address?: string;
   contactFirstName?: string;
   contactLastName?: string;
@@ -146,7 +146,7 @@ export interface CreateSeasonDto {
 export interface CreateTeamDto {
   name: string;
   address?: string;
-  logoUrl?: string;
+  websiteUrl?: string;
   contactFirstName?: string;
   contactLastName?: string;
   contactEmail?: string;
@@ -161,7 +161,7 @@ export interface CreateTeamDto {
 /** Same shape as create; seasonId can be omitted (server keeps existing). */
 export type UpdateTeamDto = Omit<CreateTeamDto, "seasonId"> & { seasonId?: string };
 
-export interface CreateCoachDto {
+interface CreatePersonDto {
   firstName: string;
   lastName: string;
   email?: string;
@@ -169,10 +169,6 @@ export interface CreateCoachDto {
   seasonId: string;
 }
 
-export interface CreateRefereeDto {
-  firstName: string;
-  lastName: string;
-  email?: string;
-  phone?: string;
-  seasonId: string;
-}
+export type CreateCoachDto = CreatePersonDto;
+export type CreateRefereeDto = CreatePersonDto;
+export type CreateClassifierDto = CreatePersonDto;

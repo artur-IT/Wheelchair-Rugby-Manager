@@ -24,6 +24,7 @@ import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
 import AppShell from "@/components/AppShell/AppShell";
 import { TeamFormContent } from "@/components/TeamForm/TeamForm";
 import TeamNewPlayer, { type PlayerRow } from "@/components/TeamNewPlayer/TeamNewPlayer";
+import ConfirmationDialog from "@/components/ui/ConfirmationDialog";
 import type { Team, Player } from "@/types";
 
 const MAX_PLAYER_NUMBER = 99;
@@ -42,7 +43,7 @@ function buildTeamUpdateBody(
   return {
     name: team.name,
     address: team.address,
-    logoUrl: team.logoUrl ?? undefined,
+    websiteUrl: team.websiteUrl ?? undefined,
     contactFirstName: team.contactFirstName,
     contactLastName: team.contactLastName,
     contactEmail: team.contactEmail,
@@ -465,50 +466,35 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
       </Dialog>
 
       {/* Delete player dialog */}
-      <Dialog open={!!deleteConfirmPlayer} onClose={handleDeleteConfirmClose}>
-        <DialogTitle>Usuń zawodnika</DialogTitle>
-        <DialogContent>
-          {playerActionError && (
-            <Alert severity="error" sx={{ mt: 1, mb: 1 }}>
-              {playerActionError}
-            </Alert>
-          )}
+      <ConfirmationDialog
+        open={Boolean(deleteConfirmPlayer)}
+        onClose={handleDeleteConfirmClose}
+        onConfirm={handleDeleteConfirm}
+        loading={playerActionLoading}
+        title="Usuń zawodnika"
+        description={
           <Typography>
             Czy na pewno chcesz usunąć
             {deleteConfirmPlayer ? ` ${deleteConfirmPlayer.firstName} ${deleteConfirmPlayer.lastName}` : ""} z drużyny?
           </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleDeleteConfirmClose} disabled={playerActionLoading}>
-            Anuluj
-          </Button>
-          <Button color="error" variant="contained" onClick={handleDeleteConfirm} disabled={playerActionLoading}>
-            {playerActionLoading ? <CircularProgress size={24} /> : "Usuń"}
-          </Button>
-        </DialogActions>
-      </Dialog>
+        }
+        errorMessage={playerActionError}
+      />
 
-      <Dialog open={deleteTeamDialogOpen} onClose={handleDeleteTeamClose}>
-        <DialogTitle>Usuń drużynę</DialogTitle>
-        <DialogContent>
-          {deleteTeamError && (
-            <Alert severity="error" sx={{ mt: 1, mb: 1 }}>
-              {deleteTeamError}
-            </Alert>
-          )}
+      <ConfirmationDialog
+        open={deleteTeamDialogOpen}
+        onClose={handleDeleteTeamClose}
+        onConfirm={handleDeleteTeamConfirm}
+        loading={deleteTeamLoading}
+        title="Usuń drużynę"
+        description={
           <Typography>
             Operacja usunie drużynę <strong>{team.name}</strong> z bazy danych. Czy na pewno chcesz kontynuować?
           </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleDeleteTeamClose} disabled={deleteTeamLoading}>
-            Anuluj
-          </Button>
-          <Button color="error" variant="contained" onClick={handleDeleteTeamConfirm} disabled={deleteTeamLoading}>
-            {deleteTeamLoading ? <CircularProgress size={24} /> : "Usuń drużynę"}
-          </Button>
-        </DialogActions>
-      </Dialog>
+        }
+        errorMessage={deleteTeamError}
+        confirmLabel="Usuń drużynę"
+      />
 
       <Box
         sx={{

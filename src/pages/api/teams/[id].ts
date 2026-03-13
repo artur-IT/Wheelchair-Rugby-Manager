@@ -8,7 +8,7 @@ const UpdateTeamSchema = z
   .object({
     name: z.string().min(1, "Nazwa drużyny jest wymagana"),
     address: z.string().min(1, "Adres jest wymagany").optional(),
-    logoUrl: z.union([z.string().url("Nieprawidłowy adres URL"), z.literal("")]).optional(),
+    websiteUrl: z.union([z.string().url("Nieprawidłowy adres URL"), z.literal("")]).optional(),
     contactFirstName: z.string().min(1, "Imię jest wymagane").optional(),
     contactLastName: z.string().min(1, "Nazwisko jest wymagane").optional(),
     contactEmail: z.string().email("Nieprawidłowy email").optional(),
@@ -36,7 +36,7 @@ const UpdateTeamSchema = z
   })
   .transform((o) => ({
     ...o,
-    logoUrl: (o.logoUrl?.trim() || undefined) as string | undefined,
+    websiteUrl: (o.websiteUrl?.trim() || undefined) as string | undefined,
     coachId: o.coachId?.trim() || undefined,
     refereeId: o.refereeId?.trim() || undefined,
     // Normalise players so updateTeam always receives a defined array

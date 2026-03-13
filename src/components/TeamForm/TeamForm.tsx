@@ -34,7 +34,7 @@ const teamSchema = z.object({
   contactLastName: z.string().min(1, "Nazwisko jest wymagane"),
   contactEmail: z.string().email("Nieprawidłowy adres email"),
   contactPhone: z.string().min(1, "Telefon jest wymagany"),
-  logoUrl: z.string().optional(),
+  websiteUrl: z.string().url("Nieprawidłowy adres URL").optional().or(z.literal("")),
   coachId: z.string().optional(),
   refereeId: z.string().optional(),
   coachFirstName: z.string().min(1, "Imię trenera jest wymagane"),
@@ -128,7 +128,7 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
     ? {
         name: initialTeam.name ?? "",
         address: initialTeam.address ?? "",
-        logoUrl: initialTeam.logoUrl ?? "",
+        websiteUrl: initialTeam.websiteUrl ?? "",
         contactFirstName: initialTeam.contactFirstName ?? "",
         contactLastName: initialTeam.contactLastName ?? "",
         contactEmail: initialTeam.contactEmail ?? "",
@@ -194,7 +194,7 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
           reset({
             name: initialTeam.name ?? "",
             address: initialTeam.address ?? "",
-            logoUrl: initialTeam.logoUrl ?? "",
+            websiteUrl: initialTeam.websiteUrl ?? "",
             contactFirstName: initialTeam.contactFirstName ?? "",
             contactLastName: initialTeam.contactLastName ?? "",
             contactEmail: initialTeam.contactEmail ?? "",
@@ -298,10 +298,11 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
         }));
 
       // Always send full players list when editing so backend replaces correctly
+      const websiteUrl = data.websiteUrl?.trim() || undefined;
       const body = {
         name: data.name,
         address: data.address,
-        logoUrl: data.logoUrl?.trim() || undefined,
+        websiteUrl,
         contactFirstName: data.contactFirstName,
         contactLastName: data.contactLastName,
         contactEmail: data.contactEmail,
@@ -410,11 +411,10 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
           <Grid size={{ xs: 12 }}>
             <TextField
               fullWidth
-              label="URL logo (opcjonalnie)"
-              placeholder="https://..."
-              {...register("logoUrl")}
-              error={!!errors.logoUrl}
-              helperText={errors.logoUrl?.message}
+              label="Strona internetowa (opcjonalnie)"
+              {...register("websiteUrl")}
+              error={!!errors.websiteUrl}
+              helperText={errors.websiteUrl?.message}
             />
           </Grid>
         </Grid>

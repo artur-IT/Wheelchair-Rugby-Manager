@@ -46,7 +46,7 @@ model Season {
 model Team {
   id               String           @id @default(cuid())
   name             String
-  logoUrl          String?
+  websiteUrl       String?
   address          String?
   contactFirstName String?
   contactLastName  String?
