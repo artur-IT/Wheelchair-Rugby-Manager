@@ -19,12 +19,20 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  Grid,
 } from "@mui/material";
 import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
 import AppShell from "@/components/AppShell/AppShell";
 import { TeamFormContent } from "@/components/TeamForm/TeamForm";
+import TeamNewPlayer, { type PlayerRow } from "@/components/TeamNewPlayer/TeamNewPlayer";
 import type { Team, Player } from "@/types";
+
+const MAX_PLAYER_NUMBER = 99;
+const playerNumberLimitError = `Numer zawodnika nie może być większy niż ${MAX_PLAYER_NUMBER}`;
+
+function getPlayerNumberError(number?: number) {
+  if (number === undefined || number === null) return null;
+  return number > MAX_PLAYER_NUMBER ? playerNumberLimitError : null;
+}
 
 /** Build PUT /api/teams/:id body from team and new players list (ids omitted; backend replaces all players). */
 function buildTeamUpdateBody(
@@ -59,14 +67,6 @@ export default function TeamDetails({ id }: TeamDetailsProps) {
       </AppShell>
     </ThemeRegistry>
   );
-}
-
-interface PlayerRow {
-  id: string;
-  firstName: string;
-  lastName: string;
-  classification: string;
-  number: string;
 }
 
 function TeamDetailsContent({ id }: TeamDetailsProps) {
@@ -227,6 +227,11 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
         : undefined;
     const number =
       editForm.number.trim() !== "" && !Number.isNaN(Number(editForm.number)) ? Number(editForm.number) : undefined;
+    const numberError = getPlayerNumberError(number);
+    if (numberError) {
+      setPlayerActionError(numberError);
+      return;
+    }
     const playersPayload = (team.players ?? []).map((p) =>
       p.id === editingPlayer.id
         ? { firstName, lastName, classification, number }
@@ -265,8 +270,8 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
       id: crypto.randomUUID(),
       firstName: "",
       lastName: "",
-      classification: "",
-      number: "",
+      classification: 0,
+      number: 0,
     });
     setAddingNewPlayer(true);
   };
@@ -285,14 +290,13 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
       setPlayerActionError("Imię i nazwisko są wymagane");
       return;
     }
-    const classification =
-      newPlayerForm.classification.trim() !== "" && !Number.isNaN(Number(newPlayerForm.classification))
-        ? Number(newPlayerForm.classification)
-        : undefined;
-    const number =
-      newPlayerForm.number.trim() !== "" && !Number.isNaN(Number(newPlayerForm.number))
-        ? Number(newPlayerForm.number)
-        : undefined;
+    const classification = Number(newPlayerForm.classification) ? Number(newPlayerForm.classification) : undefined;
+    const number = newPlayerForm.number ? Number(newPlayerForm.number) : undefined;
+    const numberError = getPlayerNumberError(number);
+    if (numberError) {
+      setPlayerActionError(numberError);
+      return;
+    }
     const playersPayload = [
       ...(team.players ?? []).map((p) => ({
         firstName: p.firstName,
@@ -354,70 +358,15 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={addingNewPlayer} onClose={handleAddPlayerClose} maxWidth="xs" fullWidth>
-        <DialogTitle>Dodaj zawodnika</DialogTitle>
-        <DialogContent>
-          {playerActionError && (
-            <Alert severity="error" sx={{ mt: 1, mb: 1 }}>
-              {playerActionError}
-            </Alert>
-          )}
-          {newPlayerForm && (
-            <Grid container spacing={2} sx={{ pt: 1 }}>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <TextField
-                  label="Imię"
-                  value={newPlayerForm.firstName}
-                  onChange={(e) => setNewPlayerForm((f) => (f ? { ...f, firstName: e.target.value } : f))}
-                  required
-                  fullWidth
-                  size="small"
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <TextField
-                  label="Nazwisko"
-                  value={newPlayerForm.lastName}
-                  onChange={(e) => setNewPlayerForm((f) => (f ? { ...f, lastName: e.target.value } : f))}
-                  required
-                  fullWidth
-                  size="small"
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <TextField
-                  label="Klasyfikacja"
-                  type="number"
-                  inputProps={{ step: 0.5, min: 0.5, max: 4.0, inputMode: "decimal" }}
-                  value={newPlayerForm.classification}
-                  onChange={(e) => setNewPlayerForm((f) => (f ? { ...f, classification: e.target.value } : f))}
-                  fullWidth
-                  size="small"
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <TextField
-                  label="Numer"
-                  type="number"
-                  inputProps={{ min: 1, max: 99, inputMode: "numeric" }}
-                  value={newPlayerForm.number}
-                  onChange={(e) => setNewPlayerForm((f) => (f ? { ...f, number: e.target.value } : f))}
-                  fullWidth
-                  size="small"
-                />
-              </Grid>
-            </Grid>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleAddPlayerClose} disabled={playerActionLoading}>
-            Anuluj
-          </Button>
-          <Button variant="contained" onClick={handleAddPlayerSave} disabled={playerActionLoading || !newPlayerForm}>
-            {playerActionLoading ? <CircularProgress size={24} /> : "Dodaj zawodnika"}
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <TeamNewPlayer
+        open={addingNewPlayer}
+        onClose={handleAddPlayerClose}
+        onSave={handleAddPlayerSave}
+        playerActionError={playerActionError}
+        playerActionLoading={playerActionLoading}
+        newPlayerForm={newPlayerForm}
+        setNewPlayerForm={setNewPlayerForm}
+      />
 
       <Dialog open={!!editingPlayer} onClose={handleEditPlayerClose} maxWidth="xs" fullWidth>
         <DialogTitle>Edytuj zawodnika</DialogTitle>

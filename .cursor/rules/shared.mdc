@@ -10,7 +10,7 @@ alwaysApply: true
 - **Backend**: Node.js, Express, TypeScript
 - **Routing**: Astro
 - **Fetching API**: Tanstack Query
-- **Forms**: React Hook Form + Zod (na backendzie do walidacji requestów)
+- **Forms**: React Hook Form + Zod (on the backend to validate requests)
 - **Authentication**: OAuth 2.0 + OpenID Connect (OIDC)
   - **Hashing passwords**: Argon2
 - **Style**: Material UI + global.css
@@ -44,6 +44,7 @@ When modifying the directory structure, always update this section.
 
 ### Guidelines for clean code
 
+- If add new function, always add tests for it according to the rules in `.cursor/rules/testing.mdc`.
 - Use feedback from linters to improve the code when making changes.
 - Prioritize error handling and edge cases.
 - Handle errors and edge cases at the beginning of functions.
@@ -60,7 +61,6 @@ When modifying the directory structure, always update this section.
 - Always generate code implementation solutions according to this order: HTML5, JavaScript, React.
 - Always add short comment to new code sections if function is not very simple and obvious and not self-explanatory.
 - Suggest two or three ways to solve the problem and briefly explain why you chose the solution you did.
-- If add new function, always add a minimum of necessary tests for it according to the rules in `.cursor/rules/testing.mdc`.
 
 ### Coding conventions
 

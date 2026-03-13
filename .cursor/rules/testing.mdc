@@ -9,3 +9,10 @@ alwaysApply: false
 - Never mock unnecessarily; only mock when needed (e.g. network requests).
 - Add only the minimum necessary tests.
 - Do not add very simple smoke tests.
+- Logics should cover helper functions so regressions stay obvious.
+- Hooks reacting to async data must be mocked/tested for loading, success, and error states.
+- RTL component tests must assert rendered elements and user interactions for all key flows.
+- Form submission tests verify callbacks receive the correct payload and error states show expected messages.
+- Always cover view states (loading, empty, error) so UI feedback stays consistent.
+- Components should update correctly when their critical props or data change.
+- Minimal validation checks go in Vitest only if no other validator tool covers them (block submit/show message for invalid input).
