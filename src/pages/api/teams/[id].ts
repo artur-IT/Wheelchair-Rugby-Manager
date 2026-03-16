@@ -3,13 +3,17 @@ import { z } from "zod";
 import { json } from "@/lib/api";
 import { getTeamById, updateTeam } from "@/lib/teams";
 import { prisma } from "@/lib/prisma";
-import { toTitleCase } from "@/lib/validateInputs";
+import { LOOSE_URL_REGEX, POSTAL_CODE_REGEX, toTitleCase } from "@/lib/validateInputs";
 
 const UpdateTeamSchema = z
   .object({
     name: z.string().min(1, "Nazwa drużyny jest wymagana"),
     address: z.string().min(1, "Adres jest wymagany").optional(),
-    websiteUrl: z.union([z.string().url("Nieprawidłowy adres URL"), z.literal("")]).optional(),
+    city: z.string().min(1, "Miasto jest wymagane").optional(),
+    postalCode: z.string().regex(POSTAL_CODE_REGEX, "Kod pocztowy musi być w formacie XX-XXX").optional(),
+    websiteUrl: z
+      .union([z.string().refine((v) => LOOSE_URL_REGEX.test(v), "Nieprawidłowy adres URL"), z.literal("")])
+      .optional(),
     contactFirstName: z.string().min(1, "Imię jest wymagane").optional(),
     contactLastName: z.string().min(1, "Nazwisko jest wymagane").optional(),
     contactEmail: z.string().email("Nieprawidłowy email").optional(),
@@ -39,6 +43,7 @@ const UpdateTeamSchema = z
     ...o,
     name: toTitleCase(o.name),
     address: o.address ? toTitleCase(o.address) : undefined,
+    city: o.city ? toTitleCase(o.city) : undefined,
     contactFirstName: o.contactFirstName ? toTitleCase(o.contactFirstName) : undefined,
     contactLastName: o.contactLastName ? toTitleCase(o.contactLastName) : undefined,
     websiteUrl: (o.websiteUrl?.trim() || undefined) as string | undefined,

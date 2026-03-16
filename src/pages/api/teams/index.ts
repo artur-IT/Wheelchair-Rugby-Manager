@@ -3,13 +3,17 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { json } from "@/lib/api";
 import { createTeam } from "@/lib/teams";
-import { toTitleCase } from "@/lib/validateInputs";
+import { LOOSE_URL_REGEX, POSTAL_CODE_REGEX, toTitleCase } from "@/lib/validateInputs";
 
 const CreateTeamSchema = z
   .object({
     name: z.string().min(1, "Nazwa drużyny jest wymagana"),
     address: z.string().min(1, "Adres jest wymagany"),
-    websiteUrl: z.union([z.string().url("Nieprawidłowy adres URL"), z.literal("")]).optional(),
+    city: z.string().min(1, "Miasto jest wymagane"),
+    postalCode: z.string().regex(POSTAL_CODE_REGEX, "Kod pocztowy musi być w formacie XX-XXX"),
+    websiteUrl: z
+      .union([z.string().refine((v) => LOOSE_URL_REGEX.test(v), "Nieprawidłowy adres URL"), z.literal("")])
+      .optional(),
     contactFirstName: z.string().min(1, "Imię jest wymagane"),
     contactLastName: z.string().min(1, "Nazwisko jest wymagane"),
     contactEmail: z.string().email("Nieprawidłowy email"),
@@ -37,6 +41,7 @@ const CreateTeamSchema = z
     ...o,
     name: toTitleCase(o.name),
     address: toTitleCase(o.address),
+    city: toTitleCase(o.city),
     contactFirstName: toTitleCase(o.contactFirstName),
     contactLastName: toTitleCase(o.contactLastName),
     websiteUrl: (o.websiteUrl?.trim() || undefined) as string | undefined,

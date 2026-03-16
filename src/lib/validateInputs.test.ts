@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { sanitizePhone, toTitleCase } from "./validateInputs";
+import {
+  optionalWebsiteUrlSchema,
+  requiredCitySchema,
+  requiredPostalCodeSchema,
+  sanitizePhone,
+  toTitleCase,
+} from "./validateInputs";
 
 describe("toTitleCase", () => {
   it("capitalises first letter of each word", () => {
@@ -48,4 +54,33 @@ describe("sanitizePhone", () => {
   it("returns empty string when input contains no digits", () => {
     expect(sanitizePhone("abcdef")).toBe("");
   });
+});
+
+describe("requiredCitySchema", () => {
+  const valid = (v: string) => requiredCitySchema.safeParse(v).success;
+
+  it("accepts a valid city name", () => expect(valid("Warszawa")).toBe(true));
+  it("rejects empty string", () => expect(valid("")).toBe(false));
+});
+
+describe("requiredPostalCodeSchema", () => {
+  const valid = (v: string) => requiredPostalCodeSchema.safeParse(v).success;
+
+  it("accepts valid Polish postal code", () => expect(valid("00-001")).toBe(true));
+  it("rejects empty string", () => expect(valid("")).toBe(false));
+  it("rejects code without dash: 00001", () => expect(valid("00001")).toBe(false));
+  it("rejects code with wrong format: 000-01", () => expect(valid("000-01")).toBe(false));
+  it("rejects code with letters: AB-CDE", () => expect(valid("AB-CDE")).toBe(false));
+});
+
+describe("optionalWebsiteUrlSchema", () => {
+  const valid = (v: string) => optionalWebsiteUrlSchema.safeParse(v).success;
+
+  it("accepts empty string", () => expect(valid("")).toBe(true));
+  it("accepts domain without protocol: wp.pl", () => expect(valid("wp.pl")).toBe(true));
+  it("accepts www prefix: www.wp.pl", () => expect(valid("www.wp.pl")).toBe(true));
+  it("accepts https URL", () => expect(valid("https://wp.pl")).toBe(true));
+  it("accepts http URL", () => expect(valid("http://www.wp.pl/path")).toBe(true));
+  it("rejects plain text without dot", () => expect(valid("notaurl")).toBe(false));
+  it("rejects string with spaces", () => expect(valid("www.wp .pl")).toBe(false));
 });

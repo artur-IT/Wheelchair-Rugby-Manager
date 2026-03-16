@@ -37,6 +37,8 @@ import {
   optionalEmailSchema,
   requiredTeamNameSchema,
   requiredAddressSchema,
+  requiredCitySchema,
+  requiredPostalCodeSchema,
   optionalWebsiteUrlSchema,
   MAX_SHORT_TEXT,
 } from "@/lib/validateInputs";
@@ -45,6 +47,8 @@ import {
 const teamSchema = z.object({
   name: requiredTeamNameSchema,
   address: requiredAddressSchema,
+  city: requiredCitySchema,
+  postalCode: requiredPostalCodeSchema,
   contactFirstName: requiredFirstNameSchema,
   contactLastName: requiredLastNameSchema,
   contactEmail: requiredEmailSchema,
@@ -150,6 +154,8 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
     ? {
         name: initialTeam.name ?? "",
         address: initialTeam.address ?? "",
+        city: initialTeam.city ?? "",
+        postalCode: initialTeam.postalCode ?? "",
         websiteUrl: initialTeam.websiteUrl ?? "",
         contactFirstName: initialTeam.contactFirstName ?? "",
         contactLastName: initialTeam.contactLastName ?? "",
@@ -169,6 +175,8 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
     : {
         name: "",
         address: "",
+        city: "",
+        postalCode: "",
         contactFirstName: "",
         contactLastName: "",
         contactEmail: "",
@@ -216,6 +224,8 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
           reset({
             name: initialTeam.name ?? "",
             address: initialTeam.address ?? "",
+            city: initialTeam.city ?? "",
+            postalCode: initialTeam.postalCode ?? "",
             websiteUrl: initialTeam.websiteUrl ?? "",
             contactFirstName: initialTeam.contactFirstName ?? "",
             contactLastName: initialTeam.contactLastName ?? "",
@@ -324,6 +334,8 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
       const body = {
         name: data.name,
         address: data.address,
+        city: data.city,
+        postalCode: data.postalCode,
         websiteUrl,
         contactFirstName: data.contactFirstName,
         contactLastName: data.contactLastName,
@@ -443,6 +455,28 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
               {...register("address")}
               error={!!errors.address}
               helperText={errors.address?.message}
+              sx={requiredFieldSx}
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 8 }}>
+            <TextField
+              fullWidth
+              label="Miasto"
+              {...register("city")}
+              error={!!errors.city}
+              helperText={errors.city?.message}
+              sx={requiredFieldSx}
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 4 }}>
+            <TextField
+              fullWidth
+              label="Kod pocztowy"
+              placeholder="00-000"
+              {...register("postalCode")}
+              error={!!errors.postalCode}
+              helperText={errors.postalCode?.message}
+              sx={requiredFieldSx}
             />
           </Grid>
           <Grid size={{ xs: 12 }}>

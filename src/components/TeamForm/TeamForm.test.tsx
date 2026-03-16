@@ -45,6 +45,8 @@ describe("TeamForm", () => {
 
     await user.type(screen.getByLabelText("Nazwa Drużyny"), "Test Team");
     await user.type(screen.getByLabelText("Adres"), "Test Address");
+    await user.type(screen.getByLabelText("Miasto"), "Warszawa");
+    await user.type(screen.getByLabelText("Kod pocztowy"), "00-001");
     await user.type(screen.getAllByLabelText(/^Imię/)[0], "Jan");
     await user.type(screen.getAllByLabelText(/^Nazwisko/)[0], "Kowalski");
     await user.type(screen.getAllByLabelText(/^Email/)[0], "jan@example.com");
@@ -77,6 +79,8 @@ describe("TeamForm", () => {
     expect(JSON.parse(String(submitOptions.body))).toEqual({
       name: "Test Team",
       address: "Test Address",
+      city: "Warszawa",
+      postalCode: "00-001",
       contactFirstName: "Jan",
       contactLastName: "Kowalski",
       contactEmail: "jan@example.com",

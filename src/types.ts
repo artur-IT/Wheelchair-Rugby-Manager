@@ -28,6 +28,8 @@ export interface Team {
   name: string;
   websiteUrl?: string;
   address?: string;
+  city?: string;
+  postalCode?: string;
   contactFirstName?: string;
   contactLastName?: string;
   contactEmail?: string;
@@ -146,6 +148,8 @@ export interface CreateSeasonDto {
 export interface CreateTeamDto {
   name: string;
   address?: string;
+  city?: string;
+  postalCode?: string;
   websiteUrl?: string;
   contactFirstName?: string;
   contactLastName?: string;

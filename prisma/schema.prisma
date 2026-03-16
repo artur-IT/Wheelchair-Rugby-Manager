@@ -48,6 +48,8 @@ model Team {
   name             String
   websiteUrl       String?
   address          String?
+  city             String?
+  postalCode       String?
   contactFirstName String?
   contactLastName  String?
   contactEmail     String?

@@ -82,6 +82,19 @@ export const requiredAddressSchema = z
   .min(1, "Adres jest wymagany")
   .max(MAX_LONG_TEXT, `Adres nie może przekraczać ${MAX_LONG_TEXT} znaków`);
 
+export const requiredCitySchema = z
+  .string()
+  .min(1, "Miasto jest wymagane")
+  .max(MAX_LONG_TEXT, `Miasto nie może przekraczać ${MAX_LONG_TEXT} znaków`);
+
+/** Polish postal code: XX-XXX */
+export const POSTAL_CODE_REGEX = /^\d{2}-\d{3}$/;
+
+export const requiredPostalCodeSchema = z
+  .string()
+  .min(1, "Kod pocztowy jest wymagany")
+  .regex(POSTAL_CODE_REGEX, "Kod pocztowy musi być w formacie XX-XXX");
+
 export const requiredSeasonNameSchema = z
   .string()
   .min(1, "Nazwa sezonu jest wymagana")
@@ -105,10 +118,16 @@ export const playerNumberSchema = z
 
 // ─── Long text fields (team name, address, website URL, season name) — max 150 chars ──
 
-/** Optional website URL: accepts empty string or a valid URL up to 150 characters. */
+// Accepts urls with or without protocol: "wp.pl", "www.wp.pl", "https://wp.pl"
+export const LOOSE_URL_REGEX = /^(https?:\/\/)?([\w-]+\.)+[\w]{2,}(\/\S*)?$/;
+
+/** Optional website URL: accepts empty string or a domain/URL up to 150 characters. */
 export const optionalWebsiteUrlSchema = z
-  .string()
-  .url("Nieprawidłowy adres URL")
-  .max(MAX_LONG_TEXT, `URL nie może przekraczać ${MAX_LONG_TEXT} znaków`)
-  .optional()
-  .or(z.literal(""));
+  .union([
+    z.literal(""),
+    z
+      .string()
+      .max(MAX_LONG_TEXT, `URL nie może przekraczać ${MAX_LONG_TEXT} znaków`)
+      .refine((v) => LOOSE_URL_REGEX.test(v), "Nieprawidłowy adres URL"),
+  ])
+  .optional();
