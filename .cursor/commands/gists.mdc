@@ -2,6 +2,8 @@
 alwaysApply: false
 ---
 
-Połącz się z moim GitHub Gist, wejdź w Daily Notes i na wzór już istniejących podsumowań dnia oraz na podstawie commitów w repozytorium dodaj kolejne bardzo krótkie podsumowanie dnia. Jeśli dzisiaj jest piątek lub sobota, to stwórz krótkie podsumowanie tygodnia.
+Połącz się z moim GitHub Gist, wejdź w Daily Notes i na wzór już istniejących podsumowań dnia oraz na podstawie wszystkich commitów z danego dnia w repozytorium dodaj kolejne bardzo krótkie podsumowanie dnia. Jeśli dzisiaj jest piątek lub sobota, to stwórz krótkie podsumowanie tygodnia dodając krótką sekcję: co warto zapamiętać w kontekście nauki frontendu?
 
-Token do GitHub Gist jest w .env file.
+**Konfiguracja:** W .env ustaw token: `GITHUB_GIST_TOKEN` lub `GIST_TOKEN`. Aby skrypt znalazł Daily Notes bez przeglądania listy gistów, ustaw też `GIST_ID` (ID z URL gista, np. `https://gist.github.com/artur-IT` ).
+
+**Skrypt:** `node src/lib/updateDailyNotesGist.mjs "treść podsumowania"` — dopisuje wpis z datą i etykietą (dzień/tydzień) do pliku Daily Notes w gistcie.

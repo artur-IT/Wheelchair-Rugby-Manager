@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod/v4";
@@ -25,28 +25,50 @@ import type { SelectChangeEvent } from "@mui/material";
 import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
 import AppShell from "@/components/AppShell/AppShell";
 import type { Season, Team } from "@/types";
+import {
+  sanitizePhone,
+  optionalPhoneSchema,
+  requiredPhoneSchema,
+  requiredFirstNameSchema,
+  requiredLastNameSchema,
+  requiredEmailSchema,
+  optionalFirstNameSchema,
+  optionalLastNameSchema,
+  optionalEmailSchema,
+  requiredTeamNameSchema,
+  requiredAddressSchema,
+  optionalWebsiteUrlSchema,
+  MAX_SHORT_TEXT,
+} from "@/lib/validateInputs";
 
 // Validation schema matching the API contract
 const teamSchema = z.object({
-  name: z.string().min(1, "Nazwa drużyny jest wymagana"),
-  address: z.string().min(1, "Adres jest wymagany"),
-  contactFirstName: z.string().min(1, "Imię jest wymagane"),
-  contactLastName: z.string().min(1, "Nazwisko jest wymagane"),
-  contactEmail: z.string().email("Nieprawidłowy adres email"),
-  contactPhone: z.string().min(1, "Telefon jest wymagany"),
-  websiteUrl: z.string().url("Nieprawidłowy adres URL").optional().or(z.literal("")),
+  name: requiredTeamNameSchema,
+  address: requiredAddressSchema,
+  contactFirstName: requiredFirstNameSchema,
+  contactLastName: requiredLastNameSchema,
+  contactEmail: requiredEmailSchema,
+  contactPhone: requiredPhoneSchema,
+  websiteUrl: optionalWebsiteUrlSchema,
   coachId: z.string().optional(),
   refereeId: z.string().optional(),
-  coachFirstName: z.string().min(1, "Imię trenera jest wymagane"),
-  coachLastName: z.string().min(1, "Nazwisko trenera jest wymagane"),
-  coachEmail: z.union([z.string().email("Nieprawidłowy email"), z.literal("")]).optional(),
-  coachPhone: z.string().optional(),
-  refereeFirstName: z.string().optional(),
-  refereeLastName: z.string().optional(),
-  refereeEmail: z.union([z.string().email("Nieprawidłowy email"), z.literal("")]).optional(),
-  refereePhone: z.string().optional(),
-  staffFirstName: z.string().optional(),
-  staffLastName: z.string().optional(),
+  // Coach first/last name have custom required messages so max is chained inline
+  coachFirstName: z
+    .string()
+    .min(1, "Imię trenera jest wymagane")
+    .max(MAX_SHORT_TEXT, `Imię nie może przekraczać ${MAX_SHORT_TEXT} znaków`),
+  coachLastName: z
+    .string()
+    .min(1, "Nazwisko trenera jest wymagane")
+    .max(MAX_SHORT_TEXT, `Nazwisko nie może przekraczać ${MAX_SHORT_TEXT} znaków`),
+  coachEmail: optionalEmailSchema,
+  coachPhone: optionalPhoneSchema,
+  refereeFirstName: optionalFirstNameSchema,
+  refereeLastName: optionalLastNameSchema,
+  refereeEmail: optionalEmailSchema,
+  refereePhone: optionalPhoneSchema,
+  staffFirstName: optionalFirstNameSchema,
+  staffLastName: optionalLastNameSchema,
 });
 
 type TeamFormValues = z.infer<typeof teamSchema>;
@@ -344,6 +366,21 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
     }
   };
 
+  // Register phone fields once and wrap onChange to sanitize input on type
+  const makePhoneField = (name: "contactPhone" | "coachPhone" | "refereePhone") => {
+    const field = register(name);
+    return {
+      ...field,
+      onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
+        e.target.value = sanitizePhone(e.target.value);
+        field.onChange(e);
+      },
+    };
+  };
+  const contactPhoneField = makePhoneField("contactPhone");
+  const coachPhoneField = makePhoneField("coachPhone");
+  const refereePhoneField = makePhoneField("refereePhone");
+
   if (loadingSeasons) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
@@ -460,7 +497,9 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
               fullWidth
               type="tel"
               label="Telefon"
-              {...register("contactPhone")}
+              {...contactPhoneField}
+              placeholder="9 cyfr"
+              inputProps={{ inputMode: "numeric" }}
               error={!!errors.contactPhone}
               helperText={errors.contactPhone?.message}
               sx={requiredFieldSx}
@@ -508,7 +547,16 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField fullWidth type="tel" label="Telefon" {...register("coachPhone")} />
+            <TextField
+              fullWidth
+              type="tel"
+              label="Telefon"
+              {...coachPhoneField}
+              placeholder="9 cyfr"
+              inputProps={{ inputMode: "numeric" }}
+              error={!!errors.coachPhone}
+              helperText={errors.coachPhone?.message}
+            />
           </Grid>
         </Grid>
 
@@ -546,7 +594,16 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
             />
           </Grid>
           <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField fullWidth type="tel" label="Telefon (opcjonalnie)" {...register("refereePhone")} />
+            <TextField
+              fullWidth
+              type="tel"
+              label="Telefon (opcjonalnie)"
+              {...refereePhoneField}
+              placeholder="9 cyfr"
+              inputProps={{ inputMode: "numeric" }}
+              error={!!errors.refereePhone}
+              helperText={errors.refereePhone?.message}
+            />
           </Grid>
         </Grid>
 

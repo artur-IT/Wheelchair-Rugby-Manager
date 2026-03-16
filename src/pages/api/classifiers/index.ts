@@ -8,8 +8,8 @@ const CreateClassifierSchema = z
   .object({
     firstName: z.string().min(1, "Imię jest wymagane"),
     lastName: z.string().min(1, "Nazwisko jest wymagane"),
-    email: z.union([z.string().email("Nieprawidłowy email"), z.literal("")]).optional(),
-    phone: z.string().optional(),
+    email: z.union([z.string().email("Nieprawidłowy email"), z.literal(""), z.null()]).optional(),
+    phone: z.string().nullable().optional(),
     seasonId: z.string().min(1, "SeasonId jest wymagany"),
   })
   .transform((o) => ({

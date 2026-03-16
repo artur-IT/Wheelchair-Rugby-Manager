@@ -16,8 +16,8 @@
     "format": "prettier --write ."
   },
   "dependencies": {
-    "@astrojs/node": "^9.4.3",
-    "@astrojs/react": "^4.3.1",
+    "@astrojs/node": "^10.0.1",
+    "@astrojs/react": "^5.0.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@fontsource/roboto": "^5.2.10",
@@ -26,7 +26,7 @@
     "@mui/material": "^7.3.8",
     "@prisma/adapter-pg": "^7.4.2",
     "@prisma/client": "^7.5.0",
-    "astro": "^5.13.7",
+    "astro": "^6.0.4",
     "lucide-react": "^0.481.0",
     "motion": "^11.14.0",
     "pg": "^8.20.0",

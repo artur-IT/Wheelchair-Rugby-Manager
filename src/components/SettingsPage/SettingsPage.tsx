@@ -1,5 +1,6 @@
 import { forwardRef, useState, useEffect } from "react";
 import type { ChangeEvent } from "react";
+import { sanitizePhone, MAX_SHORT_TEXT } from "@/lib/validateInputs";
 import { Users, UserCircle, ChevronRight, Pencil, Star } from "lucide-react";
 import {
   Box,
@@ -371,8 +372,8 @@ function TeamsTab({ seasonId }: { seasonId: string }) {
 interface PersonFormPayload {
   firstName: string;
   lastName: string;
-  email?: string;
-  phone?: string;
+  email?: string | null;
+  phone?: string | null;
 }
 
 interface PersonnelTableProps {
@@ -800,7 +801,7 @@ interface AddPersonDialogProps {
 }
 
 // Dialog that collects name and contact details before hitting the API.
-function AddPersonDialog({
+export function AddPersonDialog({
   open,
   loading,
   error,
@@ -819,12 +820,13 @@ function AddPersonDialog({
     setLocalError(null);
   }, [open, initialValues]);
 
-  const sanitizePhone = (value: string) => value.replace(/\D/g, "").slice(0, 9);
-
   const handleChange = (field: keyof PersonFormFields) => (event: ChangeEvent<HTMLInputElement>) => {
     const rawValue = event.target.value;
-    const value = field === "phone" ? sanitizePhone(rawValue) : rawValue;
-    setForm((current) => ({ ...current, [field]: value }));
+    setForm((current) => ({ ...current, [field]: rawValue }));
+  };
+
+  const handlePhoneChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setForm((current) => ({ ...current, phone: sanitizePhone(event.target.value) }));
   };
 
   const handleSave = () => {
@@ -834,12 +836,27 @@ function AddPersonDialog({
       setLocalError("Imię i nazwisko są wymagane");
       return;
     }
+    if (firstName.length > MAX_SHORT_TEXT || lastName.length > MAX_SHORT_TEXT) {
+      setLocalError(`Imię i nazwisko nie mogą przekraczać ${MAX_SHORT_TEXT} znaków`);
+      return;
+    }
+    const email = form.email.trim();
+    if (email && email.length > MAX_SHORT_TEXT) {
+      setLocalError(`Email nie może przekraczać ${MAX_SHORT_TEXT} znaków`);
+      return;
+    }
+    const phone = form.phone.trim();
+    if (phone && phone.length !== 9) {
+      setLocalError("Numer telefonu musi zawierać dokładnie 9 cyfr");
+      return;
+    }
     setLocalError(null);
+    // Send null (not undefined) so the API explicitly clears the field
     onSubmit({
       firstName,
       lastName,
-      email: form.email.trim() || undefined,
-      phone: form.phone.trim() || undefined,
+      email: email || null,
+      phone: phone || null,
     });
   };
 
@@ -856,14 +873,10 @@ function AddPersonDialog({
           <TextField
             label="Telefon"
             type="tel"
+            placeholder="9 cyfr"
+            inputMode="numeric"
             value={form.phone}
-            onChange={handleChange("phone")}
-            inputProps={{
-              inputMode: "numeric",
-              pattern: "^\\d{0,9}$",
-              maxLength: 9,
-              title: "Wprowadź maksymalnie 9 cyfr",
-            }}
+            onChange={handlePhoneChange}
           />
         </Box>
       </DialogContent>

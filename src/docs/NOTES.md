@@ -99,4 +99,4 @@ Dzięki temu kod Astro/Node będzie używał zaktualizowanego klienta i schematu
 
 ---
 
-Code Rabbit do code review p;o commitach, ALE przed zatwierdzeniem PR.
+Code Rabbit do code review po commitach, ALE przed zatwierdzeniem PR.

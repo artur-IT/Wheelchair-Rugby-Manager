@@ -11,14 +11,15 @@ const UpdatePersonSchema = z
   .object({
     firstName: z.string().min(1, "Imię jest wymagane"),
     lastName: z.string().min(1, "Nazwisko jest wymagane"),
-    email: z.union([z.string().email("Nieprawidłowy email"), z.literal("")]).optional(),
-    phone: z.string().optional(),
+    email: z.union([z.string().email("Nieprawidłowy email"), z.literal(""), z.null()]).optional(),
+    phone: z.string().nullable().optional(),
   })
   .transform((payload) => ({
     firstName: payload.firstName.trim(),
     lastName: payload.lastName.trim(),
-    email: (payload.email?.trim() || undefined) as string | undefined,
-    phone: (payload.phone?.trim() || undefined) as string | undefined,
+    // undefined = field absent → Prisma skips; null/"" = explicit clear → Prisma sets NULL
+    email: payload.email === undefined ? undefined : payload.email?.trim() || null,
+    phone: payload.phone === undefined ? undefined : payload.phone?.trim() || null,
   }));
 
 export const PATCH: APIRoute = async ({ params, request }) => {

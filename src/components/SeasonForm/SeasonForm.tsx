@@ -5,9 +5,10 @@ import { z } from "zod/v4";
 import { Box, Button, TextField, Typography, Paper, Alert, CircularProgress } from "@mui/material";
 import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
 import AppShell from "@/components/AppShell/AppShell";
+import { requiredSeasonNameSchema } from "@/lib/validateInputs";
 
 const seasonSchema = z.object({
-  name: z.string().min(1, "Nazwa sezonu jest wymagana"),
+  name: requiredSeasonNameSchema,
   year: z.preprocess(
     (value) => (value === "" ? undefined : Number(value)),
     z.number({ message: "Rok sezonu jest wymagany" }).int().min(2000, "Podaj rok w przedziale 2000-2100").max(2100)
