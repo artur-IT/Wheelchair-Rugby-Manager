@@ -1,11 +1,17 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  optionalMapLinkSchema,
   optionalWebsiteUrlSchema,
+  requiredCateringSchema,
   requiredCitySchema,
+  requiredHallNameSchema,
+  requiredHotelNameSchema,
   requiredPostalCodeSchema,
+  requiredTournamentNameSchema,
   sanitizePhone,
   toTitleCase,
+  tournamentFormSchema,
 } from "./validateInputs";
 
 describe("toTitleCase", () => {
@@ -89,4 +95,80 @@ describe("optionalWebsiteUrlSchema", () => {
   it("accepts http URL", () => expect(valid("http://www.wp.pl/path")).toBe(true));
   it("rejects plain text without dot", () => expect(valid("notaurl")).toBe(false));
   it("rejects string with spaces", () => expect(valid("www.wp .pl")).toBe(false));
+});
+
+describe("requiredTournamentNameSchema", () => {
+  const valid = (v: string) => requiredTournamentNameSchema.safeParse(v).success;
+
+  it("accepts valid tournament name", () => expect(valid("Turniej Jesienny")).toBe(true));
+  it("rejects empty string", () => expect(valid("")).toBe(false));
+  it("rejects name with less than 3 characters", () => expect(valid("AB")).toBe(false));
+});
+
+describe("requiredHotelNameSchema", () => {
+  const valid = (v: string) => requiredHotelNameSchema.safeParse(v).success;
+
+  it("accepts valid hotel name", () => expect(valid("Hotel Centrum")).toBe(true));
+  it("rejects empty string", () => expect(valid("")).toBe(false));
+  it("rejects name with less than 3 characters", () => expect(valid("AB")).toBe(false));
+});
+
+describe("requiredHallNameSchema", () => {
+  const valid = (v: string) => requiredHallNameSchema.safeParse(v).success;
+
+  it("accepts valid hall name", () => expect(valid("Hala Sportowa")).toBe(true));
+  it("rejects empty string", () => expect(valid("")).toBe(false));
+  it("rejects name with less than 3 characters", () => expect(valid("AB")).toBe(false));
+});
+
+describe("requiredCateringSchema", () => {
+  const valid = (v: string) => requiredCateringSchema.safeParse(v).success;
+
+  it("accepts valid catering description", () => expect(valid("Hotel + Catering na hali")).toBe(true));
+  it("rejects empty string", () => expect(valid("")).toBe(false));
+  it("rejects description with less than 3 characters", () => expect(valid("AB")).toBe(false));
+});
+
+describe("optionalMapLinkSchema", () => {
+  const valid = (v: string) => optionalMapLinkSchema.safeParse(v).success;
+
+  it("accepts empty string", () => expect(valid("")).toBe(true));
+  it("accepts https URL", () => expect(valid("https://maps.google.com")).toBe(true));
+  it("rejects invalid URL", () => expect(valid("notaurl")).toBe(false));
+});
+
+describe("tournamentFormSchema", () => {
+  it("accepts valid tournament data", () => {
+    const validData = {
+      name: "Turniej Jesienny",
+      startDate: new Date("2026-09-01"),
+      endDate: new Date("2026-09-03"),
+      hotel: "Hotel Centrum",
+      city: "Warszawa",
+      zipCode: "00-001",
+      street: "Ulica Główna 1",
+      mapLink: "https://maps.google.com",
+      catering: "Hotel + Catering",
+      hallName: "Hala Sportowa",
+      hallMapLink: "https://maps.google.com/hala",
+    };
+    expect(tournamentFormSchema.safeParse(validData).success).toBe(true);
+  });
+
+  it("rejects when endDate is before startDate", () => {
+    const invalidData = {
+      name: "Turniej Jesienny",
+      startDate: new Date("2026-09-03"),
+      endDate: new Date("2026-09-01"),
+      hotel: "Hotel Centrum",
+      city: "Warszawa",
+      zipCode: "00-001",
+      street: "Ulica Główna 1",
+      mapLink: "",
+      catering: "Hotel + Catering",
+      hallName: "Hala Sportowa",
+      hallMapLink: "",
+    };
+    expect(tournamentFormSchema.safeParse(invalidData).success).toBe(false);
+  });
 });

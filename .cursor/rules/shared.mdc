@@ -45,6 +45,7 @@ When modifying the directory structure, always update this section.
 ### Guidelines for clean code
 
 - If adding new functionality, always add tests for it according to the rules in `.cursor/rules/testing.mdc`.
+- Always add Zod validation to every Forms fields.
 - Use feedback from linters to improve the code when making changes.
 - Prioritize error handling and edge cases.
 - Handle errors and edge cases at the beginning of functions.
