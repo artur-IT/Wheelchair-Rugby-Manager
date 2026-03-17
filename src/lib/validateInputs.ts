@@ -2,12 +2,14 @@ import { z } from "zod/v4";
 
 // ─── Text normalisation ────────────────────────────────────────────────────────
 
-/** Capitalises the first letter of every word; lowercases the rest. */
+/** Capitalises the first letter of every word; lowercases the rest. Handles Polish characters. */
 export function toTitleCase(value: string): string {
   return value
     .trim()
     .toLowerCase()
-    .replace(/\b\w/g, (char) => char.toUpperCase());
+    .split(" ")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
 }
 
 // ─── Phone fields ──────────────────────────────────────────────────────────────

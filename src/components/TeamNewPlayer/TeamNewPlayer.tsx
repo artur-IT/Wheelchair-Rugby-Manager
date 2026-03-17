@@ -21,7 +21,7 @@ import {
 const playerSchema = z.object({
   firstName: requiredFirstNameSchema,
   lastName: requiredLastNameSchema,
-  classification: playerClassificationSchema,
+  classification: playerClassificationSchema.optional(),
   number: playerNumberSchema,
 });
 
@@ -31,7 +31,7 @@ export interface PlayerRow {
   id: string;
   firstName: string;
   lastName: string;
-  classification: number;
+  classification?: number | null;
   number: number;
 }
 
@@ -119,10 +119,11 @@ export default function TeamNewPlayer({
                   label="Klasyfikacja"
                   type="number"
                   inputProps={{ step: 0.5, min: 0.5, max: 3.5, inputMode: "decimal" }}
-                  value={newPlayerForm.classification}
-                  onChange={(e) =>
-                    setNewPlayerForm((form) => (form ? { ...form, classification: parseFloat(e.target.value) } : form))
-                  }
+                  value={newPlayerForm.classification ?? ""}
+                  onChange={(e) => {
+                    const val = e.target.value === "" ? undefined : parseFloat(e.target.value);
+                    setNewPlayerForm((form) => (form ? { ...form, classification: val } : form));
+                  }}
                   fullWidth
                   size="small"
                   error={!!formErrors.classification}

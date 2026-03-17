@@ -304,7 +304,7 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
       id: crypto.randomUUID(),
       firstName: "",
       lastName: "",
-      classification: 0,
+      classification: undefined,
       number: 0,
     });
     setAddingNewPlayer(true);
@@ -391,7 +391,7 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
             <Typography color="textSecondary">Nie podano strony internetowej</Typography>
           )}
           <Typography color="textSecondary">
-            {team.city && team.postalCode ? `${team.city}, ${team.postalCode}` : "Nie podano miasta"}
+            {team.city && team.postalCode ? `${team.postalCode} ${team.city} ` : "Nie podano miasta"}
           </Typography>
           <Typography color="textSecondary">{team.address ?? "Nie podano adresu"}</Typography>
         </Box>
@@ -668,6 +668,12 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
                 </Typography>
                 <Typography variant="body2" sx={{ fontWeight: 500 }}>
                   {team.referee ? `${team.referee.firstName} ${team.referee.lastName}` : "Nie przypisano"}
+                </Typography>
+                <Typography variant="caption" color="textSecondary" display="block">
+                  {`Email: ${team.referee?.email ?? "-"}`}
+                </Typography>
+                <Typography variant="caption" color="textSecondary" display="block">
+                  {`Tel.: ${team.referee?.phone ?? "-"}`}
                 </Typography>
               </Box>
             </Box>

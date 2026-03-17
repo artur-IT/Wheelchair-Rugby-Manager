@@ -28,6 +28,12 @@ describe("toTitleCase", () => {
   it("returns empty string for empty input", () => {
     expect(toTitleCase("")).toBe("");
   });
+
+  it("handles Polish characters", () => {
+    expect(toTitleCase("żory")).toBe("Żory");
+    expect(toTitleCase("gdańsk")).toBe("Gdańsk");
+    expect(toTitleCase("kraków")).toBe("Kraków");
+  });
 });
 
 describe("sanitizePhone", () => {
