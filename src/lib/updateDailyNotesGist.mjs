@@ -24,7 +24,7 @@ if (!summary) {
 }
 
 const today = new Date();
-const dateStr = today.toISOString().slice(0, 10);
+const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
 const dayName = DAY_NAMES[today.getDay()];
 const isFridayOrSaturday = today.getDay() === 5 || today.getDay() === 6;
 

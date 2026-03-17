@@ -104,7 +104,7 @@ export const requiredSeasonNameSchema = z
 
 // ─── Player fields (classification, number) ───────────────────────────────────
 
-/** Player classification: 0.5–4.0 in steps of 0.5. */
+/** Player classification: 0.5–3.5 in steps of 0.5. */
 export const playerClassificationSchema = z
   .number()
   .min(0.5, "Klasyfikacja: 0.5–3.5")
@@ -118,7 +118,7 @@ export const playerNumberSchema = z
   .min(1, "Numer: 1–99")
   .max(99, "Numer: 1–99");
 
-// ─── Long text fields (team name, address, website URL, season name) — max 150 chars ──
+// WebUrl validation
 
 // Accepts urls with or without protocol: "wp.pl", "www.wp.pl", "https://wp.pl"
 export const LOOSE_URL_REGEX = /^(https?:\/\/)?([\w-]+\.)+[\w]{2,}(\/\S*)?$/;
