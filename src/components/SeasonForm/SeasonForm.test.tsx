@@ -36,7 +36,7 @@ describe("SeasonForm", () => {
     render(<SeasonForm />);
 
     await user.type(screen.getByLabelText("Nazwa Sezonu"), "Sezon Testowy");
-    await user.type(screen.getByRole("spinbutton", { name: /Rok/i }), "2026");
+    await user.type(screen.getByLabelText("Rok"), "2026");
     await user.type(screen.getByLabelText("Opis"), "Opis testowy");
     await user.click(screen.getByRole("button", { name: "Zapisz Sezon" }));
 
