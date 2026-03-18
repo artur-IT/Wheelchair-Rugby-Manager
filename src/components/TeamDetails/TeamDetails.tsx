@@ -26,6 +26,7 @@ import AppShell from "@/components/AppShell/AppShell";
 import { TeamFormContent } from "@/components/TeamForm/TeamForm";
 import TeamNewPlayer, { type PlayerRow } from "@/components/TeamNewPlayer/TeamNewPlayer";
 import ConfirmationDialog from "@/components/ui/ConfirmationDialog";
+import { playerClassificationSchema } from "@/lib/validateInputs";
 import type { Team, Player } from "@/types";
 
 const MAX_PLAYER_NUMBER = 99;
@@ -35,6 +36,12 @@ function getPlayerNumberError(number?: number) {
   if (number === undefined || number === null) return null;
   if (number < 0) return "Numer zawodnika nie może być ujemny";
   return number > MAX_PLAYER_NUMBER ? playerNumberLimitError : null;
+}
+
+function getPlayerClassificationError(classification?: number) {
+  if (classification === undefined || classification === null) return null;
+  const result = playerClassificationSchema.safeParse(classification);
+  return result.success ? null : (result.error.issues[0]?.message ?? "Nieprawidłowa klasyfikacja");
 }
 
 /** Build PUT /api/teams/:id body from team and new players list (ids omitted; backend replaces all players). */
@@ -257,9 +264,14 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
       return;
     }
     const classification =
-      editForm.classification.trim() !== "" && !Number.isNaN(Number(editForm.classification))
-        ? Number(editForm.classification)
+      editForm.classification.trim() !== "" && !Number.isNaN(Number(editForm.classification.replace(",", ".")))
+        ? Number(editForm.classification.replace(",", "."))
         : undefined;
+    const classificationError = getPlayerClassificationError(classification);
+    if (classificationError) {
+      setPlayerActionError(classificationError);
+      return;
+    }
     const number =
       editForm.number.trim() !== "" && !Number.isNaN(Number(editForm.number)) ? Number(editForm.number) : undefined;
     const numberError = getPlayerNumberError(number);
@@ -325,7 +337,12 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
       setPlayerActionError("Imię i nazwisko są wymagane");
       return;
     }
-    const classification = Number(newPlayerForm.classification) ? Number(newPlayerForm.classification) : undefined;
+    const classification = newPlayerForm.classification ?? undefined;
+    const classificationError = getPlayerClassificationError(classification ?? undefined);
+    if (classificationError) {
+      setPlayerActionError(classificationError);
+      return;
+    }
     const number = newPlayerForm.number ? Number(newPlayerForm.number) : undefined;
     const numberError = getPlayerNumberError(number);
     if (numberError) {
@@ -553,7 +570,7 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
                   {players.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={3} align="center" sx={{ py: 4, color: "text.secondary" }}>
-                        Brak zawodników w drużynie. Kliknij „Dodaj Zawodnika”, aby dodać.
+                        Brak zawodników w drużynie.
                       </TableCell>
                     </TableRow>
                   ) : (

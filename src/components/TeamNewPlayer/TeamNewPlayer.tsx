@@ -21,7 +21,7 @@ import {
 const playerSchema = z.object({
   firstName: requiredFirstNameSchema,
   lastName: requiredLastNameSchema,
-  classification: playerClassificationSchema.optional(),
+  classification: z.preprocess((v) => (v === null ? undefined : v), playerClassificationSchema.optional()),
   number: playerNumberSchema,
 });
 
@@ -119,8 +119,12 @@ export default function TeamNewPlayer({
                   inputProps={{ inputMode: "decimal" }}
                   value={newPlayerForm.classification ?? ""}
                   onChange={(e) => {
-                    const val = e.target.value === "" ? undefined : parseFloat(e.target.value);
-                    setNewPlayerForm((form) => (form ? { ...form, classification: val } : form));
+                    const raw = e.target.value;
+                    const val = raw === "" ? null : Number(raw.replace(",", "."));
+                    setNewPlayerForm((form) =>
+                      form ? { ...form, classification: Number.isNaN(val) ? null : val } : form
+                    );
+                    if (formErrors.classification) setFormErrors((prev) => ({ ...prev, classification: undefined }));
                   }}
                   fullWidth
                   size="small"

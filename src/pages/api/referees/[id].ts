@@ -52,9 +52,11 @@ export const DELETE: APIRoute = async ({ params }) => {
   }
 
   try {
-    await prisma.referee.delete({
-      where: { id },
-    });
+    await prisma.$transaction([
+      // Referee assignments use ON DELETE RESTRICT, so we must clear them first.
+      prisma.refereeAssignment.deleteMany({ where: { refereeId: id } }),
+      prisma.referee.delete({ where: { id } }),
+    ]);
     return new Response(null, { status: 204 });
   } catch (error) {
     if (isNotFound(error)) return json({ error: "Nie znaleziono sędziego" }, 404);

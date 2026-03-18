@@ -12,7 +12,7 @@
     "test": "vitest",
     "test:watch": "vitest --watch",
     "test:coverage": "vitest --coverage",
-    "dev:full": "concurrently \"npm run dev\" \"npx prisma studio\" \"npm run test:watch\"",
+    "dev:full": "concurrently \"pnpm run dev\" \"pnpm prisma studio\" \"pnpm run test:watch\"",
     "format": "prettier --write .",
     "db:clear": "node scripts/clearDb.mjs",
     "db:seed": "node scripts/seedDb.mjs",

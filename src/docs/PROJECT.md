@@ -381,7 +381,7 @@ To jest profesjonalizm. **Max. 2 taski w Progress**.
 
 **Cel:** Dodanie ustawień sezonu do aplikacji.
 
-### ⚙️ Season Settings
+### ⚙️ Season Settings - DONE
 
 <details style="margin-left: 1.5em">
 <summary><h3 style="display:inline; margin:0">US1: Zarządzanie ustawieniami sezonu (CRUD)</h3></summary>
@@ -399,14 +399,14 @@ To jest profesjonalizm. **Max. 2 taski w Progress**.
 **Zadania techniczne**
 
 - Frontend
-  - [ ] Widok i routing strony ustawień sezonu (np. `/season-settings`).
-  - [ ] Podział UI na sekcje: Drużyny / Sędziowie / Klasyfikatorzy.
-  - [ ] Obsługa stanów: loading / empty / error / success.
+  - [ x ] Widok i routing strony ustawień sezonu (np. `/season-settings`).
+  - [ x] Podział UI na sekcje: Drużyny / Sędziowie / Klasyfikatorzy.
+  - [ x] Obsługa stanów: loading / empty / error / success.
 - Backend / API
-  - [ ] Model/encja `Season` + powiązania do: `Team`, `Referee`, `Classifier`.
-  - [ ] Endpointy CRUD dla sezonu (np. `GET/POST/PATCH/DELETE /seasons`).
+  - [ x] Model/encja `Season` + powiązania do: `Team`, `Referee`, `Classifier`.
+  - [ x] Endpointy CRUD dla sezonu (np. `GET/POST/PATCH/DELETE /seasons`).
 - Testy
-  - [ ] Scenariusze: zapis ustawień, edycja, błędy walidacji, odświeżenie strony.
+  - [ x] Scenariusze: zapis ustawień, edycja, błędy walidacji, odświeżenie strony.
 
 </details>
 
@@ -435,17 +435,17 @@ To jest profesjonalizm. **Max. 2 taski w Progress**.
 **Zadania techniczne**
 
 - Frontend
-  - [ ] Lista drużyn + akcje: dodaj/edytuj/usuń.
-  - [ ] Formularz drużyny z walidacją (w tym kontakt i trener).
-  - [ ] Upload logo (albo placeholder, jeśli logo opcjonalne).
-  - [ ] Zarządzanie zawodnikami w drużynie (lista + dodaj/usuń).
-  - [ ] Integracja z API (np. `GET/POST/PATCH/DELETE /seasons/:seasonId/teams`).
+  - [ x ] Lista drużyn + akcje: dodaj/edytuj/usuń.
+  - [ x] Formularz drużyny z walidacją (w tym kontakt i trener).
+  - [ - ] Upload logo (albo placeholder, jeśli logo opcjonalne).
+  - [ x ] Zarządzanie zawodnikami w drużynie (lista + dodaj/usuń).
+  - [ x] Integracja z API (np. `GET/POST/PATCH/DELETE /seasons/:seasonId/teams`).
 - Backend / API
-  - [ ] Model/encja `Team` + pola wg zakresu (w tym `contactPerson`, `coach`, `players`).
-  - [ ] Endpointy CRUD dla drużyn w sezonie.
-  - [ ] Obsługa pliku logo (jeśli dotyczy): storage + walidacja typu/rozmiaru.
+  - [ x] Model/encja `Team` + pola wg zakresu (w tym `contactPerson`, `coach`, `players`).
+  - [ x] Endpointy CRUD dla drużyn w sezonie.
+  - [ - ] Obsługa pliku logo (jeśli dotyczy): storage + walidacja typu/rozmiaru.
 - Testy
-  - [ ] Scenariusze CRUD drużyny + walidacja + upload logo.
+  - [ x] Scenariusze CRUD drużyny + walidacja .
 
 </details>
 
@@ -469,14 +469,14 @@ To jest profesjonalizm. **Max. 2 taski w Progress**.
 **Zadania techniczne**
 
 - Frontend
-  - [ ] Lista sędziów + akcje: dodaj/edytuj/usuń.
-  - [ ] Formularz sędziego + walidacja.
-  - [ ] Integracja z API (np. `GET/POST/PATCH/DELETE /seasons/:seasonId/referees`).
+  - [ x ] Lista sędziów + akcje: dodaj/edytuj/usuń.
+  - [ x ] Formularz sędziego + walidacja.
+  - [ x ] Integracja z API (np. `GET/POST/PATCH/DELETE /seasons/:seasonId/referees`).
 - Backend / API
-  - [ ] Model/encja `Referee`.
-  - [ ] Endpointy CRUD dla sędziów w sezonie.
+  - [ x ] Model/encja `Referee`.
+  - [ x ] Endpointy CRUD dla sędziów w sezonie.
 - Testy
-  - [ ] Scenariusze CRUD sędziego + walidacja.
+  - [ x ] Scenariusze CRUD sędziego + walidacja.
 
 </details>
 
@@ -500,14 +500,14 @@ To jest profesjonalizm. **Max. 2 taski w Progress**.
 **Zadania techniczne**
 
 - Frontend
-  - [ ] Lista klasyfikatorów + akcje: dodaj/edytuj/usuń.
-  - [ ] Formularz klasyfikatora + walidacja.
-  - [ ] Integracja z API (np. `GET/POST/PATCH/DELETE /seasons/:seasonId/classifiers`).
+  - [ x ] Lista klasyfikatorów + akcje: dodaj/edytuj/usuń.
+  - [ x ] Formularz klasyfikatora + walidacja.
+  - [ x ] Integracja z API (np. `GET/POST/PATCH/DELETE /seasons/:seasonId/classifiers`).
 - Backend / API
-  - [ ] Model/encja `Classifier`.
-  - [ ] Endpointy CRUD dla klasyfikatorów w sezonie.
+  - [ x ] Model/encja `Classifier`.
+  - [ x ] Endpointy CRUD dla klasyfikatorów w sezonie.
 - Testy
-  - [ ] Scenariusze CRUD klasyfikatora + walidacja.
+  - [ x ] Scenariusze CRUD klasyfikatora + walidacja.
 
 </details>
 
