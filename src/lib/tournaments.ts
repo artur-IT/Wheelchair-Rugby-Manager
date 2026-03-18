@@ -65,6 +65,7 @@ export async function listTournamentsWithDetails(): Promise<Tournament[]> {
       accommodations: { orderBy: { id: "asc" } },
       mealPlans: { orderBy: { id: "asc" } },
       volunteers: true,
+      teams: { include: { team: true } },
     },
   });
 
@@ -101,7 +102,21 @@ export async function listTournamentsWithDetails(): Promise<Tournament[]> {
         : undefined,
       catering: cateringMeal?.details ?? undefined,
       parking: primaryAccommodation?.notes ?? undefined,
-      teams: [],
+      teams: t.teams.map((tt) => ({
+        id: tt.team.id,
+        name: tt.team.name,
+        websiteUrl: tt.team.websiteUrl ?? undefined,
+        address: tt.team.address ?? undefined,
+        city: tt.team.city ?? undefined,
+        postalCode: tt.team.postalCode ?? undefined,
+        contactFirstName: tt.team.contactFirstName ?? undefined,
+        contactLastName: tt.team.contactLastName ?? undefined,
+        contactEmail: tt.team.contactEmail ?? undefined,
+        contactPhone: tt.team.contactPhone ?? undefined,
+        seasonId: tt.team.seasonId,
+        coachId: tt.team.coachId ?? undefined,
+        refereeId: tt.team.refereeId ?? undefined,
+      })),
       referees: [],
       classifiers: [],
       volunteers: t.volunteers.map((v) => ({
@@ -186,5 +201,47 @@ export async function deleteTournament(tournamentId: string) {
   }
 
   await prisma.tournament.delete({ where: { id: tournamentId } });
+  return tournamentId;
+}
+
+export async function addTeamsToTournament(tournamentId: string, teamIds: string[]) {
+  const tournament = await prisma.tournament.findUnique({
+    where: { id: tournamentId },
+    select: { id: true, seasonId: true },
+  });
+
+  if (!tournament) {
+    throw new Error("TOURNAMENT_NOT_FOUND");
+  }
+
+  const teams = await prisma.team.findMany({
+    where: { id: { in: teamIds } },
+    select: { id: true, seasonId: true },
+  });
+
+  if (teams.length !== teamIds.length) {
+    throw new Error("TEAM_NOT_FOUND");
+  }
+
+  const wrongSeason = teams.find((t) => t.seasonId !== tournament.seasonId);
+  if (wrongSeason) {
+    throw new Error("TEAM_WRONG_SEASON");
+  }
+
+  await prisma.tournamentTeam.createMany({
+    data: teamIds.map((teamId) => ({ tournamentId, teamId })),
+    skipDuplicates: true,
+  });
+
+  return tournamentId;
+}
+
+export async function removeTeamFromTournament(tournamentId: string, teamId: string) {
+  // Delete relation row directly. If it doesn't exist, we treat it as a no-op.
+  // This keeps the API safe for repeated clicks / stale UI state.
+  await prisma.tournamentTeam.deleteMany({
+    where: { tournamentId, teamId },
+  });
+
   return tournamentId;
 }

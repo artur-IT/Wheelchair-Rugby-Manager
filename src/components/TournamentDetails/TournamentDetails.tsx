@@ -1,9 +1,29 @@
 import { useEffect, useState } from "react";
-import { MapPin } from "lucide-react";
-import { Box, Typography, Button, Paper, Link as MuiLink, CircularProgress, Alert } from "@mui/material";
+import { MapPin, Trash2 } from "lucide-react";
+import {
+  Box,
+  Typography,
+  Button,
+  Paper,
+  Link as MuiLink,
+  CircularProgress,
+  Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  List,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Checkbox,
+  IconButton,
+  Tooltip,
+} from "@mui/material";
 import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
 import AppShell from "@/components/AppShell/AppShell";
-import type { Tournament } from "@/types";
+import ConfirmationDialog from "@/components/ui/ConfirmationDialog";
+import type { Team, Tournament } from "@/types";
 
 interface TournamentDetailsProps {
   id: string;
@@ -23,6 +43,16 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
   const [tournament, setTournament] = useState<Tournament | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [addTeamsOpen, setAddTeamsOpen] = useState(false);
+  const [availableTeams, setAvailableTeams] = useState<Team[]>([]);
+  const [availableTeamsLoading, setAvailableTeamsLoading] = useState(false);
+  const [availableTeamsError, setAvailableTeamsError] = useState<string | null>(null);
+  const [selectedTeamIds, setSelectedTeamIds] = useState<string[]>([]);
+  const [saveTeamsLoading, setSaveTeamsLoading] = useState(false);
+  const [saveTeamsError, setSaveTeamsError] = useState<string | null>(null);
+  const [teamToRemove, setTeamToRemove] = useState<Team | null>(null);
+  const [removeTeamLoading, setRemoveTeamLoading] = useState(false);
+  const [removeTeamError, setRemoveTeamError] = useState<string | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -31,14 +61,17 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch("/api/tournaments", { signal: controller.signal });
+        const res = await fetch(`/api/tournaments/${id}`, { signal: controller.signal });
+        if (res.status === 404) {
+          setTournament(null);
+          return;
+        }
         if (!res.ok) {
           throw new Error("Nie udało się pobrać turnieju");
         }
 
-        const data: Tournament[] = await res.json();
-        const found = data.find((t) => t.id === id) ?? null;
-        setTournament(found);
+        const data: Tournament = await res.json();
+        setTournament(data);
       } catch (err) {
         if (controller.signal.aborted) return;
         setError(err instanceof Error ? err.message : "Wystąpił błąd podczas pobierania turnieju");
@@ -50,6 +83,113 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
     loadTournament();
     return () => controller.abort();
   }, [id]);
+
+  async function refreshTournament(nextTournamentId: string) {
+    const refreshed = await fetch(`/api/tournaments/${nextTournamentId}`);
+    if (refreshed.status === 404) {
+      setTournament(null);
+      return;
+    }
+    if (!refreshed.ok) throw new Error("Nie udało się odświeżyć turnieju");
+    const updated: Tournament = await refreshed.json();
+    setTournament(updated);
+  }
+
+  async function openAddTeamsDialog() {
+    if (!tournament) return;
+
+    setAddTeamsOpen(true);
+    setAvailableTeamsError(null);
+    setSaveTeamsError(null);
+    setSelectedTeamIds([]);
+
+    if (availableTeamsLoading) return;
+    if (availableTeams.length > 0) return;
+
+    setAvailableTeamsLoading(true);
+    try {
+      const res = await fetch(`/api/teams?seasonId=${encodeURIComponent(tournament.seasonId)}`);
+      if (!res.ok) throw new Error("Nie udało się pobrać drużyn");
+      const teams: Team[] = await res.json();
+      setAvailableTeams(teams);
+    } catch (e) {
+      setAvailableTeamsError(e instanceof Error ? e.message : "Nie udało się pobrać drużyn");
+    } finally {
+      setAvailableTeamsLoading(false);
+    }
+  }
+
+  function closeAddTeamsDialog() {
+    if (saveTeamsLoading) return;
+    setAddTeamsOpen(false);
+    setSaveTeamsError(null);
+  }
+
+  function toggleSelected(teamId: string) {
+    setSelectedTeamIds((prev) => (prev.includes(teamId) ? prev.filter((id) => id !== teamId) : [...prev, teamId]));
+  }
+
+  async function saveSelectedTeams() {
+    if (!tournament) return;
+    if (selectedTeamIds.length === 0) {
+      setSaveTeamsError("Wybierz przynajmniej jedną drużynę");
+      return;
+    }
+
+    setSaveTeamsLoading(true);
+    setSaveTeamsError(null);
+    try {
+      const res = await fetch(`/api/tournaments/${tournament.id}/teams`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ teamIds: selectedTeamIds }),
+      });
+      if (!res.ok) {
+        const data = (await res.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(data?.error || "Nie udało się dodać drużyn");
+      }
+
+      await refreshTournament(tournament.id);
+      setAddTeamsOpen(false);
+    } catch (e) {
+      setSaveTeamsError(e instanceof Error ? e.message : "Nie udało się dodać drużyn");
+    } finally {
+      setSaveTeamsLoading(false);
+    }
+  }
+
+  function openRemoveTeamDialog(team: Team) {
+    setRemoveTeamError(null);
+    setTeamToRemove(team);
+  }
+
+  function closeRemoveTeamDialog() {
+    if (removeTeamLoading) return;
+    setTeamToRemove(null);
+    setRemoveTeamError(null);
+  }
+
+  async function confirmRemoveTeam() {
+    if (!tournament || !teamToRemove) return;
+
+    setRemoveTeamLoading(true);
+    setRemoveTeamError(null);
+
+    try {
+      const res = await fetch(`/api/tournaments/${tournament.id}/teams/${teamToRemove.id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const data = (await res.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(data?.error || "Nie udało się usunąć drużyny z turnieju");
+      }
+
+      await refreshTournament(tournament.id);
+      setTeamToRemove(null);
+    } catch (e) {
+      setRemoveTeamError(e instanceof Error ? e.message : "Nie udało się usunąć drużyny z turnieju");
+    } finally {
+      setRemoveTeamLoading(false);
+    }
+  }
 
   if (loading) {
     return (
@@ -295,9 +435,14 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
               Drużyny
             </Typography>
             {tournament.teams.length === 0 ? (
-              <Typography variant="body2" color="textSecondary">
-                Brak przypisanych drużyn.
-              </Typography>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+                <Typography variant="body2" color="textSecondary">
+                  Brak przypisanych drużyn.
+                </Typography>
+                <Button variant="contained" onClick={openAddTeamsDialog} sx={{ alignSelf: "flex-start" }}>
+                  Dodaj
+                </Button>
+              </Box>
             ) : (
               <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
                 {tournament.teams.map((team) => (
@@ -329,7 +474,21 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
                     >
                       {team.name[0] ?? "?"}
                     </Box>
-                    <Typography sx={{ fontWeight: 500 }}>{team.name}</Typography>
+                    <Typography sx={{ fontWeight: 500, flex: 1 }}>{team.name}</Typography>
+                    <Tooltip title="Usuń drużynę z turnieju">
+                      <span>
+                        <IconButton
+                          aria-label={`Usuń drużynę ${team.name} z turnieju`}
+                          color="error"
+                          onClick={() => openRemoveTeamDialog(team)}
+                          size="small"
+                          disabled={removeTeamLoading && teamToRemove?.id === team.id}
+                          sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2 }}
+                        >
+                          <Trash2 size={18} />
+                        </IconButton>
+                      </span>
+                    </Tooltip>
                   </Box>
                 ))}
               </Box>
@@ -395,6 +554,73 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
           </Paper>
         </Box>
       </Box>
+
+      <Dialog open={addTeamsOpen} onClose={closeAddTeamsDialog} fullWidth maxWidth="sm">
+        <DialogTitle>Dodaj drużyny</DialogTitle>
+        <DialogContent dividers>
+          {availableTeamsError ? (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {availableTeamsError}
+            </Alert>
+          ) : null}
+          {saveTeamsError ? (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {saveTeamsError}
+            </Alert>
+          ) : null}
+
+          {availableTeamsLoading ? (
+            <Box sx={{ display: "flex", justifyContent: "center", py: 3 }}>
+              <CircularProgress size={24} />
+            </Box>
+          ) : (
+            <List dense>
+              {availableTeams.map((team) => {
+                const checked = selectedTeamIds.includes(team.id);
+                return (
+                  <ListItemButton key={team.id} onClick={() => toggleSelected(team.id)}>
+                    <ListItemIcon>
+                      <Checkbox edge="start" checked={checked} tabIndex={-1} disableRipple />
+                    </ListItemIcon>
+                    <ListItemText primary={team.name} />
+                  </ListItemButton>
+                );
+              })}
+              {availableTeams.length === 0 && !availableTeamsError ? (
+                <Typography color="textSecondary" sx={{ py: 1 }}>
+                  Brak dostępnych drużyn w tym sezonie.
+                </Typography>
+              ) : null}
+            </List>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeAddTeamsDialog} disabled={saveTeamsLoading}>
+            Anuluj
+          </Button>
+          <Button variant="contained" onClick={saveSelectedTeams} disabled={saveTeamsLoading || availableTeamsLoading}>
+            Dodaj
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <ConfirmationDialog
+        open={Boolean(teamToRemove)}
+        title="Usunąć drużynę z turnieju?"
+        description={
+          teamToRemove ? (
+            <Typography color="textSecondary">
+              Drużyna: <strong>{teamToRemove.name}</strong>
+            </Typography>
+          ) : null
+        }
+        onClose={closeRemoveTeamDialog}
+        onConfirm={confirmRemoveTeam}
+        loading={removeTeamLoading}
+        errorMessage={removeTeamError}
+        confirmLabel="Usuń"
+        cancelLabel="Anuluj"
+      />
     </Box>
   );
 }
