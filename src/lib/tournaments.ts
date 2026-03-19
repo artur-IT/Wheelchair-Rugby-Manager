@@ -12,7 +12,8 @@ export async function createTournamentWithDetails(form: TournamentFormData) {
     throw new Error("NO_SEASON_AVAILABLE");
   }
 
-  const fullAddress = `${form.street}, ${form.zipCode} ${form.city}`;
+  const hotelAddress = `${form.hotelStreet}, ${form.hotelZipCode} ${form.hotelCity}`;
+  const hallAddress = `${form.street}, ${form.zipCode} ${form.city}`;
 
   return prisma.$transaction(async (tx) => {
     const tournament = await tx.tournament.create({
@@ -27,7 +28,7 @@ export async function createTournamentWithDetails(form: TournamentFormData) {
     await tx.accommodation.create({
       data: {
         name: form.hotel,
-        address: fullAddress,
+        address: hotelAddress,
         notes: form.parking || null,
         mapUrl: form.mapLink || null,
         tournamentId: tournament.id,
@@ -37,7 +38,10 @@ export async function createTournamentWithDetails(form: TournamentFormData) {
     await tx.sportsHall.create({
       data: {
         name: form.hallName,
-        address: fullAddress,
+        address: hallAddress,
+        city: form.city || null,
+        street: form.street || null,
+        postalCode: form.zipCode || null,
         notes: null,
         mapUrl: form.hallMapLink || null,
         tournamentId: tournament.id,
@@ -85,6 +89,9 @@ export async function listTournamentsWithDetails(): Promise<Tournament[]> {
             id: primaryVenue.id,
             name: primaryVenue.name,
             address: primaryVenue.address ?? undefined,
+            city: primaryVenue.city ?? undefined,
+            street: primaryVenue.street ?? undefined,
+            postalCode: primaryVenue.postalCode ?? undefined,
             notes: primaryVenue.notes ?? undefined,
             mapUrl: primaryVenue.mapUrl ?? undefined,
             tournamentId: primaryVenue.tournamentId,
@@ -132,7 +139,8 @@ export async function listTournamentsWithDetails(): Promise<Tournament[]> {
 
 /** Updates tournament basic details plus accommodation, hall and meal plan. */
 export async function updateTournamentWithDetails(tournamentId: string, form: TournamentFormData) {
-  const fullAddress = `${form.street}, ${form.zipCode} ${form.city}`;
+  const hotelAddress = `${form.hotelStreet}, ${form.hotelZipCode} ${form.hotelCity}`;
+  const hallAddress = `${form.street}, ${form.zipCode} ${form.city}`;
 
   return prisma.$transaction(async (tx) => {
     const existing = await tx.tournament.findUnique({
@@ -161,7 +169,7 @@ export async function updateTournamentWithDetails(tournamentId: string, form: To
     await tx.accommodation.create({
       data: {
         name: form.hotel,
-        address: fullAddress,
+        address: hotelAddress,
         notes: form.parking || null,
         mapUrl: form.mapLink || null,
         tournamentId,
@@ -171,7 +179,10 @@ export async function updateTournamentWithDetails(tournamentId: string, form: To
     await tx.sportsHall.create({
       data: {
         name: form.hallName,
-        address: fullAddress,
+        address: hallAddress,
+        city: form.city || null,
+        street: form.street || null,
+        postalCode: form.zipCode || null,
         notes: null,
         mapUrl: form.hallMapLink || null,
         tournamentId,

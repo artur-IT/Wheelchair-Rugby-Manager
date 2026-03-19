@@ -518,7 +518,7 @@ To jest profesjonalizm. **Max. 2 taski w Progress**.
 ### 🏆 Tournament Management
 
 <details style="margin-left: 1.5em">
-<summary><h3 style="display:inline; margin:0">US1: Turniej (CRUD)</h3></summary>
+<summary><h3 style="display:inline; margin:0">US1: Turniej (CRUD) - DONE</h3></summary>
 
 **User Story**
 
@@ -533,15 +533,15 @@ To jest profesjonalizm. **Max. 2 taski w Progress**.
 **Zadania techniczne**
 
 - Frontend
-  - [ ] Widok listy turniejów + akcje: dodaj/edytuj/usuń.
-  - [ ] Widok szczegółów turnieju (nawigacja po zakładkach/sekcjach).
-  - [ ] Integracja z API (np. `GET/POST/PATCH/DELETE /tournaments`).
-  - [ ] Obsługa stanów: loading / empty / error / success.
+  - [ x ] Widok listy turniejów + akcje: dodaj/edytuj/usuń.
+  - [ x ] Widok szczegółów turnieju (nawigacja po zakładkach/sekcjach).
+  - [ x ] Integracja z API (np. `GET/POST/PATCH/DELETE /tournaments`).
+  - [ x ] Obsługa stanów: loading / empty / error / success.
 - Backend / API
   - [ x ] Model/encja `Tournament` + podstawowe pola (np. nazwa, daty, miejsce — do ustalenia).
-  - [ ] Endpointy CRUD dla turniejów.
+  - [ x ] Endpointy CRUD dla turniejów.
 - Testy
-  - [ ] Scenariusze CRUD turnieju + walidacja + błędy API.
+  - [ x ] Scenariusze CRUD turnieju + walidacja + błędy API.
 
 </details>
 
@@ -560,13 +560,13 @@ To jest profesjonalizm. **Max. 2 taski w Progress**.
 **Zadania techniczne**
 
 - Frontend
-  - [ ] Formularz hali (np. nazwa, adres, notatki — do doprecyzowania).
-  - [ ] Integracja z API (np. `GET/POST/PATCH/DELETE /tournaments/:id/venue`).
+  - [ x ] Formularz hali (np. nazwa, adres — do doprecyzowania).
+  - [ x ] Integracja z API (np. `GET/POST/PATCH/DELETE /tournaments/:id/venue`).
 - Backend / API
-  - [ ] Model/encja `Venue` (lub pola w `Tournament`) + walidacja.
-  - [ ] Endpointy do hali dla turnieju.
+  - [ x ] Model/encja `Venue` (lub pola w `Tournament`) + walidacja.
+  - [ x ] Endpointy do hali dla turnieju.
 - Testy
-  - [ ] Scenariusze: dodanie, edycja, usunięcie hali.
+  - [ x ] Scenariusze: dodanie, edycja, usunięcie hali.
 
 </details>
 

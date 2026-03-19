@@ -42,13 +42,16 @@ function TournamentFormContent({ tournamentId }: Props) {
       startDate: undefined,
       endDate: undefined,
       hotel: "",
-      city: "",
-      zipCode: "",
-      street: "",
+      hotelCity: "",
+      hotelZipCode: "",
+      hotelStreet: "",
       mapLink: "",
       catering: "",
       parking: "",
       hallName: "",
+      city: "",
+      zipCode: "",
+      street: "",
       hallMapLink: "",
     },
   });
@@ -207,7 +210,7 @@ function TournamentFormContent({ tournamentId }: Props) {
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
               <Controller
-                name="city"
+                name="hotelCity"
                 control={control}
                 render={({ field }) => (
                   <TextField
@@ -215,15 +218,15 @@ function TournamentFormContent({ tournamentId }: Props) {
                     fullWidth
                     label="Miasto"
                     placeholder="Miasto"
-                    error={!!errors.city}
-                    helperText={errors.city?.message}
+                    error={!!errors.hotelCity}
+                    helperText={errors.hotelCity?.message}
                   />
                 )}
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
               <Controller
-                name="zipCode"
+                name="hotelZipCode"
                 control={control}
                 render={({ field }) => (
                   <TextField
@@ -231,15 +234,15 @@ function TournamentFormContent({ tournamentId }: Props) {
                     fullWidth
                     label="Kod pocztowy"
                     placeholder="XX-XXX"
-                    error={!!errors.zipCode}
-                    helperText={errors.zipCode?.message}
+                    error={!!errors.hotelZipCode}
+                    helperText={errors.hotelZipCode?.message}
                   />
                 )}
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
               <Controller
-                name="street"
+                name="hotelStreet"
                 control={control}
                 render={({ field }) => (
                   <TextField
@@ -247,8 +250,8 @@ function TournamentFormContent({ tournamentId }: Props) {
                     fullWidth
                     label="Ulica"
                     placeholder="Ulica"
-                    error={!!errors.street}
-                    helperText={errors.street?.message}
+                    error={!!errors.hotelStreet}
+                    helperText={errors.hotelStreet?.message}
                   />
                 )}
               />
@@ -305,7 +308,7 @@ function TournamentFormContent({ tournamentId }: Props) {
 
           <Divider sx={{ my: 2 }} />
           <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 2 }}>
-            Lokalizacja
+            Hala Sportowa
           </Typography>
           <Grid container spacing={2} sx={{ mb: 3 }}>
             <Grid size={{ xs: 12, sm: 6 }}>
@@ -319,6 +322,54 @@ function TournamentFormContent({ tournamentId }: Props) {
                     label="Nazwa Hali"
                     error={!!errors.hallName}
                     helperText={errors.hallName?.message}
+                  />
+                )}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <Controller
+                name="city"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    fullWidth
+                    label="Miasto"
+                    placeholder="Miasto"
+                    error={!!errors.city}
+                    helperText={errors.city?.message}
+                  />
+                )}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <Controller
+                name="zipCode"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    fullWidth
+                    label="Kod pocztowy"
+                    placeholder="XX-XXX"
+                    error={!!errors.zipCode}
+                    helperText={errors.zipCode?.message}
+                  />
+                )}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <Controller
+                name="street"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    fullWidth
+                    label="Ulica"
+                    placeholder="Ulica"
+                    error={!!errors.street}
+                    helperText={errors.street?.message}
                   />
                 )}
               />
