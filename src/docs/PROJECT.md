@@ -546,7 +546,7 @@ To jest profesjonalizm. **Max. 2 taski w Progress**.
 </details>
 
 <details style="margin-left: 1.5em">
-<summary><h3 style="display:inline; margin:0">US2: Hala sportowa (CRUD)</h3></summary>
+<summary><h3 style="display:inline; margin:0">US2: Hala sportowa (CRUD) - DONE</h3></summary>
 
 **User Story**
 
@@ -571,7 +571,7 @@ To jest profesjonalizm. **Max. 2 taski w Progress**.
 </details>
 
 <details style="margin-left: 1.5em">
-<summary><h3 style="display:inline; margin:0">US3: Zakwaterowanie (CRUD)</h3></summary>
+<summary><h3 style="display:inline; margin:0">US3: Zakwaterowanie (CRUD) - DONE</h3></summary>
 
 **User Story**
 
@@ -585,18 +585,18 @@ To jest profesjonalizm. **Max. 2 taski w Progress**.
 **Zadania techniczne**
 
 - Frontend
-  - [ ] Formularz zakwaterowania (np. nazwa, adres, notatki — do doprecyzowania).
-  - [ ] Integracja z API (np. `GET/POST/PATCH/DELETE /tournaments/:id/accommodation`).
+  - [ x ] Formularz zakwaterowania (np. nazwa, adres, do doprecyzowania).
+  - [ x ] Integracja z API (np. `GET/POST/PATCH/DELETE /tournaments/:id/accommodation`).
 - Backend / API
-  - [ ] Model/encja `Accommodation` (lub pola w `Tournament`) + walidacja.
-  - [ ] Endpointy do zakwaterowania dla turnieju.
+  - [ x ] Model/encja `Accommodation` (lub pola w `Tournament`) + walidacja.
+  - [ x ] Endpointy do zakwaterowania dla turnieju.
 - Testy
-  - [ ] Scenariusze: dodanie, edycja, usunięcie zakwaterowania.
+  - [ x ] Scenariusze: dodanie, edycja, usunięcie zakwaterowania.
 
 </details>
 
 <details style="margin-left: 1.5em">
-<summary><h3 style="display:inline; margin:0">US4: Wyżywienie (CRUD)</h3></summary>
+<summary><h3 style="display:inline; margin:0">US4: Wyżywienie (CRUD) - DONE</h3></summary>
 
 **User Story**
 
@@ -610,13 +610,13 @@ To jest profesjonalizm. **Max. 2 taski w Progress**.
 **Zadania techniczne**
 
 - Frontend
-  - [ ] Formularz wyżywienia z rozróżnieniem: hala / hotel.
-  - [ ] Integracja z API (np. `GET/POST/PATCH/DELETE /tournaments/:id/meals`).
+  - [ x ] Formularz wyżywienia z rozróżnieniem: hala / hotel.
+  - [ x ] Integracja z API (np. `GET/POST/PATCH/DELETE /tournaments/:id/meals`).
 - Backend / API
   - [ ] Model/encja `MealPlan` + typ (hala/hotel) + walidacja.
-  - [ ] Endpointy do wyżywienia dla turnieju.
+  - [ x ] Endpointy do wyżywienia dla turnieju.
 - Testy
-  - [ ] Scenariusze: dodanie wyżywienia hali, dodanie wyżywienia hotelu, edycja, usunięcie.
+  - [ x ] Scenariusze: dodanie wyżywienia hali, dodanie wyżywienia hotelu, edycja, usunięcie.
 
 </details>
 
@@ -636,14 +636,14 @@ To jest profesjonalizm. **Max. 2 taski w Progress**.
 **Zadania techniczne**
 
 - Frontend
-  - [ ] Widok „Drużyny turnieju” (lista + dodaj/usuń).
+  - [ x ] Widok „Drużyny turnieju” (lista + dodaj/usuń).
   - [ ] Select/autocomplete do wyboru drużyn z sezonu.
-  - [ ] Integracja z API (np. `GET /seasons/:seasonId/teams` + `POST/DELETE /tournaments/:id/teams`).
+  - [ x ] Integracja z API (np. `GET /seasons/:seasonId/teams` + `POST/DELETE /tournaments/:id/teams`).
 - Backend / API
-  - [ ] Relacja `Tournament <-> Team` (np. tabela łącząca).
-  - [ ] Endpointy do przypisywania/odpinania drużyn.
+  - [ x ] Relacja `Tournament <-> Team` (np. tabela łącząca).
+  - [ x ] Endpointy do przypisywania/odpinania drużyn.
 - Testy
-  - [ ] Scenariusze: przypisanie, odpięcie, brak duplikatów.
+  - [ x ] Scenariusze: przypisanie, odpięcie, brak duplikatów.
 
 </details>
 
