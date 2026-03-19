@@ -187,6 +187,36 @@ describe("TournamentDetails", () => {
     expect(screen.getByText("Krakow Eagles")).toBeInTheDocument();
   });
 
+  it("preselects already added teams in add dialog", async () => {
+    const user = userEvent.setup();
+    render(<TournamentDetails id="t1" />);
+
+    await screen.findByRole("heading", { name: "Turniej Otwarcia Sezonu" });
+    const teamsSection = screen.getByRole("heading", { name: "Drużyny" }).closest("div") as HTMLElement;
+
+    // First add two teams
+    await user.click(within(teamsSection).getByRole("button", { name: "Dodaj" }));
+    const addDialog1 = await screen.findByRole("dialog");
+    await user.click(within(addDialog1).getByText("Warsaw Raptors"));
+    await user.click(within(addDialog1).getByText("Krakow Eagles"));
+    await user.click(within(addDialog1).getByRole("button", { name: "Dodaj" }));
+
+    expect(await screen.findByText("Warsaw Raptors")).toBeInTheDocument();
+    expect(screen.getByText("Krakow Eagles")).toBeInTheDocument();
+
+    // Open dialog again and verify checkboxes are pre-selected
+    await user.click(within(teamsSection).getByRole("button", { name: "Dodaj" }));
+    const addDialog2 = await screen.findByRole("dialog");
+
+    // Available teams are rendered in the order from the mocked /api/teams response.
+    const checkboxes = within(addDialog2).getAllByRole("checkbox");
+    expect(checkboxes).toHaveLength(3);
+
+    expect(checkboxes[0]).toBeChecked(); // Warsaw Raptors
+    expect(checkboxes[1]).toBeChecked(); // Krakow Eagles
+    expect(checkboxes[2]).not.toBeChecked(); // Gdansk Sharks
+  });
+
   it("removes a team from tournament after confirmation", async () => {
     const user = userEvent.setup();
     render(<TournamentDetails id="t1" />);
@@ -293,9 +323,7 @@ describe("TournamentDetails", () => {
     expect(await screen.findByText("Piotr Wiśniewski")).toBeInTheDocument();
     expect(screen.getByText("Maria Lewandowska")).toBeInTheDocument();
 
-    await user.click(
-      screen.getByRole("button", { name: /Usuń klasyfikatora Piotr Wiśniewski z turnieju/i })
-    );
+    await user.click(screen.getByRole("button", { name: /Usuń klasyfikatora Piotr Wiśniewski z turnieju/i }));
 
     const confirmDialog = await screen.findByRole("dialog");
     expect(within(confirmDialog).getByText("Usunąć klasyfikatora z turnieju?")).toBeInTheDocument();

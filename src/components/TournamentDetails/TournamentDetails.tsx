@@ -123,7 +123,8 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
     setAddTeamsOpen(true);
     setAvailableTeamsError(null);
     setSaveTeamsError(null);
-    setSelectedTeamIds([]);
+    // Pre-select teams already assigned to the tournament.
+    setSelectedTeamIds(tournament.teams.map((t) => t.id));
 
     if (availableTeamsLoading) return;
     if (availableTeams.length > 0) return;
@@ -650,53 +651,58 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
                 </Button>
               </Box>
             ) : (
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                {tournament.teams.map((team) => (
-                  <Box
-                    key={team.id}
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 1.5,
-                      p: 1.5,
-                      borderRadius: 2,
-                      bgcolor: "grey.50",
-                    }}
-                  >
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                  {tournament.teams.map((team) => (
                     <Box
+                      key={team.id}
                       sx={{
-                        width: 32,
-                        height: 32,
-                        bgcolor: "white",
-                        borderRadius: 1,
-                        border: "1px solid",
-                        borderColor: "grey.200",
                         display: "flex",
                         alignItems: "center",
-                        justifyContent: "center",
-                        fontWeight: "bold",
-                        color: "primary.main",
+                        gap: 1.5,
+                        p: 1.5,
+                        borderRadius: 2,
+                        bgcolor: "grey.50",
                       }}
                     >
-                      {team.name[0] ?? "?"}
+                      <Box
+                        sx={{
+                          width: 32,
+                          height: 32,
+                          bgcolor: "white",
+                          borderRadius: 1,
+                          border: "1px solid",
+                          borderColor: "grey.200",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontWeight: "bold",
+                          color: "primary.main",
+                        }}
+                      >
+                        {team.name[0] ?? "?"}
+                      </Box>
+                      <Typography sx={{ fontWeight: 500, flex: 1 }}>{team.name}</Typography>
+                      <Tooltip title="Usuń drużynę z turnieju">
+                        <span>
+                          <IconButton
+                            aria-label={`Usuń drużynę ${team.name} z turnieju`}
+                            color="error"
+                            onClick={() => openRemoveTeamDialog(team)}
+                            size="small"
+                            disabled={removeTeamLoading && teamToRemove?.id === team.id}
+                            sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2 }}
+                          >
+                            <Trash2 size={18} />
+                          </IconButton>
+                        </span>
+                      </Tooltip>
                     </Box>
-                    <Typography sx={{ fontWeight: 500, flex: 1 }}>{team.name}</Typography>
-                    <Tooltip title="Usuń drużynę z turnieju">
-                      <span>
-                        <IconButton
-                          aria-label={`Usuń drużynę ${team.name} z turnieju`}
-                          color="error"
-                          onClick={() => openRemoveTeamDialog(team)}
-                          size="small"
-                          disabled={removeTeamLoading && teamToRemove?.id === team.id}
-                          sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2 }}
-                        >
-                          <Trash2 size={18} />
-                        </IconButton>
-                      </span>
-                    </Tooltip>
-                  </Box>
-                ))}
+                  ))}
+                </Box>
+                <Button variant="outlined" onClick={openAddTeamsDialog} sx={{ alignSelf: "flex-start" }}>
+                  Dodaj
+                </Button>
               </Box>
             )}
           </Paper>
