@@ -912,6 +912,7 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
 
   async function confirmDeleteMatch() {
     if (!tournament || !matchToDelete) return;
+    const deletedId = matchToDelete.id;
     setDeleteMatchLoading(true);
     setDeleteMatchError(null);
 
@@ -923,6 +924,9 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
       }
 
       await refreshMatches(tournament.id);
+      // Jeśli edytujemy plan w tym samym komponencie, usuń wiersz z formularza od razu.
+      setEditMatchDrafts((prev) => prev.filter((d) => d.id !== deletedId));
+      if (editMatch?.id === deletedId) setEditMatch(null);
       setMatchToDelete(null);
     } catch (e) {
       setDeleteMatchError(e instanceof Error ? e.message : "Nie udało się usunąć meczu");
@@ -1445,7 +1449,7 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
                             onClick={() => openRemoveTeamDialog(team)}
                             size="small"
                             disabled={removeTeamLoading && teamToRemove?.id === team.id}
-                            sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2 }}
+                            sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2, p: 0 }}
                           >
                             <Trash2 size={18} />
                           </IconButton>
@@ -1528,7 +1532,7 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
                               onClick={() => openRemoveRefereeDialog(r)}
                               size="small"
                               disabled={removeRefereeLoading && refereeToRemove?.id === r.id}
-                              sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2 }}
+                              sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2, p: 0 }}
                             >
                               <Trash2 size={18} />
                             </IconButton>
@@ -1604,7 +1608,7 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
                               onClick={() => openRemoveClassifierDialog(c)}
                               size="small"
                               disabled={removeClassifierLoading && classifierToRemove?.id === c.id}
-                              sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2 }}
+                              sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2, p: 0 }}
                             >
                               <Trash2 size={18} />
                             </IconButton>
@@ -1758,11 +1762,11 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
 
           <Divider sx={{ mb: 2 }} />
 
-          <Typography sx={{ fontWeight: 900, mb: 1 }}>Kolory koszulek</Typography>
+          <Typography sx={{ fontWeight: 900, mb: 1, fontSize: 14 }}>Kolory koszulek</Typography>
 
           <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
             <Box>
-              <Typography color="text.secondary" sx={{ mb: 1 }}>
+              <Typography color="text.secondary" sx={{ mb: 1, fontSize: 13 }}>
                 Drużyna A
               </Typography>
               <RadioGroup
@@ -1774,13 +1778,23 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
                   setNewMatchJerseyB(next === "jasne" ? "ciemne" : "jasne");
                 }}
               >
-                <FormControlLabel value="jasne" control={<Radio />} label="Jasne" />
-                <FormControlLabel value="ciemne" control={<Radio />} label="Ciemne" />
+                <FormControlLabel
+                  value="jasne"
+                  control={<Radio size="small" />}
+                  label="Jasne"
+                  sx={{ "& .MuiFormControlLabel-label": { fontSize: 13 } }}
+                />
+                <FormControlLabel
+                  value="ciemne"
+                  control={<Radio size="small" />}
+                  label="Ciemne"
+                  sx={{ "& .MuiFormControlLabel-label": { fontSize: 13 } }}
+                />
               </RadioGroup>
             </Box>
 
             <Box>
-              <Typography color="text.secondary" sx={{ mb: 1 }}>
+              <Typography color="text.secondary" sx={{ mb: 1, fontSize: 13 }}>
                 Drużyna B
               </Typography>
               <RadioGroup
@@ -1792,8 +1806,18 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
                   setNewMatchJerseyA(next === "jasne" ? "ciemne" : "jasne");
                 }}
               >
-                <FormControlLabel value="jasne" control={<Radio />} label="Jasne" />
-                <FormControlLabel value="ciemne" control={<Radio />} label="Ciemne" />
+                <FormControlLabel
+                  value="jasne"
+                  control={<Radio size="small" />}
+                  label="Jasne"
+                  sx={{ "& .MuiFormControlLabel-label": { fontSize: 13 } }}
+                />
+                <FormControlLabel
+                  value="ciemne"
+                  control={<Radio size="small" />}
+                  label="Ciemne"
+                  sx={{ "& .MuiFormControlLabel-label": { fontSize: 13 } }}
+                />
               </RadioGroup>
             </Box>
           </Box>
@@ -1850,19 +1874,66 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
             <Table size="small" aria-label="Tabela meczów">
               <TableHead>
                 <TableRow>
-                  <TableCell>Drużyna A</TableCell>
-                  <TableCell>Wynik meczu drużyny A</TableCell>
-                  <TableCell>Start</TableCell>
-                  <TableCell>Koniec</TableCell>
-                  <TableCell>Wynik meczu drużyny B</TableCell>
-                  <TableCell>Drużyna B</TableCell>
-                  <TableCell>Boisko</TableCell>
-                  <TableCell>Kolor koszulek</TableCell>
+                  <TableCell align="center" sx={{ width: 48 }} />
+                  <TableCell align="center">Drużyna A</TableCell>
+                  <TableCell align="center">Wynik A</TableCell>
+                  <TableCell align="center">Start</TableCell>
+                  <TableCell align="center">Koniec</TableCell>
+                  <TableCell align="center">Wynik B</TableCell>
+                  <TableCell align="center">Drużyna B</TableCell>
+                  <TableCell align="center">Boisko</TableCell>
+                  <TableCell align="center">Kolor koszulek</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {editMatchDrafts.map((draft, idx) => (
                   <TableRow key={draft.id ?? `row-${idx}`}>
+                    <TableCell
+                      align="center"
+                      sx={{ width: 48, paddingLeft: 1, paddingRight: 1, verticalAlign: "middle" }}
+                    >
+                      {(() => {
+                        const teamAName = tournament.teams.find((t) => t.id === draft.teamAId)?.name ?? draft.teamAId;
+                        const teamBName = tournament.teams.find((t) => t.id === draft.teamBId)?.name ?? draft.teamBId;
+
+                        const canDeleteFromApi = Boolean(draft.id);
+                        const disabled = editMatchLoading || (canDeleteFromApi && deleteMatchLoading);
+
+                        return (
+                          <Tooltip title="Usuń rozgrywkę">
+                            <Box sx={{ display: "flex", justifyContent: "center", width: "100%" }}>
+                              <IconButton
+                                aria-label={`Usuń rozgrywkę ${teamAName} vs ${teamBName}`}
+                                color="error"
+                                onClick={() => {
+                                  if (disabled) return;
+
+                                  if (!draft.id) {
+                                    setEditMatchDrafts((prev) => prev.filter((_, i) => i !== idx));
+                                    return;
+                                  }
+
+                                  const match = matches.find((m) => m.id === draft.id);
+                                  if (!match) {
+                                    setEditMatchDrafts((prev) => prev.filter((d) => d.id !== draft.id));
+                                    return;
+                                  }
+
+                                  setDeleteMatchError(null);
+                                  setMatchToDelete(match);
+                                  setEditMatchOpen(false);
+                                }}
+                                size="small"
+                                disabled={disabled}
+                                sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2, p: 0 }}
+                              >
+                                <Trash2 size={18} />
+                              </IconButton>
+                            </Box>
+                          </Tooltip>
+                        );
+                      })()}
+                    </TableCell>
                     <TableCell sx={{ minWidth: 180 }}>
                       <TextField
                         select
@@ -1903,7 +1974,6 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
                           )
                         }
                         InputLabelProps={{ shrink: true }}
-                        helperText="Opcjonalnie"
                         size="small"
                       />
                     </TableCell>
@@ -1949,7 +2019,6 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
                           )
                         }
                         InputLabelProps={{ shrink: true }}
-                        helperText="Opcjonalnie"
                         size="small"
                       />
                     </TableCell>
@@ -1993,8 +2062,15 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
                       </TextField>
                     </TableCell>
 
-                    <TableCell sx={{ minWidth: 230 }}>
-                      <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1 }}>
+                    <TableCell sx={{ minWidth: 230, verticalAlign: "middle" }}>
+                      <Box
+                        sx={{
+                          display: "grid",
+                          gridTemplateColumns: "1fr 1fr",
+                          gap: 1,
+                          alignItems: "center",
+                        }}
+                      >
                         <Box>
                           <Typography variant="caption" color="text.secondary">
                             A
@@ -2013,8 +2089,18 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
                               );
                             }}
                           >
-                            <FormControlLabel value="jasne" control={<Radio size="small" />} label="Jasne" />
-                            <FormControlLabel value="ciemne" control={<Radio size="small" />} label="Ciemne" />
+                            <FormControlLabel
+                              value="jasne"
+                              control={<Radio size="small" />}
+                              label="Jasne"
+                              sx={{ "& .MuiFormControlLabel-label": { fontSize: 12 } }}
+                            />
+                            <FormControlLabel
+                              value="ciemne"
+                              control={<Radio size="small" />}
+                              label="Ciemne"
+                              sx={{ "& .MuiFormControlLabel-label": { fontSize: 12 } }}
+                            />
                           </RadioGroup>
                         </Box>
                         <Box>
@@ -2035,8 +2121,18 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
                               );
                             }}
                           >
-                            <FormControlLabel value="jasne" control={<Radio size="small" />} label="Jasne" />
-                            <FormControlLabel value="ciemne" control={<Radio size="small" />} label="Ciemne" />
+                            <FormControlLabel
+                              value="jasne"
+                              control={<Radio size="small" />}
+                              label="Jasne"
+                              sx={{ "& .MuiFormControlLabel-label": { fontSize: 12 } }}
+                            />
+                            <FormControlLabel
+                              value="ciemne"
+                              control={<Radio size="small" />}
+                              label="Ciemne"
+                              sx={{ "& .MuiFormControlLabel-label": { fontSize: 12 } }}
+                            />
                           </RadioGroup>
                         </Box>
                       </Box>

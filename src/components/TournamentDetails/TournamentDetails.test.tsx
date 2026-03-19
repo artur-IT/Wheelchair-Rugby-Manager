@@ -334,9 +334,9 @@ describe("TournamentDetails", () => {
     expect(within(addMatchDialog).getByLabelText("Drużyna B")).toBeInTheDocument();
     expect(within(addMatchDialog).getByLabelText("Start")).toBeInTheDocument();
     expect(within(addMatchDialog).getByLabelText("Koniec")).toBeInTheDocument();
-    expect(within(addMatchDialog).getByLabelText("Numer boiska")).toBeInTheDocument();
-    expect(within(addMatchDialog).getByLabelText("Wynik drużyny A")).toBeInTheDocument();
-    expect(within(addMatchDialog).getByLabelText("Wynik drużyny B")).toBeInTheDocument();
+    expect(within(addMatchDialog).getByLabelText("Boisko")).toBeInTheDocument();
+    expect(within(addMatchDialog).getByLabelText("Wynik A")).toBeInTheDocument();
+    expect(within(addMatchDialog).getByLabelText("Wynik B")).toBeInTheDocument();
 
     await user.click(within(addMatchDialog).getByRole("button", { name: "Dodaj" }));
 
@@ -377,13 +377,56 @@ describe("TournamentDetails", () => {
     const editDialog = await screen.findByRole("dialog");
     expect(within(editDialog).getByText("Edycja meczu")).toBeInTheDocument();
 
-    const scoreAInput = within(editDialog).getByLabelText("Wynik drużyny A") as HTMLInputElement;
+    const scoreAInput = within(editDialog).getByLabelText("Wynik A") as HTMLInputElement;
     await user.clear(scoreAInput);
     await user.type(scoreAInput, "2");
 
     await user.click(within(editDialog).getByRole("button", { name: "Zapisz" }));
 
     expect(await within(planSection).findByText("2")).toBeInTheDocument();
+  }, 10000);
+
+  it("deletes match row inside edit dialog", async () => {
+    const user = userEvent.setup();
+    render(<TournamentDetails id="t1" />);
+
+    await screen.findByRole("heading", { name: "Turniej Otwarcia Sezonu" });
+
+    // Add teams so dialog has valid options.
+    const teamsSection = screen.getByRole("heading", { name: "Drużyny" }).closest("div") as HTMLElement;
+    await user.click(within(teamsSection).getByRole("button", { name: "Dodaj" }));
+
+    const addTeamsDialog = await screen.findByRole("dialog");
+    await user.click(within(addTeamsDialog).getByText("Warsaw Raptors"));
+    await user.click(within(addTeamsDialog).getByText("Krakow Eagles"));
+    await user.click(within(addTeamsDialog).getByRole("button", { name: "Dodaj" }));
+    expect(await screen.findByText("Warsaw Raptors")).toBeInTheDocument();
+
+    // Add first match.
+    const planSection = screen.getByRole("heading", { name: "Plan Rozgrywek" }).closest("div") as HTMLElement;
+    await user.click(within(planSection).getByRole("button", { name: "Dodaj" }));
+
+    const addMatchDialog = await screen.findByRole("dialog");
+    await user.click(within(addMatchDialog).getByRole("button", { name: "Dodaj" }));
+
+    expect(await within(planSection).findByText("Warsaw Raptors")).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByText("Tworzenie planu rozgrywek")).not.toBeInTheDocument());
+
+    // Delete single row from edit dialog.
+    await user.click(within(planSection).getByRole("button", { name: "Edytuj" }));
+    const editDialog = await screen.findByRole("dialog");
+
+    await user.click(
+      within(editDialog).getByRole("button", {
+        name: /Usuń rozgrywkę Warsaw Raptors vs Krakow Eagles/i,
+      })
+    );
+
+    const confirmDialog = await screen.findByRole("dialog");
+    expect(within(confirmDialog).getByText("Usunąć mecz?")).toBeInTheDocument();
+    await user.click(within(confirmDialog).getByRole("button", { name: "Usuń" }));
+
+    expect(await screen.findByText(/Brak zaplanowanych meczów\./)).toBeInTheDocument();
   }, 10000);
 
   it("deletes match from plan", async () => {
