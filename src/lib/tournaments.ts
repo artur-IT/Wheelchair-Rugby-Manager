@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import type { Tournament } from "@/types";
+import type { Match, Tournament } from "@/types";
 import type { TournamentFormData } from "@/lib/validateInputs";
 
 /** Creates a tournament with basic details plus accommodation, hall and meal plan. */
@@ -323,5 +323,152 @@ export async function removeClassifierFromTournament(tournamentId: string, class
   await prisma.tournamentClassifier.deleteMany({
     where: { tournamentId, classifierId },
   });
+  return tournamentId;
+}
+
+interface CreateMatchInput {
+  teamAId: string;
+  teamBId: string;
+  scheduledAt: string;
+  court?: string;
+  jerseyInfo?: string;
+  scoreA?: number;
+  scoreB?: number;
+}
+
+export async function listMatchesForTournament(tournamentId: string): Promise<Match[]> {
+  const tournament = await prisma.tournament.findUnique({
+    where: { id: tournamentId },
+    select: { id: true },
+  });
+
+  if (!tournament) throw new Error("TOURNAMENT_NOT_FOUND");
+
+  const matches = await prisma.match.findMany({
+    where: { tournamentId },
+    orderBy: { scheduledAt: "asc" },
+    select: {
+      id: true,
+      scheduledAt: true,
+      court: true,
+      jerseyInfo: true,
+      scoreA: true,
+      scoreB: true,
+      status: true,
+      tournamentId: true,
+      teamAId: true,
+      teamBId: true,
+    },
+  });
+
+  return matches.map((m) => ({
+    id: m.id,
+    scheduledAt: m.scheduledAt.toISOString(),
+    court: m.court ?? undefined,
+    jerseyInfo: m.jerseyInfo ?? undefined,
+    scoreA: m.scoreA ?? undefined,
+    scoreB: m.scoreB ?? undefined,
+    status: m.status,
+    tournamentId: m.tournamentId,
+    teamAId: m.teamAId,
+    teamBId: m.teamBId,
+  }));
+}
+
+export async function createMatchForTournament(tournamentId: string, input: CreateMatchInput): Promise<string> {
+  const tournament = await prisma.tournament.findUnique({
+    where: { id: tournamentId },
+    select: { id: true },
+  });
+
+  if (!tournament) throw new Error("TOURNAMENT_NOT_FOUND");
+
+  // Ensure both teams are assigned to this tournament.
+  const teams = await prisma.tournamentTeam.findMany({
+    where: { tournamentId, teamId: { in: [input.teamAId, input.teamBId] } },
+    select: { teamId: true },
+  });
+
+  if (teams.length !== 2 || input.teamAId === input.teamBId) {
+    throw new Error("TEAM_NOT_IN_TOURNAMENT");
+  }
+
+  await prisma.match.create({
+    data: {
+      tournamentId,
+      scheduledAt: new Date(input.scheduledAt),
+      court: input.court ?? null,
+      jerseyInfo: input.jerseyInfo ?? null,
+      scoreA: input.scoreA ?? null,
+      scoreB: input.scoreB ?? null,
+      teamAId: input.teamAId,
+      teamBId: input.teamBId,
+    },
+  });
+
+  return tournamentId;
+}
+
+export async function updateMatchForTournament(
+  tournamentId: string,
+  matchId: string,
+  input: CreateMatchInput
+): Promise<string> {
+  const tournament = await prisma.tournament.findUnique({
+    where: { id: tournamentId },
+    select: { id: true },
+  });
+
+  if (!tournament) throw new Error("TOURNAMENT_NOT_FOUND");
+
+  const existingMatch = await prisma.match.findUnique({
+    where: { id: matchId },
+    select: { id: true, tournamentId: true },
+  });
+
+  if (!existingMatch || existingMatch.tournamentId !== tournamentId) throw new Error("MATCH_NOT_FOUND");
+
+  // Ensure both teams are assigned to this tournament.
+  const teams = await prisma.tournamentTeam.findMany({
+    where: { tournamentId, teamId: { in: [input.teamAId, input.teamBId] } },
+    select: { teamId: true },
+  });
+
+  if (teams.length !== 2 || input.teamAId === input.teamBId) {
+    throw new Error("TEAM_NOT_IN_TOURNAMENT");
+  }
+
+  await prisma.match.update({
+    where: { id: matchId },
+    data: {
+      scheduledAt: new Date(input.scheduledAt),
+      court: input.court ?? null,
+      jerseyInfo: input.jerseyInfo ?? null,
+      scoreA: input.scoreA ?? null,
+      scoreB: input.scoreB ?? null,
+      teamAId: input.teamAId,
+      teamBId: input.teamBId,
+    },
+  });
+
+  return tournamentId;
+}
+
+export async function deleteMatchForTournament(tournamentId: string, matchId: string): Promise<string> {
+  const tournament = await prisma.tournament.findUnique({
+    where: { id: tournamentId },
+    select: { id: true },
+  });
+
+  if (!tournament) throw new Error("TOURNAMENT_NOT_FOUND");
+
+  const existingMatch = await prisma.match.findUnique({
+    where: { id: matchId },
+    select: { id: true, tournamentId: true },
+  });
+
+  if (!existingMatch || existingMatch.tournamentId !== tournamentId) throw new Error("MATCH_NOT_FOUND");
+
+  await prisma.match.delete({ where: { id: matchId } });
   return tournamentId;
 }
