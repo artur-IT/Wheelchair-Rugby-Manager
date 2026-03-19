@@ -161,13 +161,15 @@ model Classifier {
 model SportsHall {
   id           String     @id @default(cuid())
   name         String
-  address      String?
+  city         String?
+  street       String?
+  postalCode   String?
   notes        String?
   mapUrl       String?
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
   tournamentId String
-  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  tournament   Tournament   @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
 }
 
 model Accommodation {

@@ -1,9 +1,22 @@
 import { useEffect, useState } from "react";
-import { Plus, Calendar, MapPin } from "lucide-react";
+import { Plus, Calendar, MapPin, Trash2 } from "lucide-react";
 import { motion } from "motion/react";
-import { Box, Button, Grid, Card, CardContent, Typography, Chip, CircularProgress, Alert } from "@mui/material";
+import {
+  Box,
+  Button,
+  Grid,
+  Card,
+  CardContent,
+  Typography,
+  Chip,
+  CircularProgress,
+  Alert,
+  IconButton,
+  Tooltip,
+} from "@mui/material";
 import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
 import AppShell from "@/components/AppShell/AppShell";
+import ConfirmationDialog from "@/components/ui/ConfirmationDialog";
 import type { Tournament } from "@/types";
 
 export default function TournamentsPage() {
@@ -35,6 +48,9 @@ function TournamentsContent() {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [tournamentToDelete, setTournamentToDelete] = useState<Tournament | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -65,6 +81,38 @@ function TournamentsContent() {
     loadTournaments();
     return () => controller.abort();
   }, []);
+
+  function openDeleteDialog(tournament: Tournament) {
+    setDeleteError(null);
+    setTournamentToDelete(tournament);
+  }
+
+  function closeDeleteDialog() {
+    if (deleteLoading) return;
+    setTournamentToDelete(null);
+    setDeleteError(null);
+  }
+
+  async function confirmDeleteTournament() {
+    if (!tournamentToDelete) return;
+    setDeleteLoading(true);
+    setDeleteError(null);
+
+    try {
+      const res = await fetch(`/api/tournaments/${tournamentToDelete.id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const data = (await res.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(data?.error || "Nie udało się usunąć turnieju");
+      }
+
+      setTournaments((prev) => prev.filter((t) => t.id !== tournamentToDelete.id));
+      setTournamentToDelete(null);
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : "Nie udało się usunąć turnieju");
+    } finally {
+      setDeleteLoading(false);
+    }
+  }
 
   function getTournamentStatus(
     startDate: string,
@@ -178,6 +226,20 @@ function TournamentsContent() {
                     <Button component="a" href={`/tournaments/${t.id}/edit`} variant="contained" fullWidth size="small">
                       Edytuj
                     </Button>
+                    <Tooltip title="Usuń turniej">
+                      <span>
+                        <IconButton
+                          aria-label={`Usuń turniej ${t.name}`}
+                          color="error"
+                          onClick={() => openDeleteDialog(t)}
+                          disabled={deleteLoading && tournamentToDelete?.id === t.id}
+                          size="small"
+                          sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2 }}
+                        >
+                          <Trash2 size={18} />
+                        </IconButton>
+                      </span>
+                    </Tooltip>
                   </Box>
                 </Card>
               </motion.div>
@@ -185,6 +247,24 @@ function TournamentsContent() {
           ))}
         </Grid>
       )}
+
+      <ConfirmationDialog
+        open={Boolean(tournamentToDelete)}
+        title="Usunąć turniej?"
+        description={
+          tournamentToDelete ? (
+            <Typography color="textSecondary">
+              Ta operacja jest nieodwracalna. Turniej: <strong>{tournamentToDelete.name}</strong>
+            </Typography>
+          ) : null
+        }
+        onClose={closeDeleteDialog}
+        onConfirm={confirmDeleteTournament}
+        loading={deleteLoading}
+        errorMessage={deleteError}
+        confirmLabel="Usuń"
+        cancelLabel="Anuluj"
+      />
     </Box>
   );
 }

@@ -63,6 +63,9 @@ export interface SportsHall {
   id: string;
   name: string;
   address?: string;
+  city?: string;
+  street?: string;
+  postalCode?: string;
   notes?: string;
   mapUrl?: string;
   tournamentId: string;

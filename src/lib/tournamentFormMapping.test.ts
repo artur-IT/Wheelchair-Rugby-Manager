@@ -35,10 +35,14 @@ describe("tournamentFormMapping", () => {
     const defaults = tournamentToTournamentFormDefaults(tournamentFixture);
 
     expect(defaults.name).toBe("Turniej Otwarcia Sezonu");
-    expect(defaults.street).toBe("ul. Hotelowa 5");
-    expect(defaults.zipCode).toBe("11-222");
-    expect(defaults.city).toBe("Krakow");
+    // Form "Hala Sportowa" uses venue (hall) address
+    expect(defaults.street).toBe("ul. Olimpijska 1");
+    expect(defaults.zipCode).toBe("00-123");
+    expect(defaults.city).toBe("Warszawa");
     expect(defaults.hotel).toBe("Hotel Sport");
+    expect(defaults.hotelCity).toBe("Krakow");
+    expect(defaults.hotelZipCode).toBe("11-222");
+    expect(defaults.hotelStreet).toBe("ul. Hotelowa 5");
     expect(defaults.hallName).toBe("Hala Arena");
     expect(defaults.catering).toBe("Hotel + Catering na hali");
 
@@ -50,5 +54,33 @@ describe("tournamentFormMapping", () => {
     expect(defaults.endDate.getFullYear()).toBe(2024);
     expect(defaults.endDate.getMonth()).toBe(4);
     expect(defaults.endDate.getDate()).toBe(12);
+  });
+
+  it("uses explicit venue city, street, postalCode when present", () => {
+    const tournament: Tournament = {
+      id: "t1",
+      name: "Test",
+      startDate: "2024-05-10",
+      endDate: "2024-05-12",
+      seasonId: "s1",
+      venue: {
+        id: "v1",
+        tournamentId: "t1",
+        name: "Hala",
+        address: "ignored, 99-999 Other",
+        city: "Poznan",
+        street: "ul. Sportowa 10",
+        postalCode: "61-001",
+      },
+      teams: [],
+      referees: [],
+      classifiers: [],
+      volunteers: [],
+    };
+
+    const defaults = tournamentToTournamentFormDefaults(tournament);
+    expect(defaults.city).toBe("Poznan");
+    expect(defaults.zipCode).toBe("61-001");
+    expect(defaults.street).toBe("ul. Sportowa 10");
   });
 });

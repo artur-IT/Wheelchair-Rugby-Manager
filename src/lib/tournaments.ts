@@ -12,7 +12,8 @@ export async function createTournamentWithDetails(form: TournamentFormData) {
     throw new Error("NO_SEASON_AVAILABLE");
   }
 
-  const fullAddress = `${form.street}, ${form.zipCode} ${form.city}`;
+  const hotelAddress = `${form.hotelStreet}, ${form.hotelZipCode} ${form.hotelCity}`;
+  const hallAddress = `${form.street}, ${form.zipCode} ${form.city}`;
 
   return prisma.$transaction(async (tx) => {
     const tournament = await tx.tournament.create({
@@ -27,7 +28,7 @@ export async function createTournamentWithDetails(form: TournamentFormData) {
     await tx.accommodation.create({
       data: {
         name: form.hotel,
-        address: fullAddress,
+        address: hotelAddress,
         notes: form.parking || null,
         mapUrl: form.mapLink || null,
         tournamentId: tournament.id,
@@ -37,7 +38,10 @@ export async function createTournamentWithDetails(form: TournamentFormData) {
     await tx.sportsHall.create({
       data: {
         name: form.hallName,
-        address: fullAddress,
+        address: hallAddress,
+        city: form.city || null,
+        street: form.street || null,
+        postalCode: form.zipCode || null,
         notes: null,
         mapUrl: form.hallMapLink || null,
         tournamentId: tournament.id,
@@ -65,6 +69,9 @@ export async function listTournamentsWithDetails(): Promise<Tournament[]> {
       accommodations: { orderBy: { id: "asc" } },
       mealPlans: { orderBy: { id: "asc" } },
       volunteers: true,
+      teams: { include: { team: true } },
+      referees: { include: { referee: true } },
+      classifiers: { include: { classifier: true } },
     },
   });
 
@@ -84,6 +91,9 @@ export async function listTournamentsWithDetails(): Promise<Tournament[]> {
             id: primaryVenue.id,
             name: primaryVenue.name,
             address: primaryVenue.address ?? undefined,
+            city: primaryVenue.city ?? undefined,
+            street: primaryVenue.street ?? undefined,
+            postalCode: primaryVenue.postalCode ?? undefined,
             notes: primaryVenue.notes ?? undefined,
             mapUrl: primaryVenue.mapUrl ?? undefined,
             tournamentId: primaryVenue.tournamentId,
@@ -101,9 +111,35 @@ export async function listTournamentsWithDetails(): Promise<Tournament[]> {
         : undefined,
       catering: cateringMeal?.details ?? undefined,
       parking: primaryAccommodation?.notes ?? undefined,
-      teams: [],
-      referees: [],
-      classifiers: [],
+      teams: t.teams.map((tt) => ({
+        id: tt.team.id,
+        name: tt.team.name,
+        websiteUrl: tt.team.websiteUrl ?? undefined,
+        address: tt.team.address ?? undefined,
+        city: tt.team.city ?? undefined,
+        postalCode: tt.team.postalCode ?? undefined,
+        contactFirstName: tt.team.contactFirstName ?? undefined,
+        contactLastName: tt.team.contactLastName ?? undefined,
+        contactEmail: tt.team.contactEmail ?? undefined,
+        contactPhone: tt.team.contactPhone ?? undefined,
+        seasonId: tt.team.seasonId,
+        coachId: tt.team.coachId ?? undefined,
+        refereeId: tt.team.refereeId ?? undefined,
+      })),
+      referees: t.referees.map((tr) => ({
+        id: tr.referee.id,
+        firstName: tr.referee.firstName,
+        lastName: tr.referee.lastName,
+        email: tr.referee.email ?? undefined,
+        phone: tr.referee.phone ?? undefined,
+      })),
+      classifiers: t.classifiers.map((tc) => ({
+        id: tc.classifier.id,
+        firstName: tc.classifier.firstName,
+        lastName: tc.classifier.lastName,
+        email: tc.classifier.email ?? undefined,
+        phone: tc.classifier.phone ?? undefined,
+      })),
       volunteers: t.volunteers.map((v) => ({
         id: v.id,
         firstName: v.firstName,
@@ -117,7 +153,8 @@ export async function listTournamentsWithDetails(): Promise<Tournament[]> {
 
 /** Updates tournament basic details plus accommodation, hall and meal plan. */
 export async function updateTournamentWithDetails(tournamentId: string, form: TournamentFormData) {
-  const fullAddress = `${form.street}, ${form.zipCode} ${form.city}`;
+  const hotelAddress = `${form.hotelStreet}, ${form.hotelZipCode} ${form.hotelCity}`;
+  const hallAddress = `${form.street}, ${form.zipCode} ${form.city}`;
 
   return prisma.$transaction(async (tx) => {
     const existing = await tx.tournament.findUnique({
@@ -146,7 +183,7 @@ export async function updateTournamentWithDetails(tournamentId: string, form: To
     await tx.accommodation.create({
       data: {
         name: form.hotel,
-        address: fullAddress,
+        address: hotelAddress,
         notes: form.parking || null,
         mapUrl: form.mapLink || null,
         tournamentId,
@@ -156,7 +193,10 @@ export async function updateTournamentWithDetails(tournamentId: string, form: To
     await tx.sportsHall.create({
       data: {
         name: form.hallName,
-        address: fullAddress,
+        address: hallAddress,
+        city: form.city || null,
+        street: form.street || null,
+        postalCode: form.zipCode || null,
         notes: null,
         mapUrl: form.hallMapLink || null,
         tournamentId,
@@ -173,4 +213,115 @@ export async function updateTournamentWithDetails(tournamentId: string, form: To
 
     return tournamentId;
   });
+}
+
+export async function deleteTournament(tournamentId: string) {
+  const existing = await prisma.tournament.findUnique({
+    where: { id: tournamentId },
+    select: { id: true },
+  });
+
+  if (!existing) {
+    throw new Error("TOURNAMENT_NOT_FOUND");
+  }
+
+  await prisma.tournament.delete({ where: { id: tournamentId } });
+  return tournamentId;
+}
+
+export async function addTeamsToTournament(tournamentId: string, teamIds: string[]) {
+  const tournament = await prisma.tournament.findUnique({
+    where: { id: tournamentId },
+    select: { id: true, seasonId: true },
+  });
+
+  if (!tournament) {
+    throw new Error("TOURNAMENT_NOT_FOUND");
+  }
+
+  const teams = await prisma.team.findMany({
+    where: { id: { in: teamIds } },
+    select: { id: true, seasonId: true },
+  });
+
+  if (teams.length !== teamIds.length) {
+    throw new Error("TEAM_NOT_FOUND");
+  }
+
+  const wrongSeason = teams.find((t) => t.seasonId !== tournament.seasonId);
+  if (wrongSeason) {
+    throw new Error("TEAM_WRONG_SEASON");
+  }
+
+  await prisma.tournamentTeam.createMany({
+    data: teamIds.map((teamId) => ({ tournamentId, teamId })),
+    skipDuplicates: true,
+  });
+
+  return tournamentId;
+}
+
+export async function removeTeamFromTournament(tournamentId: string, teamId: string) {
+  await prisma.tournamentTeam.deleteMany({
+    where: { tournamentId, teamId },
+  });
+  return tournamentId;
+}
+
+export async function addRefereesToTournament(tournamentId: string, refereeIds: string[]) {
+  const tournament = await prisma.tournament.findUnique({
+    where: { id: tournamentId },
+    select: { id: true, seasonId: true },
+  });
+  if (!tournament) throw new Error("TOURNAMENT_NOT_FOUND");
+
+  const referees = await prisma.referee.findMany({
+    where: { id: { in: refereeIds } },
+    select: { id: true, seasonId: true },
+  });
+  if (referees.length !== refereeIds.length) throw new Error("REFEREE_NOT_FOUND");
+  const wrongSeason = referees.find((r) => r.seasonId !== tournament.seasonId);
+  if (wrongSeason) throw new Error("REFEREE_WRONG_SEASON");
+
+  await prisma.tournamentReferee.createMany({
+    data: refereeIds.map((refereeId) => ({ tournamentId, refereeId })),
+    skipDuplicates: true,
+  });
+  return tournamentId;
+}
+
+export async function removeRefereeFromTournament(tournamentId: string, refereeId: string) {
+  await prisma.tournamentReferee.deleteMany({
+    where: { tournamentId, refereeId },
+  });
+  return tournamentId;
+}
+
+export async function addClassifiersToTournament(tournamentId: string, classifierIds: string[]) {
+  const tournament = await prisma.tournament.findUnique({
+    where: { id: tournamentId },
+    select: { id: true, seasonId: true },
+  });
+  if (!tournament) throw new Error("TOURNAMENT_NOT_FOUND");
+
+  const classifiers = await prisma.classifier.findMany({
+    where: { id: { in: classifierIds } },
+    select: { id: true, seasonId: true },
+  });
+  if (classifiers.length !== classifierIds.length) throw new Error("CLASSIFIER_NOT_FOUND");
+  const wrongSeason = classifiers.find((c) => c.seasonId !== tournament.seasonId);
+  if (wrongSeason) throw new Error("CLASSIFIER_WRONG_SEASON");
+
+  await prisma.tournamentClassifier.createMany({
+    data: classifierIds.map((classifierId) => ({ tournamentId, classifierId })),
+    skipDuplicates: true,
+  });
+  return tournamentId;
+}
+
+export async function removeClassifierFromTournament(tournamentId: string, classifierId: string) {
+  await prisma.tournamentClassifier.deleteMany({
+    where: { tournamentId, classifierId },
+  });
+  return tournamentId;
 }

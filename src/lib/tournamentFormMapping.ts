@@ -36,18 +36,30 @@ export function tournamentToTournamentFormDefaults(tournament: Tournament): Tour
   const endDate = tournament.endDate ? new Date(tournament.endDate) : new Date(validStart.getTime() + 86400000);
   const validEnd = !Number.isNaN(endDate.getTime()) ? endDate : new Date(validStart.getTime() + 86400000);
 
-  const venueAddress = tournament.accommodation?.address ?? tournament.venue?.address ?? "";
-  const addressParts = parseAddressParts(venueAddress);
+  // Hall (venue) address — prefer explicit fields, then parsed
+  const venue = tournament.venue;
+  const venueAddress = venue?.address ?? "";
+  const hallParts = parseAddressParts(venueAddress);
+  const city = venue?.city ?? hallParts.city;
+  const zipCode = venue?.postalCode ?? hallParts.zipCode;
+  const street = venue?.street ?? (hallParts.street || "Brak danych");
+
+  // Hotel (accommodation) address — parsed from single address string
+  const accommodationAddress = tournament.accommodation?.address ?? "";
+  const hotelParts = parseAddressParts(accommodationAddress);
 
   return {
     name: tournament.name,
     startDate: validStart,
     endDate: validEnd,
     hotel: tournament.accommodation?.name ?? "Brak danych",
-    city: addressParts.city,
-    zipCode: addressParts.zipCode,
-    street: addressParts.street || "Brak danych",
+    hotelCity: hotelParts.city,
+    hotelZipCode: hotelParts.zipCode,
+    hotelStreet: hotelParts.street || "Brak danych",
     mapLink: tournament.accommodation?.mapUrl ?? "",
+    city,
+    zipCode,
+    street,
     catering: tournament.catering ?? "Brak danych",
     parking: tournament.parking ?? "",
     hallName: tournament.venue?.name ?? "Brak danych",
