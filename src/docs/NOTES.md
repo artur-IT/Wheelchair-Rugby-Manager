@@ -139,3 +139,7 @@ WNIOSEK:
 Dobrze przemyślany i zaplanowany prompt to wielka siła i ma świetny potencjał oraz sens do tworzenia całych nowych modułów!
 
 ---
+
+Ładny design - https://soleilenergia.pl/ - może by zastosować?
+
+---
