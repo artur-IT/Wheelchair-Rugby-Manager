@@ -35,6 +35,10 @@ import {
 import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
 import AppShell from "@/components/AppShell/AppShell";
 import ConfirmationDialog from "@/components/ui/ConfirmationDialog";
+import TournamentHeader from "@/components/TournamentDetails/TournamentHeader";
+import TournamentMatchesPlanPanel from "@/components/TournamentDetails/TournamentMatchesPlanPanel";
+import TournamentRefereePlanPanel from "@/components/TournamentDetails/TournamentRefereePlanPanel";
+import TournamentTeamsPanel from "@/components/TournamentDetails/TournamentTeamsPanel";
 import type { Match, Person, RefereePlanMatch, RefereeRole, Team, Tournament } from "@/types";
 
 interface TournamentDetailsProps {
@@ -1459,48 +1463,7 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-        }}
-      >
-        <Box>
-          <MuiLink
-            href="/tournaments"
-            underline="hover"
-            sx={{
-              color: "primary.main",
-              fontWeight: 600,
-              fontSize: "0.875rem",
-              display: "flex",
-              alignItems: "center",
-              gap: 0.5,
-              mb: 1,
-            }}
-          >
-            &larr; Powrót do listy
-          </MuiLink>
-          <Typography variant="h3" sx={{ fontWeight: 900 }}>
-            {tournament.name}
-          </Typography>
-          <Typography color="textSecondary">{formatDateRange(tournament.startDate, tournament.endDate)}</Typography>
-        </Box>
-        <Box sx={{ display: "flex", gap: 1.5 }}>
-          <Button variant="outlined" sx={{ borderRadius: 4, fontWeight: "bold" }}>
-            Wyczyść dane
-          </Button>
-          <Button
-            component="a"
-            href={`/tournaments/${id}/edit`}
-            variant="contained"
-            sx={{ borderRadius: 4, fontWeight: "bold" }}
-          >
-            Edytuj turniej
-          </Button>
-        </Box>
-      </Box>
+      <TournamentHeader id={id} tournament={tournament} formatDateRange={formatDateRange} />
 
       <Box
         sx={{
@@ -1637,501 +1600,57 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
             </Paper>
           </Box>
 
-          <Paper sx={{ p: 4, borderRadius: 3 }}>
-            <Typography variant="h6" sx={{ fontWeight: "bold", mb: 3 }}>
-              📋 Plan Rozgrywek
-            </Typography>
-            {matchesLoading ? (
-              <Box sx={{ display: "flex", justifyContent: "center", py: 5 }}>
-                <CircularProgress size={24} />
-              </Box>
-            ) : matchesError ? (
-              <Alert severity="error">{matchesError}</Alert>
-            ) : scheduleTableDayTimestamps.length === 0 ? (
-              <Box
-                sx={{
-                  color: "text.secondary",
-                  fontStyle: "italic",
-                  textAlign: "center",
-                  py: 5,
-                  border: "2px dashed",
-                  borderColor: "grey.200",
-                  borderRadius: 2,
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  gap: 2,
-                }}
-              >
-                <Typography>
-                  Brak zaplanowanych meczów.
-                  <br />
-                  Dodaj nowy mecz do planu.
-                </Typography>
-                <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", justifyContent: "center" }}>
-                  <Button
-                    variant="contained"
-                    onClick={() => openAddMatchDialog()}
-                    disabled={tournament.teams.length < 2}
-                  >
-                    Dodaj
-                  </Button>
-                  <Button variant="outlined" onClick={openNewDayTable} disabled={tournament.teams.length < 2}>
-                    Nowy dzień
-                  </Button>
-                </Box>
-              </Box>
-            ) : (
-              <>
-                <Box sx={{ display: "flex", justifyContent: "flex-start", mb: 2 }}>
-                  <Button variant="outlined" onClick={openNewDayTable} disabled={tournament.teams.length < 2}>
-                    Nowy dzień
-                  </Button>
-                </Box>
+          <TournamentMatchesPlanPanel
+            tournament={tournament}
+            matches={matches}
+            matchesLoading={matchesLoading}
+            matchesError={matchesError}
+            scheduleTableDayTimestamps={scheduleTableDayTimestamps}
+            parseJerseyInfo={parseJerseyInfo}
+            jerseyValueToNounLabel={jerseyValueToNounLabel}
+            getMatchDayTimestamp={getMatchDayTimestamp}
+            getScheduleDayLabel={getScheduleDayLabel}
+            openAddMatchDialog={openAddMatchDialog}
+            openNewDayTable={openNewDayTable}
+            openEditMatchDialog={openEditMatchDialog}
+            setMatchDayToDelete={setMatchDayToDelete}
+            deleteMatchDayLoading={deleteMatchDayLoading}
+            matchDayToDelete={matchDayToDelete}
+          />
 
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                  {scheduleTableDayTimestamps.map((dayTimestamp) => {
-                    const dayMatches = matches.filter((m) => getMatchDayTimestamp(m.scheduledAt) === dayTimestamp);
-                    const dayLabel = getScheduleDayLabel(dayTimestamp);
-
-                    return (
-                      <Box key={dayTimestamp}>
-                        <Typography variant="h6" sx={{ fontWeight: 900, mb: 2 }}>
-                          {dayLabel}
-                        </Typography>
-
-                        {dayMatches.length === 0 ? (
-                          <Box
-                            sx={{
-                              color: "text.secondary",
-                              fontStyle: "italic",
-                              textAlign: "center",
-                              py: 4,
-                              border: "2px dashed",
-                              borderColor: "grey.200",
-                              borderRadius: 2,
-                              display: "flex",
-                              flexDirection: "column",
-                              alignItems: "center",
-                              gap: 2,
-                            }}
-                          >
-                            <Typography>Brak zaplanowanych meczów w tym dniu.</Typography>
-                            <Button
-                              variant="contained"
-                              onClick={() => openAddMatchDialog(dayTimestamp)}
-                              disabled={tournament.teams.length < 2}
-                            >
-                              Dodaj mecz
-                            </Button>
-                          </Box>
-                        ) : (
-                          <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 3 }}>
-                            <Table size="small" aria-label={`Tabela planu rozgrywek: ${dayLabel}`}>
-                              <TableHead>
-                                <TableRow>
-                                  <TableCell align="center">Drużyna A</TableCell>
-                                  <TableCell align="center">Punkty A</TableCell>
-                                  <TableCell align="center">Start</TableCell>
-                                  <TableCell align="center">Koniec</TableCell>
-                                  <TableCell align="center">Punkty B</TableCell>
-                                  <TableCell align="center">Drużyna B</TableCell>
-                                  <TableCell align="center">Boisko</TableCell>
-                                  <TableCell align="center">Koszulki</TableCell>
-                                </TableRow>
-                              </TableHead>
-                              <TableBody>
-                                {dayMatches.map((m) => {
-                                  const teamAName = tournament.teams.find((t) => t.id === m.teamAId)?.name ?? m.teamAId;
-                                  const teamBName = tournament.teams.find((t) => t.id === m.teamBId)?.name ?? m.teamBId;
-                                  const startD = new Date(m.scheduledAt);
-                                  const endD = new Date(startD.getTime() + 60 * 60 * 1000);
-                                  const startTime = !Number.isNaN(startD.getTime())
-                                    ? startD.toLocaleTimeString("pl-PL", {
-                                        hour: "2-digit",
-                                        minute: "2-digit",
-                                        hour12: false,
-                                      })
-                                    : "—";
-                                  const endTime = !Number.isNaN(endD.getTime())
-                                    ? endD.toLocaleTimeString("pl-PL", {
-                                        hour: "2-digit",
-                                        minute: "2-digit",
-                                        hour12: false,
-                                      })
-                                    : "—";
-                                  const { teamA: jerseyA, teamB: jerseyB } = parseJerseyInfo(m.jerseyInfo);
-
-                                  return (
-                                    <TableRow key={m.id}>
-                                      <TableCell align="center" sx={{ fontWeight: 600 }}>
-                                        {teamAName}
-                                      </TableCell>
-                                      <TableCell align="center">{m.scoreA ?? "—"}</TableCell>
-                                      <TableCell align="center">{startTime}</TableCell>
-                                      <TableCell align="center">{endTime}</TableCell>
-                                      <TableCell align="center">{m.scoreB ?? "—"}</TableCell>
-                                      <TableCell align="center" sx={{ fontWeight: 600 }}>
-                                        {teamBName}
-                                      </TableCell>
-                                      <TableCell align="center">{m.court ?? "—"}</TableCell>
-                                      <TableCell align="center" sx={{ minWidth: 260 }}>
-                                        <Box
-                                          sx={{
-                                            display: "flex",
-                                            flexDirection: "column",
-                                            alignItems: "center",
-                                          }}
-                                        >
-                                          <Typography
-                                            variant="body2"
-                                            component="div"
-                                            sx={{ textAlign: "center", whiteSpace: "pre-line" }}
-                                          >
-                                            {`A: ${jerseyValueToNounLabel(jerseyA)}\nB: ${jerseyValueToNounLabel(jerseyB)}`}
-                                          </Typography>
-                                        </Box>
-                                      </TableCell>
-                                    </TableRow>
-                                  );
-                                })}
-                              </TableBody>
-                            </Table>
-                          </TableContainer>
-                        )}
-
-                        <Box sx={{ display: "flex", justifyContent: "flex-start", mt: 2, gap: 2 }}>
-                          <Button
-                            variant="outlined"
-                            color="primary"
-                            onClick={() => openEditMatchDialog(dayMatches)}
-                            disabled={dayMatches.length === 0}
-                          >
-                            Edytuj
-                          </Button>
-                          <Button
-                            variant="outlined"
-                            color="error"
-                            onClick={() => setMatchDayToDelete(dayTimestamp)}
-                            disabled={deleteMatchDayLoading && matchDayToDelete === dayTimestamp}
-                          >
-                            Usuń
-                          </Button>
-                        </Box>
-                      </Box>
-                    );
-                  })}
-                </Box>
-              </>
-            )}
-          </Paper>
-
-          <Paper
-            sx={{
-              p: 4,
-              borderRadius: 3,
-              bgcolor: "#fff7ed",
-              border: "1px solid",
-              borderColor: "grey.200",
-            }}
-          >
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
-              <Box
-                sx={{
-                  bgcolor: "#fde68a",
-                  p: 1,
-                  borderRadius: 2,
-                  color: "#b45309",
-                }}
-              >
-                <Typography component="div" sx={{ fontWeight: 900 }}>
-                  SJ
-                </Typography>
-              </Box>
-              <Typography variant="h6" sx={{ fontWeight: "bold" }}>
-                Plan Sędziów
-              </Typography>
-            </Box>
-
-            {refereePlanLoading ? (
-              <Box sx={{ display: "flex", justifyContent: "center", py: 5 }}>
-                <CircularProgress size={24} />
-              </Box>
-            ) : refereePlanError ? (
-              <Alert severity="error">{refereePlanError}</Alert>
-            ) : scheduleTableDayTimestamps.length === 0 ? (
-              <Box
-                sx={{
-                  color: "text.secondary",
-                  fontStyle: "italic",
-                  textAlign: "center",
-                  py: 5,
-                  border: "2px dashed",
-                  borderColor: "grey.200",
-                  borderRadius: 2,
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  gap: 2,
-                }}
-              >
-                <Typography>
-                  Brak zaplanowanych pozycji sędziów.
-                  <br />
-                  Dodaj nowy wpis do planu.
-                </Typography>
-                <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", justifyContent: "center" }}>
-                  <Button
-                    variant="contained"
-                    onClick={() => openAddRefereePlanDialog()}
-                    disabled={tournament.teams.length < 2}
-                  >
-                    Dodaj
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    onClick={openNewDayRefereePlanTable}
-                    disabled={tournament.teams.length < 2}
-                  >
-                    Nowy dzień
-                  </Button>
-                </Box>
-              </Box>
-            ) : (
-              <>
-                <Box sx={{ display: "flex", justifyContent: "flex-start", mb: 2 }}>
-                  <Button
-                    variant="outlined"
-                    onClick={openNewDayRefereePlanTable}
-                    disabled={tournament.teams.length < 2}
-                  >
-                    Nowy dzień
-                  </Button>
-                </Box>
-
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                  {scheduleTableDayTimestamps.map((dayTimestamp) => {
-                    const dayMatches = matches.filter((m) => getMatchDayTimestamp(m.scheduledAt) === dayTimestamp);
-                    const dayLabel = getScheduleDayLabel(dayTimestamp);
-
-                    return (
-                      <Box key={dayTimestamp}>
-                        <Typography variant="h6" sx={{ fontWeight: 900, mb: 2 }}>
-                          {dayLabel}
-                        </Typography>
-
-                        {dayMatches.length === 0 ? (
-                          <Box
-                            sx={{
-                              color: "text.secondary",
-                              fontStyle: "italic",
-                              textAlign: "center",
-                              py: 4,
-                              border: "2px dashed",
-                              borderColor: "grey.200",
-                              borderRadius: 2,
-                              display: "flex",
-                              flexDirection: "column",
-                              alignItems: "center",
-                              gap: 2,
-                            }}
-                          >
-                            <Typography>Brak zaplanowanych meczów w tym dniu.</Typography>
-                            <Button
-                              variant="contained"
-                              onClick={() => openAddRefereePlanDialog(dayTimestamp)}
-                              disabled={tournament.teams.length < 2}
-                            >
-                              Dodaj wpis sędziów
-                            </Button>
-                          </Box>
-                        ) : (
-                          <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 3 }}>
-                            <Table size="small" aria-label={`Tabela planu sędziów: ${dayLabel}`}>
-                              <TableHead>
-                                <TableRow>
-                                  <TableCell align="center">Drużyna A</TableCell>
-                                  <TableCell align="center">Start</TableCell>
-                                  <TableCell align="center">Koniec</TableCell>
-                                  <TableCell align="center">Drużyna B</TableCell>
-                                  <TableCell align="center">Boisko</TableCell>
-                                  <TableCell align="center">Sędzia 1</TableCell>
-                                  <TableCell align="center">Sędzia 2</TableCell>
-                                  <TableCell align="center">Stolik kar</TableCell>
-                                  <TableCell align="center">Zagary</TableCell>
-                                </TableRow>
-                              </TableHead>
-                              <TableBody>
-                                {dayMatches.map((m) => {
-                                  const teamAName = tournament.teams.find((t) => t.id === m.teamAId)?.name ?? m.teamAId;
-                                  const teamBName = tournament.teams.find((t) => t.id === m.teamBId)?.name ?? m.teamBId;
-
-                                  const startD = new Date(m.scheduledAt);
-                                  const endD = new Date(startD.getTime() + 60 * 60 * 1000);
-                                  const startTime = !Number.isNaN(startD.getTime())
-                                    ? startD.toLocaleTimeString("pl-PL", {
-                                        hour: "2-digit",
-                                        minute: "2-digit",
-                                        hour12: false,
-                                      })
-                                    : "—";
-                                  const endTime = !Number.isNaN(endD.getTime())
-                                    ? endD.toLocaleTimeString("pl-PL", {
-                                        hour: "2-digit",
-                                        minute: "2-digit",
-                                        hour12: false,
-                                      })
-                                    : "—";
-
-                                  const assignments = refereePlanByMatchId[m.id] ?? {};
-                                  const ref1 = assignments.REFEREE_1;
-                                  const ref2 = assignments.REFEREE_2;
-                                  const tablePenalty = assignments.TABLE_PENALTY;
-                                  const tableClock = assignments.TABLE_CLOCK;
-
-                                  const ref1Name = ref1 ? tournament.referees.find((r) => r.id === ref1) : undefined;
-                                  const ref2Name = ref2 ? tournament.referees.find((r) => r.id === ref2) : undefined;
-                                  const tablePenaltyName = tablePenalty
-                                    ? tournament.referees.find((r) => r.id === tablePenalty)
-                                    : undefined;
-                                  const tableClockName = tableClock
-                                    ? tournament.referees.find((r) => r.id === tableClock)
-                                    : undefined;
-
-                                  return (
-                                    <TableRow key={m.id}>
-                                      <TableCell align="center" sx={{ fontWeight: 600 }}>
-                                        {teamAName}
-                                      </TableCell>
-                                      <TableCell align="center">{startTime}</TableCell>
-                                      <TableCell align="center">{endTime}</TableCell>
-                                      <TableCell align="center" sx={{ fontWeight: 600 }}>
-                                        {teamBName}
-                                      </TableCell>
-                                      <TableCell align="center">{m.court ?? "—"}</TableCell>
-                                      <TableCell align="center">
-                                        {ref1Name ? personDisplayName(ref1Name) : "—"}
-                                      </TableCell>
-                                      <TableCell align="center">
-                                        {ref2Name ? personDisplayName(ref2Name) : "—"}
-                                      </TableCell>
-                                      <TableCell align="center">
-                                        {tablePenaltyName ? personDisplayName(tablePenaltyName) : "—"}
-                                      </TableCell>
-                                      <TableCell align="center">
-                                        {tableClockName ? personDisplayName(tableClockName) : "—"}
-                                      </TableCell>
-                                    </TableRow>
-                                  );
-                                })}
-                              </TableBody>
-                            </Table>
-                          </TableContainer>
-                        )}
-
-                        <Box sx={{ display: "flex", justifyContent: "flex-start", mt: 2, gap: 2 }}>
-                          <Button
-                            variant="outlined"
-                            color="primary"
-                            onClick={() => openEditRefereePlanDialog(dayMatches)}
-                            disabled={dayMatches.length === 0}
-                          >
-                            Edytuj
-                          </Button>
-                          <Button
-                            variant="outlined"
-                            color="error"
-                            onClick={() => setMatchDayToDelete(dayTimestamp)}
-                            disabled={deleteMatchDayLoading && matchDayToDelete === dayTimestamp}
-                          >
-                            Usuń dzień
-                          </Button>
-                        </Box>
-                      </Box>
-                    );
-                  })}
-                </Box>
-              </>
-            )}
-          </Paper>
+          <TournamentRefereePlanPanel
+            tournament={tournament}
+            matches={matches}
+            refereePlanByMatchId={refereePlanByMatchId}
+            refereePlanLoading={refereePlanLoading}
+            refereePlanError={refereePlanError}
+            scheduleTableDayTimestamps={scheduleTableDayTimestamps}
+            getMatchDayTimestamp={getMatchDayTimestamp}
+            getScheduleDayLabel={getScheduleDayLabel}
+            openAddRefereePlanDialog={openAddRefereePlanDialog}
+            openNewDayRefereePlanTable={openNewDayRefereePlanTable}
+            openEditRefereePlanDialog={openEditRefereePlanDialog}
+            personDisplayName={personDisplayName}
+            setMatchDayToDelete={setMatchDayToDelete}
+            deleteMatchDayLoading={deleteMatchDayLoading}
+            matchDayToDelete={matchDayToDelete}
+          />
         </Box>
 
         <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-          <Paper sx={{ p: 3, borderRadius: 3 }}>
-            <Typography variant="h6" sx={{ fontWeight: "bold", mb: 2 }}>
-              Drużyny
-            </Typography>
-            {tournament.teams.length === 0 ? (
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
-                <Typography variant="body2" color="textSecondary">
-                  Brak przypisanych drużyn.
-                </Typography>
-                <Button variant="contained" onClick={openAddTeamsDialog} sx={{ alignSelf: "flex-start" }}>
-                  Dodaj
-                </Button>
-              </Box>
-            ) : (
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                  {tournament.teams.map((team) => (
-                    <Box
-                      key={team.id}
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1.5,
-                        p: 1.5,
-                        borderRadius: 2,
-                        bgcolor: "grey.50",
-                      }}
-                    >
-                      <Box
-                        sx={{
-                          width: 32,
-                          height: 32,
-                          bgcolor: "white",
-                          borderRadius: 1,
-                          border: "1px solid",
-                          borderColor: "grey.200",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          fontWeight: "bold",
-                          color: "primary.main",
-                        }}
-                      >
-                        {team.name[0] ?? "?"}
-                      </Box>
-                      <Typography sx={{ fontWeight: 500, flex: 1 }}>{team.name}</Typography>
-                      <Tooltip title="Usuń drużynę z turnieju">
-                        <span>
-                          <IconButton
-                            aria-label={`Usuń drużynę ${team.name} z turnieju`}
-                            color="error"
-                            onClick={() => openRemoveTeamDialog(team)}
-                            size="small"
-                            disabled={removeTeamLoading && teamToRemove?.id === team.id}
-                            sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2, p: 0 }}
-                          >
-                            <Trash2 size={18} />
-                          </IconButton>
-                        </span>
-                      </Tooltip>
-                    </Box>
-                  ))}
-                </Box>
-                <Button variant="outlined" onClick={openAddTeamsDialog} sx={{ alignSelf: "flex-start" }}>
-                  Dodaj
-                </Button>
-              </Box>
-            )}
-          </Paper>
+          <TournamentTeamsPanel
+            tournament={tournament}
+            openAddTeamsDialog={openAddTeamsDialog}
+            openRemoveTeamDialog={openRemoveTeamDialog}
+            removeTeamLoading={removeTeamLoading}
+            teamToRemove={teamToRemove}
+          />
 
           <Paper sx={{ p: 3, borderRadius: 3 }}>
             <Typography variant="h6" sx={{ fontWeight: "bold", mb: 2 }}>
               Personel
             </Typography>
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" }, gap: 2 }}>
               <Box>
                 <Typography
                   variant="caption"
@@ -2144,6 +1663,9 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
                   }}
                 >
                   Sędziowie
+                  <Typography component="span" aria-hidden="true" variant="body2" color="text.secondary" sx={{ ml: 1 }}>
+                    ({tournament.referees.length})
+                  </Typography>
                 </Typography>
                 {tournament.referees.length === 0 ? (
                   <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
@@ -2220,6 +1742,9 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
                   }}
                 >
                   Klasyfikatorzy
+                  <Typography component="span" aria-hidden="true" variant="body2" color="text.secondary" sx={{ ml: 1 }}>
+                    ({tournament.classifiers.length})
+                  </Typography>
                 </Typography>
                 {tournament.classifiers.length === 0 ? (
                   <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
