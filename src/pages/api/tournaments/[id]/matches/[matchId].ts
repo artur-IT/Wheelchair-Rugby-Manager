@@ -70,4 +70,3 @@ export const DELETE: APIRoute = async ({ params }) => {
     return json({ error: "Nie udało się usunąć meczu" }, 500);
   }
 };
-

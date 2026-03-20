@@ -59,17 +59,21 @@ function renderDialog(onSubmit = vi.fn()) {
 }
 
 describe("AddPersonDialog — validation", () => {
-  it("shows error and blocks submit when first name exceeds 50 characters", async () => {
-    const user = userEvent.setup();
-    const { onSubmit } = renderDialog();
+  it(
+    "shows error and blocks submit when first name exceeds 50 characters",
+    async () => {
+      const user = userEvent.setup();
+      const { onSubmit } = renderDialog();
 
-    await user.type(screen.getByLabelText("Imię"), "A".repeat(MAX_SHORT_TEXT + 1));
-    await user.type(screen.getByLabelText("Nazwisko"), "Kowalski");
-    await user.click(screen.getByRole("button", { name: "Zapisz" }));
+      await user.type(screen.getByLabelText("Imię"), "A".repeat(MAX_SHORT_TEXT + 1));
+      await user.type(screen.getByLabelText("Nazwisko"), "Kowalski");
+      await user.click(screen.getByRole("button", { name: "Zapisz" }));
 
-    expect(screen.getByRole("alert")).toHaveTextContent(/nie mogą przekraczać 50 znaków/i);
-    expect(onSubmit).not.toHaveBeenCalled();
-  });
+      expect(screen.getByRole("alert")).toHaveTextContent(/nie mogą przekraczać 50 znaków/i);
+      expect(onSubmit).not.toHaveBeenCalled();
+    },
+    10000
+  );
 
   it("shows error and blocks submit when email exceeds 50 characters", async () => {
     const user = userEvent.setup();

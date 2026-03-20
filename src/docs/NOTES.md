@@ -100,3 +100,42 @@ Dzięki temu kod Astro/Node będzie używał zaktualizowanego klienta i schematu
 ---
 
 Code Rabbit do code review po commitach, ALE przed zatwierdzeniem PR.
+
+---
+
+REFEREE MATCH PLAN prompt:
+
+_Poniżej planu rozgrywek i na podstawie planu rozgrywek stwórz podobny plan dla sędziów.
+Kolumny jakie ma zawierać formularz dokładnie w tej kolejności to:_
+
+- Drużyna A
+- Start
+- Koniec
+- Drużyna B
+- Boisko
+- Sędzia 1
+- Sędzia 2
+- Stolik kar
+- Zagary
+
+_dodaj takie same funkcjonalności tj. edycja, usuwanie, tworzenie nowych pozycji.
+tworzenie i usuwanie dnia itp.
+całą sekcję dla sędziów wyróżnij innym kolorem tła i nagłówkiem._
+
+AGENT: Auto
+EFEKT: Super! - tylko po tym 1 poleceniu (bez dopisywania poprawek) otrzymałem:
+
+- dokładny plan rozgrywek sędziów,
+- wszystkie niezbędne kolumny
+- bez błędów w konsoli DevTools!
+- pełny CRUD dla nowych dni planu rozgrywek sędziów,
+- CRUD wybranego dnia planu rozgrywek sędziów,
+
+DO POPRAWKI:
+
+- Nie wszystkie testy przechodziły, ale wszystko działało!
+
+WNIOSEK:
+Dobrze przemyślany i zaplanowany prompt to wielka siła i ma świetny potencjał oraz sens do tworzenia całych nowych modułów!
+
+---

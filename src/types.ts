@@ -123,6 +123,26 @@ export interface RefereeAssignment {
   refereeId: string;
 }
 
+export interface RefereePlanMatch {
+  matchId: string;
+  scheduledAt: string;
+  court?: string;
+  teamAId: string;
+  teamBId: string;
+  refereeAssignments: Partial<Record<RefereeRole, string>>;
+}
+
+export interface UpsertRefereePlanMatchDto {
+  teamAId: string;
+  teamBId: string;
+  scheduledAt: string; // ISO
+  court?: string;
+  referee1Id?: string;
+  referee2Id?: string;
+  tablePenaltyId?: string;
+  tableClockId?: string;
+}
+
 export interface ClassificationExam {
   id: string;
   scheduledAt?: string;

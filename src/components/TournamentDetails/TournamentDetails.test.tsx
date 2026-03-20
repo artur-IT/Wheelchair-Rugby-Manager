@@ -156,6 +156,10 @@ beforeEach(() => {
         return new Response(JSON.stringify(matches), { status: 200 });
       }
 
+      if (url === "/api/tournaments/t1/referee-plan" && (!init?.method || init.method === "GET")) {
+        return new Response(JSON.stringify([]), { status: 200 });
+      }
+
       if (url === "/api/tournaments/t1/matches" && init?.method === "POST") {
         const body = init?.body ? JSON.parse(String(init.body)) : {};
         matches = [
@@ -547,6 +551,42 @@ describe("TournamentDetails", () => {
 
     expect(await screen.findByText("Anna Nowak")).toBeInTheDocument();
     expect(screen.queryByText("Jan Kowalski")).not.toBeInTheDocument();
+  }, 10000);
+
+  it("renders referee plan dialog inputs (columns order)", async () => {
+    const user = userEvent.setup();
+    render(<TournamentDetails id="t1" />);
+
+    await screen.findByRole("heading", { name: "Turniej Otwarcia Sezonu" });
+
+    // Add teams so referee plan "Dodaj" is enabled.
+    const teamsSection = screen.getByRole("heading", { name: "Drużyny" }).closest("div") as HTMLElement;
+    await user.click(within(teamsSection).getByRole("button", { name: "Dodaj" }));
+
+    const addTeamsDialog = await screen.findByRole("dialog");
+    await user.click(within(addTeamsDialog).getByText("Warsaw Raptors"));
+    await user.click(within(addTeamsDialog).getByText("Krakow Eagles"));
+    await user.click(within(addTeamsDialog).getByRole("button", { name: "Dodaj" }));
+
+    expect(await screen.findByText("Warsaw Raptors")).toBeInTheDocument();
+    expect(screen.getByText("Krakow Eagles")).toBeInTheDocument();
+
+    const emptyRefereePlanBox = screen.getByText(/Brak zaplanowanych pozycji/i).closest("div") as HTMLElement;
+    await user.click(within(emptyRefereePlanBox).getByRole("button", { name: "Dodaj" }));
+
+    const dialog = await screen.findByRole("dialog");
+
+    expect(within(dialog).getByText("Tworzenie planu sędziów")).toBeInTheDocument();
+
+    expect(within(dialog).getByLabelText("Drużyna A")).toBeInTheDocument();
+    expect(within(dialog).getByLabelText("Start")).toBeInTheDocument();
+    expect(within(dialog).getByLabelText("Koniec")).toBeInTheDocument();
+    expect(within(dialog).getByLabelText("Drużyna B")).toBeInTheDocument();
+    expect(within(dialog).getByLabelText("Boisko")).toBeInTheDocument();
+    expect(within(dialog).getByLabelText("Sędzia 1")).toBeInTheDocument();
+    expect(within(dialog).getByLabelText("Sędzia 2")).toBeInTheDocument();
+    expect(within(dialog).getByLabelText("Stolik kar")).toBeInTheDocument();
+    expect(within(dialog).getByLabelText("Zagary")).toBeInTheDocument();
   }, 10000);
 
   it("adds classifiers via dialog and shows them", async () => {

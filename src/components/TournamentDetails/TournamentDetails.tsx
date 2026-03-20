@@ -35,7 +35,7 @@ import {
 import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
 import AppShell from "@/components/AppShell/AppShell";
 import ConfirmationDialog from "@/components/ui/ConfirmationDialog";
-import type { Match, Person, Team, Tournament } from "@/types";
+import type { Match, Person, RefereePlanMatch, RefereeRole, Team, Tournament } from "@/types";
 
 interface TournamentDetailsProps {
   id: string;
@@ -93,12 +93,22 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
   const [matchesLoading, setMatchesLoading] = useState(false);
   const [matchesError, setMatchesError] = useState<string | null>(null);
 
+  // Referee plan (assignments per match)
+  const [refereePlanByMatchId, setRefereePlanByMatchId] = useState<
+    Record<string, Partial<Record<RefereeRole, string>>>
+  >({});
+  const [refereePlanLoading, setRefereePlanLoading] = useState(false);
+  const [refereePlanError, setRefereePlanError] = useState<string | null>(null);
+
   // UI-only: pozwala tworzyć „pustą” tabelę dla dnia zanim pojawią się mecze.
   const [scheduleDayTimestamps, setScheduleDayTimestamps] = useState<number[]>([]);
 
   // Walidacja dla flow „Nowy dzień”: użytkownik ma wybierać tylko wolne dni,
   // które nie mają jeszcze zaplanowanych meczów.
   const [allowedNewDayTimestamps, setAllowedNewDayTimestamps] = useState<number[] | null>(null);
+
+  // Analogiczna walidacja dla flow „Nowy dzień” w sekcji sędziów.
+  const [allowedNewRefereePlanDayTimestamps, setAllowedNewRefereePlanDayTimestamps] = useState<number[] | null>(null);
 
   const [addMatchOpen, setAddMatchOpen] = useState(false);
   const [createMatchLoading, setCreateMatchLoading] = useState(false);
@@ -143,6 +153,41 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
   const [matchDayToDelete, setMatchDayToDelete] = useState<number | null>(null);
   const [deleteMatchDayLoading, setDeleteMatchDayLoading] = useState(false);
   const [deleteMatchDayError, setDeleteMatchDayError] = useState<string | null>(null);
+
+  // Referee plan dialogs
+  const [addRefereePlanOpen, setAddRefereePlanOpen] = useState(false);
+  const [createRefereePlanLoading, setCreateRefereePlanLoading] = useState(false);
+  const [createRefereePlanError, setCreateRefereePlanError] = useState<string | null>(null);
+
+  const [newRefereePlanDayTimestamp, setNewRefereePlanDayTimestamp] = useState<number | null>(null);
+  const [newRefereePlanTeamAId, setNewRefereePlanTeamAId] = useState<string>("");
+  const [newRefereePlanTeamBId, setNewRefereePlanTeamBId] = useState<string>("");
+  const [newRefereePlanStartTime, setNewRefereePlanStartTime] = useState<string>("10:00");
+  const [newRefereePlanEndTime, setNewRefereePlanEndTime] = useState<string>("11:00");
+  const [newRefereePlanCourt, setNewRefereePlanCourt] = useState<string>("1");
+  const [newRefereePlanReferee1Id, setNewRefereePlanReferee1Id] = useState<string>("");
+  const [newRefereePlanReferee2Id, setNewRefereePlanReferee2Id] = useState<string>("");
+  const [newRefereePlanTablePenaltyId, setNewRefereePlanTablePenaltyId] = useState<string>("");
+  const [newRefereePlanTableClockId, setNewRefereePlanTableClockId] = useState<string>("");
+
+  interface RefereePlanDraft {
+    id?: string;
+    teamAId: string;
+    teamBId: string;
+    startTime: string;
+    endTime: string;
+    court: string;
+    referee1Id: string;
+    referee2Id: string;
+    tablePenaltyId: string;
+    tableClockId: string;
+  }
+
+  const [editRefereePlanOpen, setEditRefereePlanOpen] = useState(false);
+  const [editRefereePlanDayTimestamp, setEditRefereePlanDayTimestamp] = useState<number | null>(null);
+  const [editRefereePlanLoading, setEditRefereePlanLoading] = useState(false);
+  const [editRefereePlanError, setEditRefereePlanError] = useState<string | null>(null);
+  const [editRefereePlanDrafts, setEditRefereePlanDrafts] = useState<RefereePlanDraft[]>([]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -204,11 +249,36 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
     }
   }
 
+  async function refreshRefereePlan(tournamentId: string) {
+    setRefereePlanLoading(true);
+    setRefereePlanError(null);
+    try {
+      const res = await fetch(`/api/tournaments/${tournamentId}/referee-plan`);
+      if (!res.ok) {
+        const data = (await res.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(data?.error || "Nie udało się pobrać planu sędziów");
+      }
+
+      const list: RefereePlanMatch[] = await res.json();
+      const mapping: Record<string, Partial<Record<RefereeRole, string>>> = {};
+      for (const row of list) {
+        mapping[row.matchId] = row.refereeAssignments;
+      }
+      setRefereePlanByMatchId(mapping);
+    } catch (e) {
+      setRefereePlanError(e instanceof Error ? e.message : "Nie udało się pobrać planu sędziów");
+      setRefereePlanByMatchId({});
+    } finally {
+      setRefereePlanLoading(false);
+    }
+  }
+
   const tournamentId = tournament?.id;
   useEffect(() => {
     if (!tournamentId) return;
     setScheduleDayTimestamps([]);
     void refreshMatches(tournamentId);
+    void refreshRefereePlan(tournamentId);
   }, [tournamentId]);
 
   async function openAddTeamsDialog() {
@@ -667,6 +737,7 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
       }
 
       await refreshMatches(tournament.id);
+      await refreshRefereePlan(tournament.id);
       setAddMatchOpen(false);
     } catch (e) {
       setCreateMatchError(e instanceof Error ? e.message : "Nie udało się utworzyć meczu");
@@ -685,6 +756,315 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
     const minute = Number(minuteRaw);
     if (!Number.isFinite(hour) || !Number.isFinite(minute)) return null;
     return hour * 60 + minute;
+  }
+
+  function openAddRefereePlanDialog(presetDayTimestamp?: number | null, allowedDays?: number[] | null) {
+    if (!tournament) return;
+
+    setAddRefereePlanOpen(true);
+    setCreateRefereePlanError(null);
+    setCreateRefereePlanLoading(false);
+
+    setNewRefereePlanDayTimestamp(presetDayTimestamp ?? matchDayOptions[0]?.timestamp ?? null);
+    setAllowedNewRefereePlanDayTimestamps(allowedDays ?? null);
+
+    const [teamA, teamB] = tournament.teams;
+    setNewRefereePlanTeamAId(teamA?.id ?? "");
+    setNewRefereePlanTeamBId(teamB?.id ?? "");
+
+    setNewRefereePlanStartTime("10:00");
+    setNewRefereePlanEndTime("11:00");
+    setNewRefereePlanCourt("1");
+
+    // Domyślne przypisania: maks. 4 różne osoby, jeśli są dostępne.
+    const referees = tournament.referees;
+    setNewRefereePlanReferee1Id(referees[0]?.id ?? "");
+    setNewRefereePlanReferee2Id(referees[1]?.id ?? "");
+    setNewRefereePlanTablePenaltyId(referees[2]?.id ?? "");
+    setNewRefereePlanTableClockId(referees[3]?.id ?? "");
+  }
+
+  function closeAddRefereePlanDialog() {
+    if (createRefereePlanLoading) return;
+    setAddRefereePlanOpen(false);
+    setCreateRefereePlanError(null);
+    setAllowedNewRefereePlanDayTimestamps(null);
+  }
+
+  async function submitNewRefereePlan() {
+    if (!tournament) return;
+    if (!newRefereePlanDayTimestamp) {
+      setCreateRefereePlanError("Wybierz dzień tygodnia");
+      return;
+    }
+    if (
+      allowedNewRefereePlanDayTimestamps &&
+      !allowedNewRefereePlanDayTimestamps.includes(newRefereePlanDayTimestamp)
+    ) {
+      setCreateRefereePlanError("Wybierz wolny dzień (bez zaplanowanych meczów).");
+      return;
+    }
+    if (!newRefereePlanTeamAId || !newRefereePlanTeamBId) {
+      setCreateRefereePlanError("Wybierz drużyny A i B");
+      return;
+    }
+    if (newRefereePlanTeamAId === newRefereePlanTeamBId) {
+      setCreateRefereePlanError("Drużyny A i B muszą być różne");
+      return;
+    }
+
+    const [hourRaw, minuteRaw] = newRefereePlanStartTime.split(":");
+    const hour = Number(hourRaw);
+    const minute = Number(minuteRaw);
+    if (!Number.isFinite(hour) || !Number.isFinite(minute)) {
+      setCreateRefereePlanError("Podaj poprawną godzinę");
+      return;
+    }
+
+    const startMinutes = hour * 60 + minute;
+    const endMinutes = timeToMinutes(newRefereePlanEndTime);
+    const minMinutes = 7 * 60;
+    const maxMinutes = 22 * 60;
+
+    if (startMinutes < minMinutes || startMinutes > maxMinutes) {
+      setCreateRefereePlanError("Start musi być w przedziale 07:00-22:00");
+      return;
+    }
+    if (endMinutes == null) {
+      setCreateRefereePlanError("Podaj poprawny Koniec");
+      return;
+    }
+    if (endMinutes < minMinutes || endMinutes > maxMinutes) {
+      setCreateRefereePlanError("Koniec musi być w przedziale 07:00-22:00");
+      return;
+    }
+    if (endMinutes <= startMinutes) {
+      setCreateRefereePlanError("Koniec musi być po Start");
+      return;
+    }
+
+    const day = new Date(newRefereePlanDayTimestamp);
+    const scheduledAt = new Date(day.getFullYear(), day.getMonth(), day.getDate(), hour, minute, 0, 0).toISOString();
+
+    const court = newRefereePlanCourt.trim() === "" ? undefined : newRefereePlanCourt.trim();
+
+    const referee1Id = newRefereePlanReferee1Id.trim() === "" ? undefined : newRefereePlanReferee1Id.trim();
+    const referee2Id = newRefereePlanReferee2Id.trim() === "" ? undefined : newRefereePlanReferee2Id.trim();
+    const tablePenaltyId = newRefereePlanTablePenaltyId.trim() === "" ? undefined : newRefereePlanTablePenaltyId.trim();
+    const tableClockId = newRefereePlanTableClockId.trim() === "" ? undefined : newRefereePlanTableClockId.trim();
+
+    setCreateRefereePlanLoading(true);
+    setCreateRefereePlanError(null);
+    try {
+      const res = await fetch(`/api/tournaments/${tournament.id}/referee-plan`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          teamAId: newRefereePlanTeamAId,
+          teamBId: newRefereePlanTeamBId,
+          scheduledAt,
+          court,
+          referee1Id,
+          referee2Id,
+          tablePenaltyId,
+          tableClockId,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = (await res.json().catch(() => null)) as { error?: string } | null;
+        throw new Error(data?.error || "Nie udało się utworzyć wpisu w planie sędziów");
+      }
+
+      await refreshMatches(tournament.id);
+      await refreshRefereePlan(tournament.id);
+      setAddRefereePlanOpen(false);
+    } catch (e) {
+      setCreateRefereePlanError(e instanceof Error ? e.message : "Nie udało się utworzyć wpisu w planie sędziów");
+    } finally {
+      setCreateRefereePlanLoading(false);
+    }
+  }
+
+  function openEditRefereePlanDialog(matchesToEdit: Match[]) {
+    if (!tournament) return;
+    if (matchesToEdit.length === 0) return;
+
+    setEditRefereePlanError(null);
+    setEditRefereePlanLoading(false);
+
+    const first = matchesToEdit[0];
+    const d = new Date(first.scheduledAt);
+    if (!Number.isNaN(d.getTime())) {
+      setEditRefereePlanDayTimestamp(new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime());
+    } else {
+      setEditRefereePlanDayTimestamp(null);
+    }
+
+    setEditRefereePlanDrafts(
+      matchesToEdit.map((match) => {
+        const matchDate = new Date(match.scheduledAt);
+        const startTime = !Number.isNaN(matchDate.getTime())
+          ? `${pad2(matchDate.getHours())}:${pad2(matchDate.getMinutes())}`
+          : "10:00";
+        const endDate = !Number.isNaN(matchDate.getTime()) ? new Date(matchDate.getTime() + 60 * 60 * 1000) : null;
+        const endTime = endDate ? `${pad2(endDate.getHours())}:${pad2(endDate.getMinutes())}` : "11:00";
+
+        const assignments = refereePlanByMatchId[match.id] ?? {};
+
+        return {
+          id: match.id,
+          teamAId: match.teamAId,
+          teamBId: match.teamBId,
+          startTime,
+          endTime,
+          court: match.court ?? "1",
+          referee1Id: assignments.REFEREE_1 ?? "",
+          referee2Id: assignments.REFEREE_2 ?? "",
+          tablePenaltyId: assignments.TABLE_PENALTY ?? "",
+          tableClockId: assignments.TABLE_CLOCK ?? "",
+        };
+      })
+    );
+
+    setEditRefereePlanOpen(true);
+  }
+
+  function closeEditRefereePlanDialog() {
+    if (editRefereePlanLoading) return;
+    setEditRefereePlanOpen(false);
+    setEditRefereePlanDayTimestamp(null);
+    setEditRefereePlanDrafts([]);
+    setEditRefereePlanError(null);
+  }
+
+  function addAnotherEditRefereePlanRow() {
+    if (!tournament) return;
+    const teamAId = tournament.teams[0]?.id ?? "";
+    const teamBId = tournament.teams.find((t) => t.id !== teamAId)?.id ?? teamAId;
+    setEditRefereePlanDrafts((prev) => [
+      ...prev,
+      {
+        teamAId,
+        teamBId,
+        startTime: "10:00",
+        endTime: "11:00",
+        court: "1",
+        referee1Id: "",
+        referee2Id: "",
+        tablePenaltyId: "",
+        tableClockId: "",
+      },
+    ]);
+  }
+
+  async function submitEditedRefereePlan() {
+    if (!tournament) return;
+    if (!editRefereePlanDayTimestamp) {
+      setEditRefereePlanError("Wybierz dzień tygodnia");
+      return;
+    }
+    if (editRefereePlanDrafts.length === 0) {
+      setEditRefereePlanError("Brak pozycji do zapisania");
+      return;
+    }
+
+    setEditRefereePlanLoading(true);
+    setEditRefereePlanError(null);
+    try {
+      const day = new Date(editRefereePlanDayTimestamp);
+
+      for (const draft of editRefereePlanDrafts) {
+        if (!draft.teamAId || !draft.teamBId) {
+          setEditRefereePlanError("Wybierz drużyny A i B");
+          return;
+        }
+        if (draft.teamAId === draft.teamBId) {
+          setEditRefereePlanError("Drużyny A i B muszą być różne");
+          return;
+        }
+
+        const [hourRaw, minuteRaw] = draft.startTime.split(":");
+        const hour = Number(hourRaw);
+        const minute = Number(minuteRaw);
+        if (!Number.isFinite(hour) || !Number.isFinite(minute)) {
+          setEditRefereePlanError("Podaj poprawny Start");
+          return;
+        }
+
+        const startMinutes = hour * 60 + minute;
+        const endMinutes = timeToMinutes(draft.endTime);
+        const minMinutes = 7 * 60;
+        const maxMinutes = 22 * 60;
+
+        if (startMinutes < minMinutes || startMinutes > maxMinutes) {
+          setEditRefereePlanError("Start musi być w przedziale 07:00-22:00");
+          return;
+        }
+        if (endMinutes == null) {
+          setEditRefereePlanError("Podaj poprawny Koniec");
+          return;
+        }
+        if (endMinutes < minMinutes || endMinutes > maxMinutes) {
+          setEditRefereePlanError("Koniec musi być w przedziale 07:00-22:00");
+          return;
+        }
+        if (endMinutes <= startMinutes) {
+          setEditRefereePlanError("Koniec musi być po Start");
+          return;
+        }
+
+        const scheduledAt = new Date(
+          day.getFullYear(),
+          day.getMonth(),
+          day.getDate(),
+          hour,
+          minute,
+          0,
+          0
+        ).toISOString();
+
+        const court = draft.court.trim() === "" ? undefined : draft.court.trim();
+
+        const referee1Id = draft.referee1Id.trim() === "" ? undefined : draft.referee1Id.trim();
+        const referee2Id = draft.referee2Id.trim() === "" ? undefined : draft.referee2Id.trim();
+        const tablePenaltyId = draft.tablePenaltyId.trim() === "" ? undefined : draft.tablePenaltyId.trim();
+        const tableClockId = draft.tableClockId.trim() === "" ? undefined : draft.tableClockId.trim();
+
+        const url = draft.id
+          ? `/api/tournaments/${tournament.id}/referee-plan/${draft.id}`
+          : `/api/tournaments/${tournament.id}/referee-plan`;
+        const method = draft.id ? "PUT" : "POST";
+
+        const res = await fetch(url, {
+          method,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            teamAId: draft.teamAId,
+            teamBId: draft.teamBId,
+            scheduledAt,
+            court,
+            referee1Id,
+            referee2Id,
+            tablePenaltyId,
+            tableClockId,
+          }),
+        });
+
+        if (!res.ok) {
+          const data = (await res.json().catch(() => null)) as { error?: string } | null;
+          throw new Error(data?.error || "Nie udało się zapisać wpisu w planie sędziów");
+        }
+      }
+
+      await refreshMatches(tournament.id);
+      await refreshRefereePlan(tournament.id);
+      closeEditRefereePlanDialog();
+    } catch (e) {
+      setEditRefereePlanError(e instanceof Error ? e.message : "Nie udało się zapisać wpisu w planie sędziów");
+    } finally {
+      setEditRefereePlanLoading(false);
+    }
   }
 
   function parseJerseyInfo(jerseyInfo?: string) {
@@ -896,6 +1276,7 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
       }
 
       await refreshMatches(tournament.id);
+      await refreshRefereePlan(tournament.id);
       closeEditMatchDialog();
     } catch (e) {
       setEditMatchError(e instanceof Error ? e.message : "Nie udało się zaktualizować meczu");
@@ -924,8 +1305,10 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
       }
 
       await refreshMatches(tournament.id);
+      await refreshRefereePlan(tournament.id);
       // Jeśli edytujemy plan w tym samym komponencie, usuń wiersz z formularza od razu.
       setEditMatchDrafts((prev) => prev.filter((d) => d.id !== deletedId));
+      setEditRefereePlanDrafts((prev) => prev.filter((d) => d.id !== deletedId));
       if (editMatch?.id === deletedId) setEditMatch(null);
       setMatchToDelete(null);
     } catch (e) {
@@ -959,6 +1342,7 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
       }
 
       await refreshMatches(tournament.id);
+      await refreshRefereePlan(tournament.id);
       setScheduleDayTimestamps((prev) => prev.filter((ts) => ts !== matchDayToDelete));
       setMatchDayToDelete(null);
     } catch (e) {
@@ -979,6 +1363,14 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
       ? [...matchDayOptions, { timestamp: editMatchDayTimestamp, label: formatDayOptionLabel(editMatchDayTimestamp) }]
       : matchDayOptions;
 
+  const editRefereePlanDayOptions =
+    editRefereePlanDayTimestamp != null && !matchDayOptions.some((o) => o.timestamp === editRefereePlanDayTimestamp)
+      ? [
+          ...matchDayOptions,
+          { timestamp: editRefereePlanDayTimestamp, label: formatDayOptionLabel(editRefereePlanDayTimestamp) },
+        ]
+      : matchDayOptions;
+
   const getMatchDayTimestamp = (scheduledAtIso: string) => {
     const d = new Date(scheduledAtIso);
     return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
@@ -994,6 +1386,10 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
 
   const newMatchDayOptionsForSelect = allowedNewDayTimestamps
     ? matchDayOptions.filter((o) => allowedNewDayTimestamps.includes(o.timestamp))
+    : matchDayOptions;
+
+  const newRefereePlanDayOptionsForSelect = allowedNewRefereePlanDayTimestamps
+    ? matchDayOptions.filter((o) => allowedNewRefereePlanDayTimestamps.includes(o.timestamp))
     : matchDayOptions;
 
   function getScheduleDayLabel(timestamp: number) {
@@ -1016,6 +1412,27 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
     });
 
     openAddMatchDialog(
+      nextDay,
+      freeDayOptions.map((o) => o.timestamp)
+    );
+  }
+
+  function openNewDayRefereePlanTable() {
+    if (!tournament) return;
+    if (tournament.teams.length < 2) return;
+
+    const used = new Set(scheduleTableDayTimestamps);
+    const freeDayOptions = matchDayOptions.filter((o) => !used.has(o.timestamp));
+    const nextDay = freeDayOptions[0]?.timestamp ?? null;
+    if (!nextDay) return;
+
+    setScheduleDayTimestamps((prev) => {
+      const merged = Array.from(new Set([...prev, nextDay]));
+      merged.sort((a, b) => a - b);
+      return merged;
+    });
+
+    openAddRefereePlanDialog(
       nextDay,
       freeDayOptions.map((o) => o.timestamp)
     );
@@ -1383,6 +1800,235 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
                             disabled={deleteMatchDayLoading && matchDayToDelete === dayTimestamp}
                           >
                             Usuń
+                          </Button>
+                        </Box>
+                      </Box>
+                    );
+                  })}
+                </Box>
+              </>
+            )}
+          </Paper>
+
+          <Paper
+            sx={{
+              p: 4,
+              borderRadius: 3,
+              bgcolor: "#fff7ed",
+              border: "1px solid",
+              borderColor: "grey.200",
+            }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
+              <Box
+                sx={{
+                  bgcolor: "#fde68a",
+                  p: 1,
+                  borderRadius: 2,
+                  color: "#b45309",
+                }}
+              >
+                <Typography component="div" sx={{ fontWeight: 900 }}>
+                  SJ
+                </Typography>
+              </Box>
+              <Typography variant="h6" sx={{ fontWeight: "bold" }}>
+                Plan Sędziów
+              </Typography>
+            </Box>
+
+            {refereePlanLoading ? (
+              <Box sx={{ display: "flex", justifyContent: "center", py: 5 }}>
+                <CircularProgress size={24} />
+              </Box>
+            ) : refereePlanError ? (
+              <Alert severity="error">{refereePlanError}</Alert>
+            ) : scheduleTableDayTimestamps.length === 0 ? (
+              <Box
+                sx={{
+                  color: "text.secondary",
+                  fontStyle: "italic",
+                  textAlign: "center",
+                  py: 5,
+                  border: "2px dashed",
+                  borderColor: "grey.200",
+                  borderRadius: 2,
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: 2,
+                }}
+              >
+                <Typography>
+                  Brak zaplanowanych pozycji sędziów.
+                  <br />
+                  Dodaj nowy wpis do planu.
+                </Typography>
+                <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", justifyContent: "center" }}>
+                  <Button
+                    variant="contained"
+                    onClick={() => openAddRefereePlanDialog()}
+                    disabled={tournament.teams.length < 2}
+                  >
+                    Dodaj
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    onClick={openNewDayRefereePlanTable}
+                    disabled={tournament.teams.length < 2}
+                  >
+                    Nowy dzień
+                  </Button>
+                </Box>
+              </Box>
+            ) : (
+              <>
+                <Box sx={{ display: "flex", justifyContent: "flex-start", mb: 2 }}>
+                  <Button
+                    variant="outlined"
+                    onClick={openNewDayRefereePlanTable}
+                    disabled={tournament.teams.length < 2}
+                  >
+                    Nowy dzień
+                  </Button>
+                </Box>
+
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                  {scheduleTableDayTimestamps.map((dayTimestamp) => {
+                    const dayMatches = matches.filter((m) => getMatchDayTimestamp(m.scheduledAt) === dayTimestamp);
+                    const dayLabel = getScheduleDayLabel(dayTimestamp);
+
+                    return (
+                      <Box key={dayTimestamp}>
+                        <Typography variant="h6" sx={{ fontWeight: 900, mb: 2 }}>
+                          {dayLabel}
+                        </Typography>
+
+                        {dayMatches.length === 0 ? (
+                          <Box
+                            sx={{
+                              color: "text.secondary",
+                              fontStyle: "italic",
+                              textAlign: "center",
+                              py: 4,
+                              border: "2px dashed",
+                              borderColor: "grey.200",
+                              borderRadius: 2,
+                              display: "flex",
+                              flexDirection: "column",
+                              alignItems: "center",
+                              gap: 2,
+                            }}
+                          >
+                            <Typography>Brak zaplanowanych meczów w tym dniu.</Typography>
+                            <Button
+                              variant="contained"
+                              onClick={() => openAddRefereePlanDialog(dayTimestamp)}
+                              disabled={tournament.teams.length < 2}
+                            >
+                              Dodaj wpis sędziów
+                            </Button>
+                          </Box>
+                        ) : (
+                          <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 3 }}>
+                            <Table size="small" aria-label={`Tabela planu sędziów: ${dayLabel}`}>
+                              <TableHead>
+                                <TableRow>
+                                  <TableCell align="center">Drużyna A</TableCell>
+                                  <TableCell align="center">Start</TableCell>
+                                  <TableCell align="center">Koniec</TableCell>
+                                  <TableCell align="center">Drużyna B</TableCell>
+                                  <TableCell align="center">Boisko</TableCell>
+                                  <TableCell align="center">Sędzia 1</TableCell>
+                                  <TableCell align="center">Sędzia 2</TableCell>
+                                  <TableCell align="center">Stolik kar</TableCell>
+                                  <TableCell align="center">Zagary</TableCell>
+                                </TableRow>
+                              </TableHead>
+                              <TableBody>
+                                {dayMatches.map((m) => {
+                                  const teamAName = tournament.teams.find((t) => t.id === m.teamAId)?.name ?? m.teamAId;
+                                  const teamBName = tournament.teams.find((t) => t.id === m.teamBId)?.name ?? m.teamBId;
+
+                                  const startD = new Date(m.scheduledAt);
+                                  const endD = new Date(startD.getTime() + 60 * 60 * 1000);
+                                  const startTime = !Number.isNaN(startD.getTime())
+                                    ? startD.toLocaleTimeString("pl-PL", {
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                        hour12: false,
+                                      })
+                                    : "—";
+                                  const endTime = !Number.isNaN(endD.getTime())
+                                    ? endD.toLocaleTimeString("pl-PL", {
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                        hour12: false,
+                                      })
+                                    : "—";
+
+                                  const assignments = refereePlanByMatchId[m.id] ?? {};
+                                  const ref1 = assignments.REFEREE_1;
+                                  const ref2 = assignments.REFEREE_2;
+                                  const tablePenalty = assignments.TABLE_PENALTY;
+                                  const tableClock = assignments.TABLE_CLOCK;
+
+                                  const ref1Name = ref1 ? tournament.referees.find((r) => r.id === ref1) : undefined;
+                                  const ref2Name = ref2 ? tournament.referees.find((r) => r.id === ref2) : undefined;
+                                  const tablePenaltyName = tablePenalty
+                                    ? tournament.referees.find((r) => r.id === tablePenalty)
+                                    : undefined;
+                                  const tableClockName = tableClock
+                                    ? tournament.referees.find((r) => r.id === tableClock)
+                                    : undefined;
+
+                                  return (
+                                    <TableRow key={m.id}>
+                                      <TableCell align="center" sx={{ fontWeight: 600 }}>
+                                        {teamAName}
+                                      </TableCell>
+                                      <TableCell align="center">{startTime}</TableCell>
+                                      <TableCell align="center">{endTime}</TableCell>
+                                      <TableCell align="center" sx={{ fontWeight: 600 }}>
+                                        {teamBName}
+                                      </TableCell>
+                                      <TableCell align="center">{m.court ?? "—"}</TableCell>
+                                      <TableCell align="center">
+                                        {ref1Name ? personDisplayName(ref1Name) : "—"}
+                                      </TableCell>
+                                      <TableCell align="center">
+                                        {ref2Name ? personDisplayName(ref2Name) : "—"}
+                                      </TableCell>
+                                      <TableCell align="center">
+                                        {tablePenaltyName ? personDisplayName(tablePenaltyName) : "—"}
+                                      </TableCell>
+                                      <TableCell align="center">
+                                        {tableClockName ? personDisplayName(tableClockName) : "—"}
+                                      </TableCell>
+                                    </TableRow>
+                                  );
+                                })}
+                              </TableBody>
+                            </Table>
+                          </TableContainer>
+                        )}
+
+                        <Box sx={{ display: "flex", justifyContent: "flex-start", mt: 2, gap: 2 }}>
+                          <Button
+                            variant="outlined"
+                            color="primary"
+                            onClick={() => openEditRefereePlanDialog(dayMatches)}
+                            disabled={dayMatches.length === 0}
+                          >
+                            Edytuj
+                          </Button>
+                          <Button
+                            variant="outlined"
+                            color="error"
+                            onClick={() => setMatchDayToDelete(dayTimestamp)}
+                            disabled={deleteMatchDayLoading && matchDayToDelete === dayTimestamp}
+                          >
+                            Usuń dzień (sędziów)
                           </Button>
                         </Box>
                       </Box>
@@ -2168,6 +2814,565 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
             Usuń
           </Button>
           <Button variant="contained" onClick={submitEditedMatch} disabled={editMatchLoading}>
+            Zapisz
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={addRefereePlanOpen} onClose={closeAddRefereePlanDialog} fullWidth maxWidth="md">
+        <DialogTitle
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 2,
+            flexWrap: "wrap",
+          }}
+        >
+          <Typography component="div" variant="h6" sx={{ fontWeight: 900 }}>
+            Tworzenie planu sędziów
+          </Typography>
+
+          <TextField
+            select
+            label="Dzień tygodnia"
+            value={String(newRefereePlanDayTimestamp ?? "")}
+            onChange={(e) => setNewRefereePlanDayTimestamp(Number(e.target.value))}
+            size="small"
+            sx={{ minWidth: 220 }}
+          >
+            {newRefereePlanDayOptionsForSelect.map((o) => (
+              <MenuItem key={o.timestamp} value={String(o.timestamp)}>
+                {o.label}
+              </MenuItem>
+            ))}
+          </TextField>
+        </DialogTitle>
+
+        <DialogContent dividers>
+          {createRefereePlanError ? (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {createRefereePlanError}
+            </Alert>
+          ) : null}
+
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: { xs: "1fr", sm: "1fr 120px 120px 1fr 95px" },
+                gap: 1.5,
+                alignItems: "end",
+              }}
+            >
+              <TextField
+                select
+                label="Drużyna A"
+                value={newRefereePlanTeamAId}
+                onChange={(e) => setNewRefereePlanTeamAId(String(e.target.value))}
+                fullWidth
+                size="small"
+              >
+                {tournament.teams.map((t) => (
+                  <MenuItem key={t.id} value={t.id}>
+                    {t.name}
+                  </MenuItem>
+                ))}
+              </TextField>
+
+              <TextField
+                type="time"
+                label="Start"
+                value={newRefereePlanStartTime}
+                onChange={(e) => setNewRefereePlanStartTime(e.target.value)}
+                InputLabelProps={{ shrink: true }}
+                size="small"
+              />
+
+              <TextField
+                type="time"
+                label="Koniec"
+                value={newRefereePlanEndTime}
+                onChange={(e) => setNewRefereePlanEndTime(e.target.value)}
+                InputLabelProps={{ shrink: true }}
+                size="small"
+              />
+
+              <TextField
+                select
+                label="Drużyna B"
+                value={newRefereePlanTeamBId}
+                onChange={(e) => setNewRefereePlanTeamBId(String(e.target.value))}
+                fullWidth
+                size="small"
+              >
+                {tournament.teams.map((t) => (
+                  <MenuItem key={t.id} value={t.id} disabled={t.id === newRefereePlanTeamAId}>
+                    {t.name}
+                  </MenuItem>
+                ))}
+              </TextField>
+
+              <TextField
+                select
+                label="Boisko"
+                value={newRefereePlanCourt}
+                onChange={(e) => setNewRefereePlanCourt(String(e.target.value))}
+                size="small"
+              >
+                <MenuItem value="1">1</MenuItem>
+                <MenuItem value="2">2</MenuItem>
+              </TextField>
+            </Box>
+
+            <Divider />
+
+            <Typography sx={{ fontWeight: 900, fontSize: 14 }}>Obsada sędziowska</Typography>
+
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr 1fr 1fr" },
+                gap: 1.5,
+              }}
+            >
+              <TextField
+                select
+                label="Sędzia 1"
+                value={newRefereePlanReferee1Id}
+                onChange={(e) => setNewRefereePlanReferee1Id(String(e.target.value))}
+                size="small"
+              >
+                <MenuItem value="">—</MenuItem>
+                {tournament.referees.map((r) => (
+                  <MenuItem
+                    key={r.id}
+                    value={r.id}
+                    disabled={
+                      r.id !== newRefereePlanReferee1Id &&
+                      [newRefereePlanReferee2Id, newRefereePlanTablePenaltyId, newRefereePlanTableClockId].includes(
+                        r.id
+                      )
+                    }
+                  >
+                    {personDisplayName(r)}
+                  </MenuItem>
+                ))}
+              </TextField>
+
+              <TextField
+                select
+                label="Sędzia 2"
+                value={newRefereePlanReferee2Id}
+                onChange={(e) => setNewRefereePlanReferee2Id(String(e.target.value))}
+                size="small"
+              >
+                <MenuItem value="">—</MenuItem>
+                {tournament.referees.map((r) => (
+                  <MenuItem
+                    key={r.id}
+                    value={r.id}
+                    disabled={
+                      r.id !== newRefereePlanReferee2Id &&
+                      [newRefereePlanReferee1Id, newRefereePlanTablePenaltyId, newRefereePlanTableClockId].includes(
+                        r.id
+                      )
+                    }
+                  >
+                    {personDisplayName(r)}
+                  </MenuItem>
+                ))}
+              </TextField>
+
+              <TextField
+                select
+                label="Stolik kar"
+                value={newRefereePlanTablePenaltyId}
+                onChange={(e) => setNewRefereePlanTablePenaltyId(String(e.target.value))}
+                size="small"
+              >
+                <MenuItem value="">—</MenuItem>
+                {tournament.referees.map((r) => (
+                  <MenuItem
+                    key={r.id}
+                    value={r.id}
+                    disabled={
+                      r.id !== newRefereePlanTablePenaltyId &&
+                      [newRefereePlanReferee1Id, newRefereePlanReferee2Id, newRefereePlanTableClockId].includes(r.id)
+                    }
+                  >
+                    {personDisplayName(r)}
+                  </MenuItem>
+                ))}
+              </TextField>
+
+              <TextField
+                select
+                label="Zagary"
+                value={newRefereePlanTableClockId}
+                onChange={(e) => setNewRefereePlanTableClockId(String(e.target.value))}
+                size="small"
+              >
+                <MenuItem value="">—</MenuItem>
+                {tournament.referees.map((r) => (
+                  <MenuItem
+                    key={r.id}
+                    value={r.id}
+                    disabled={
+                      r.id !== newRefereePlanTableClockId &&
+                      [newRefereePlanReferee1Id, newRefereePlanReferee2Id, newRefereePlanTablePenaltyId].includes(r.id)
+                    }
+                  >
+                    {personDisplayName(r)}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Box>
+          </Box>
+        </DialogContent>
+
+        <DialogActions>
+          <Button onClick={closeAddRefereePlanDialog} disabled={createRefereePlanLoading}>
+            Anuluj
+          </Button>
+          <Button variant="contained" onClick={submitNewRefereePlan} disabled={createRefereePlanLoading}>
+            Dodaj
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={editRefereePlanOpen} onClose={closeEditRefereePlanDialog} fullWidth maxWidth="md">
+        <DialogTitle
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 2,
+            flexWrap: "wrap",
+          }}
+        >
+          <Typography component="div" variant="h6" sx={{ fontWeight: 900 }}>
+            Edycja planu sędziów
+          </Typography>
+
+          <TextField
+            select
+            label="Dzień tygodnia"
+            value={String(editRefereePlanDayTimestamp ?? "")}
+            onChange={(e) => setEditRefereePlanDayTimestamp(Number(e.target.value))}
+            size="small"
+            sx={{ minWidth: 220 }}
+          >
+            {editRefereePlanDayOptions.map((o) => (
+              <MenuItem key={o.timestamp} value={String(o.timestamp)}>
+                {o.label}
+              </MenuItem>
+            ))}
+          </TextField>
+        </DialogTitle>
+
+        <DialogContent dividers>
+          {editRefereePlanError ? (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {editRefereePlanError}
+            </Alert>
+          ) : null}
+
+          <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2 }}>
+            <Table size="small" aria-label="Tabela planu sędziów (edycja)">
+              <TableHead>
+                <TableRow>
+                  <TableCell align="center" sx={{ width: 48 }} />
+                  <TableCell align="center">Drużyna A</TableCell>
+                  <TableCell align="center">Start</TableCell>
+                  <TableCell align="center">Koniec</TableCell>
+                  <TableCell align="center">Drużyna B</TableCell>
+                  <TableCell align="center">Boisko</TableCell>
+                  <TableCell align="center">Sędzia 1</TableCell>
+                  <TableCell align="center">Sędzia 2</TableCell>
+                  <TableCell align="center">Stolik kar</TableCell>
+                  <TableCell align="center">Zagary</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {editRefereePlanDrafts.map((draft, idx) => {
+                  const teamAName = tournament.teams.find((t) => t.id === draft.teamAId)?.name ?? draft.teamAId;
+                  const teamBName = tournament.teams.find((t) => t.id === draft.teamBId)?.name ?? draft.teamBId;
+
+                  return (
+                    <TableRow key={draft.id ?? `ref-row-${idx}`}>
+                      <TableCell
+                        align="center"
+                        sx={{ width: 48, paddingLeft: 1, paddingRight: 1, verticalAlign: "middle" }}
+                      >
+                        <Tooltip title="Usuń pozycję">
+                          <Box sx={{ display: "flex", justifyContent: "center", width: "100%" }}>
+                            <IconButton
+                              aria-label={`Usuń pozycję ${teamAName} vs ${teamBName}`}
+                              color="error"
+                              onClick={() => {
+                                if (editRefereePlanLoading) return;
+
+                                if (!draft.id) {
+                                  setEditRefereePlanDrafts((prev) => prev.filter((_, i) => i !== idx));
+                                  return;
+                                }
+
+                                const match = matches.find((m) => m.id === draft.id);
+                                if (!match) {
+                                  setEditRefereePlanDrafts((prev) => prev.filter((d) => d.id !== draft.id));
+                                  return;
+                                }
+
+                                setDeleteMatchError(null);
+                                setMatchToDelete(match);
+                                setEditRefereePlanOpen(false);
+                              }}
+                              size="small"
+                              disabled={editRefereePlanLoading || (draft.id ? deleteMatchLoading : false)}
+                              sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2, p: 0 }}
+                            >
+                              <Trash2 size={18} />
+                            </IconButton>
+                          </Box>
+                        </Tooltip>
+                      </TableCell>
+
+                      <TableCell sx={{ minWidth: 180 }}>
+                        <TextField
+                          select
+                          label="Drużyna A"
+                          value={draft.teamAId}
+                          onChange={(e) => {
+                            const nextTeamAId = String(e.target.value);
+                            setEditRefereePlanDrafts((prev) =>
+                              prev.map((d, i) =>
+                                i !== idx
+                                  ? d
+                                  : {
+                                      ...d,
+                                      teamAId: nextTeamAId,
+                                      teamBId:
+                                        d.teamBId === nextTeamAId
+                                          ? (tournament.teams.find((t) => t.id !== nextTeamAId)?.id ?? "")
+                                          : d.teamBId,
+                                    }
+                              )
+                            );
+                          }}
+                          size="small"
+                          fullWidth
+                        >
+                          {tournament.teams.map((t) => (
+                            <MenuItem key={t.id} value={t.id}>
+                              {t.name}
+                            </MenuItem>
+                          ))}
+                        </TextField>
+                      </TableCell>
+
+                      <TableCell sx={{ minWidth: 120 }}>
+                        <TextField
+                          type="time"
+                          label="Start"
+                          value={draft.startTime}
+                          onChange={(e) =>
+                            setEditRefereePlanDrafts((prev) =>
+                              prev.map((d, i) => (i === idx ? { ...d, startTime: e.target.value } : d))
+                            )
+                          }
+                          InputLabelProps={{ shrink: true }}
+                          size="small"
+                        />
+                      </TableCell>
+
+                      <TableCell sx={{ minWidth: 120 }}>
+                        <TextField
+                          type="time"
+                          label="Koniec"
+                          value={draft.endTime}
+                          onChange={(e) =>
+                            setEditRefereePlanDrafts((prev) =>
+                              prev.map((d, i) => (i === idx ? { ...d, endTime: e.target.value } : d))
+                            )
+                          }
+                          InputLabelProps={{ shrink: true }}
+                          size="small"
+                        />
+                      </TableCell>
+
+                      <TableCell sx={{ minWidth: 180 }}>
+                        <TextField
+                          select
+                          label="Drużyna B"
+                          value={draft.teamBId}
+                          onChange={(e) =>
+                            setEditRefereePlanDrafts((prev) =>
+                              prev.map((d, i) => (i === idx ? { ...d, teamBId: String(e.target.value) } : d))
+                            )
+                          }
+                          size="small"
+                          fullWidth
+                        >
+                          {tournament.teams.map((t) => (
+                            <MenuItem key={t.id} value={t.id} disabled={t.id === draft.teamAId}>
+                              {t.name}
+                            </MenuItem>
+                          ))}
+                        </TextField>
+                      </TableCell>
+
+                      <TableCell sx={{ minWidth: 95 }}>
+                        <TextField
+                          select
+                          label="Boisko"
+                          value={draft.court}
+                          onChange={(e) =>
+                            setEditRefereePlanDrafts((prev) =>
+                              prev.map((d, i) => (i === idx ? { ...d, court: String(e.target.value) } : d))
+                            )
+                          }
+                          size="small"
+                        >
+                          <MenuItem value="1">1</MenuItem>
+                          <MenuItem value="2">2</MenuItem>
+                        </TextField>
+                      </TableCell>
+
+                      <TableCell sx={{ minWidth: 160 }}>
+                        <TextField
+                          select
+                          label="Sędzia 1"
+                          value={draft.referee1Id}
+                          onChange={(e) =>
+                            setEditRefereePlanDrafts((prev) =>
+                              prev.map((d, i) => (i === idx ? { ...d, referee1Id: String(e.target.value) } : d))
+                            )
+                          }
+                          size="small"
+                          fullWidth
+                        >
+                          <MenuItem value="">—</MenuItem>
+                          {tournament.referees.map((r) => (
+                            <MenuItem
+                              key={r.id}
+                              value={r.id}
+                              disabled={
+                                r.id !== draft.referee1Id &&
+                                [draft.referee2Id, draft.tablePenaltyId, draft.tableClockId].includes(r.id)
+                              }
+                            >
+                              {personDisplayName(r)}
+                            </MenuItem>
+                          ))}
+                        </TextField>
+                      </TableCell>
+
+                      <TableCell sx={{ minWidth: 160 }}>
+                        <TextField
+                          select
+                          label="Sędzia 2"
+                          value={draft.referee2Id}
+                          onChange={(e) =>
+                            setEditRefereePlanDrafts((prev) =>
+                              prev.map((d, i) => (i === idx ? { ...d, referee2Id: String(e.target.value) } : d))
+                            )
+                          }
+                          size="small"
+                          fullWidth
+                        >
+                          <MenuItem value="">—</MenuItem>
+                          {tournament.referees.map((r) => (
+                            <MenuItem
+                              key={r.id}
+                              value={r.id}
+                              disabled={
+                                r.id !== draft.referee2Id &&
+                                [draft.referee1Id, draft.tablePenaltyId, draft.tableClockId].includes(r.id)
+                              }
+                            >
+                              {personDisplayName(r)}
+                            </MenuItem>
+                          ))}
+                        </TextField>
+                      </TableCell>
+
+                      <TableCell sx={{ minWidth: 160 }}>
+                        <TextField
+                          select
+                          label="Stolik kar"
+                          value={draft.tablePenaltyId}
+                          onChange={(e) =>
+                            setEditRefereePlanDrafts((prev) =>
+                              prev.map((d, i) => (i === idx ? { ...d, tablePenaltyId: String(e.target.value) } : d))
+                            )
+                          }
+                          size="small"
+                          fullWidth
+                        >
+                          <MenuItem value="">—</MenuItem>
+                          {tournament.referees.map((r) => (
+                            <MenuItem
+                              key={r.id}
+                              value={r.id}
+                              disabled={
+                                r.id !== draft.tablePenaltyId &&
+                                [draft.referee1Id, draft.referee2Id, draft.tableClockId].includes(r.id)
+                              }
+                            >
+                              {personDisplayName(r)}
+                            </MenuItem>
+                          ))}
+                        </TextField>
+                      </TableCell>
+
+                      <TableCell sx={{ minWidth: 160 }}>
+                        <TextField
+                          select
+                          label="Zagary"
+                          value={draft.tableClockId}
+                          onChange={(e) =>
+                            setEditRefereePlanDrafts((prev) =>
+                              prev.map((d, i) => (i === idx ? { ...d, tableClockId: String(e.target.value) } : d))
+                            )
+                          }
+                          size="small"
+                          fullWidth
+                        >
+                          <MenuItem value="">—</MenuItem>
+                          {tournament.referees.map((r) => (
+                            <MenuItem
+                              key={r.id}
+                              value={r.id}
+                              disabled={
+                                r.id !== draft.tableClockId &&
+                                [draft.referee1Id, draft.referee2Id, draft.tablePenaltyId].includes(r.id)
+                              }
+                            >
+                              {personDisplayName(r)}
+                            </MenuItem>
+                          ))}
+                        </TextField>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </TableContainer>
+
+          <Box sx={{ mt: 2, display: "flex", justifyContent: "flex-start" }}>
+            <Button variant="outlined" onClick={addAnotherEditRefereePlanRow} disabled={editRefereePlanLoading}>
+              Dodaj kolejny wpis sędziów
+            </Button>
+          </Box>
+        </DialogContent>
+
+        <DialogActions>
+          <Button onClick={closeEditRefereePlanDialog} disabled={editRefereePlanLoading}>
+            Anuluj
+          </Button>
+          <Button variant="contained" onClick={submitEditedRefereePlan} disabled={editRefereePlanLoading}>
             Zapisz
           </Button>
         </DialogActions>

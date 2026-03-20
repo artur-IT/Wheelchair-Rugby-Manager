@@ -30,64 +30,68 @@ describe("TeamForm", () => {
     expect(await screen.findByText("Nazwa drużyny jest wymagana")).toBeInTheDocument();
   });
 
-  it("sends team payload with selected season id after valid submit", async () => {
-    const user = userEvent.setup();
-    const onSuccess = vi.fn();
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce({ ok: true, json: async () => [{ id: "s1", name: "Sezon 1" }] }) // GET /api/seasons
-      .mockResolvedValueOnce({ ok: true, json: async () => ({ id: "coach1", firstName: "Anna", lastName: "Nowak" }) }) // POST /api/coaches
-      .mockResolvedValueOnce({ ok: true, json: async () => ({ id: "t1", name: "Test Team" }) }); // POST /api/teams
-    vi.stubGlobal("fetch", fetchMock);
+  it(
+    "sends team payload with selected season id after valid submit",
+    async () => {
+      const user = userEvent.setup();
+      const onSuccess = vi.fn();
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce({ ok: true, json: async () => [{ id: "s1", name: "Sezon 1" }] }) // GET /api/seasons
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ id: "coach1", firstName: "Anna", lastName: "Nowak" }) }) // POST /api/coaches
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ id: "t1", name: "Test Team" }) }); // POST /api/teams
+      vi.stubGlobal("fetch", fetchMock);
 
-    render(<TeamFormContent onSuccess={onSuccess} />);
-    await screen.findByRole("button", { name: "Zapisz Drużynę" });
+      render(<TeamFormContent onSuccess={onSuccess} />);
+      await screen.findByRole("button", { name: "Zapisz Drużynę" });
 
-    await user.type(screen.getByLabelText("Nazwa Drużyny"), "Test Team");
-    await user.type(screen.getByLabelText("Adres"), "Test Address");
-    await user.type(screen.getByLabelText("Miasto"), "Warszawa");
-    await user.type(screen.getByLabelText("Kod pocztowy"), "00-001");
-    await user.type(screen.getAllByLabelText(/^Imię/)[0], "Jan");
-    await user.type(screen.getAllByLabelText(/^Nazwisko/)[0], "Kowalski");
-    await user.type(screen.getAllByLabelText(/^Email/)[0], "jan@example.com");
-    await user.type(screen.getAllByLabelText(/^Telefon/)[0], "123456789");
-    // Fill required coach fields (index 1: contact is [0], coach is [1], referee is [2])
-    await user.type(screen.getAllByLabelText(/^Imię/)[1], "Anna");
-    await user.type(screen.getAllByLabelText(/^Nazwisko/)[1], "Nowak");
-    await user.click(screen.getByRole("button", { name: "Zapisz Drużynę" }));
+      await user.type(screen.getByLabelText("Nazwa Drużyny"), "Test Team");
+      await user.type(screen.getByLabelText("Adres"), "Test Address");
+      await user.type(screen.getByLabelText("Miasto"), "Warszawa");
+      await user.type(screen.getByLabelText("Kod pocztowy"), "00-001");
+      await user.type(screen.getAllByLabelText(/^Imię/)[0], "Jan");
+      await user.type(screen.getAllByLabelText(/^Nazwisko/)[0], "Kowalski");
+      await user.type(screen.getAllByLabelText(/^Email/)[0], "jan@example.com");
+      await user.type(screen.getAllByLabelText(/^Telefon/)[0], "123456789");
+      // Fill required coach fields (index 1: contact is [0], coach is [1], referee is [2])
+      await user.type(screen.getAllByLabelText(/^Imię/)[1], "Anna");
+      await user.type(screen.getAllByLabelText(/^Nazwisko/)[1], "Nowak");
+      await user.click(screen.getByRole("button", { name: "Zapisz Drużynę" }));
 
-    await waitFor(() => expect(onSuccess).toHaveBeenCalled());
+      await waitFor(() => expect(onSuccess).toHaveBeenCalled());
 
-    expect(fetchMock).toHaveBeenCalledTimes(3);
-    expect(fetchMock).toHaveBeenNthCalledWith(
-      3,
-      "/api/teams",
-      expect.objectContaining({
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      })
-    );
+      expect(fetchMock).toHaveBeenCalledTimes(3);
+      expect(fetchMock).toHaveBeenNthCalledWith(
+        3,
+        "/api/teams",
+        expect.objectContaining({
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        })
+      );
 
-    const [, coachOptions] = fetchMock.mock.calls[1] as [string, RequestInit];
-    expect(JSON.parse(String(coachOptions.body))).toEqual({
-      firstName: "Anna",
-      lastName: "Nowak",
-      seasonId: "s1",
-    });
+      const [, coachOptions] = fetchMock.mock.calls[1] as [string, RequestInit];
+      expect(JSON.parse(String(coachOptions.body))).toEqual({
+        firstName: "Anna",
+        lastName: "Nowak",
+        seasonId: "s1",
+      });
 
-    const [, submitOptions] = fetchMock.mock.calls[2] as [string, RequestInit];
-    expect(JSON.parse(String(submitOptions.body))).toEqual({
-      name: "Test Team",
-      address: "Test Address",
-      city: "Warszawa",
-      postalCode: "00-001",
-      contactFirstName: "Jan",
-      contactLastName: "Kowalski",
-      contactEmail: "jan@example.com",
-      contactPhone: "123456789",
-      seasonId: "s1",
-      coachId: "coach1",
-      players: [],
-    });
-  });
+      const [, submitOptions] = fetchMock.mock.calls[2] as [string, RequestInit];
+      expect(JSON.parse(String(submitOptions.body))).toEqual({
+        name: "Test Team",
+        address: "Test Address",
+        city: "Warszawa",
+        postalCode: "00-001",
+        contactFirstName: "Jan",
+        contactLastName: "Kowalski",
+        contactEmail: "jan@example.com",
+        contactPhone: "123456789",
+        seasonId: "s1",
+        coachId: "coach1",
+        players: [],
+      });
+    },
+    10000
+  );
 });

@@ -33,4 +33,3 @@ export const POST: APIRoute = async ({ params, request }) => {
     return json({ error: "Nie udało się dodać drużyn do turnieju" }, 500);
   }
 };
-
