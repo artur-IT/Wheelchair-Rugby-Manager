@@ -2028,7 +2028,7 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
                             onClick={() => setMatchDayToDelete(dayTimestamp)}
                             disabled={deleteMatchDayLoading && matchDayToDelete === dayTimestamp}
                           >
-                            Usuń dzień (sędziów)
+                            Usuń dzień
                           </Button>
                         </Box>
                       </Box>
