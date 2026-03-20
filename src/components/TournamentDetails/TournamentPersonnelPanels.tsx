@@ -27,6 +27,7 @@ export default function TournamentPersonnelPanels({
   removeClassifierLoading,
   classifierToRemove,
 }: TournamentPersonnelPanelsProps) {
+
   return (
     <Paper sx={{ p: 3, borderRadius: 3 }}>
       <Typography variant="h6" sx={{ fontWeight: "bold", mb: 2 }}>
@@ -41,10 +42,19 @@ export default function TournamentPersonnelPanels({
               textTransform: "uppercase",
               color: "text.secondary",
               mb: 1,
-              display: "block",
+              display: "flex",
+              alignItems: "baseline",
+              gap: 1,
             }}
           >
             Sędziowie
+            <Box
+              component="span"
+              aria-hidden="true"
+              sx={{ fontSize: "0.75rem", fontWeight: 400, color: "text.secondary" }}
+            >
+              ({tournament.referees.length})
+            </Box>
           </Typography>
           {tournament.referees.length === 0 ? (
             <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
@@ -118,10 +128,19 @@ export default function TournamentPersonnelPanels({
               textTransform: "uppercase",
               color: "text.secondary",
               mb: 1,
-              display: "block",
+              display: "flex",
+              alignItems: "baseline",
+              gap: 1,
             }}
           >
             Klasyfikatorzy
+            <Box
+              component="span"
+              aria-hidden="true"
+              sx={{ fontSize: "0.75rem", fontWeight: 400, color: "text.secondary" }}
+            >
+              ({tournament.classifiers.length})
+            </Box>
           </Typography>
           {tournament.classifiers.length === 0 ? (
             <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
