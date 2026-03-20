@@ -51,7 +51,15 @@ export default function TournamentMatchesPlanPanel({
   matchDayToDelete,
 }: TournamentMatchesPlanPanelProps) {
   return (
-    <Paper sx={{ p: 4, borderRadius: 3 }}>
+    <Paper
+      sx={{
+        p: 4,
+        borderRadius: 3,
+        bgcolor: "#F1F7FC",
+        border: "1px solid",
+        borderColor: "grey.200",
+      }}
+    >
       <Typography variant="h6" sx={{ fontWeight: "bold", mb: 3 }}>
         Plan Rozgrywek
       </Typography>

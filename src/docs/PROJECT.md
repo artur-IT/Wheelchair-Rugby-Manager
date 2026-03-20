@@ -621,7 +621,7 @@ To jest profesjonalizm. **Max. 2 taski w Progress**.
 </details>
 
 <details style="margin-left: 1.5em">
-<summary><h3 style="display:inline; margin:0">US5: Drużyny biorące udział w turnieju</h3></summary>
+<summary><h3 style="display:inline; margin:0">US5: Drużyny biorące udział w turnieju - DONE</h3></summary>
 
 **User Story**
 
@@ -637,7 +637,7 @@ To jest profesjonalizm. **Max. 2 taski w Progress**.
 
 - Frontend
   - [ x ] Widok „Drużyny turnieju” (lista + dodaj/usuń).
-  - [ ] Select/autocomplete do wyboru drużyn z sezonu.
+  - [ x ] Select/autocomplete do wyboru drużyn z sezonu.
   - [ x ] Integracja z API (np. `GET /seasons/:seasonId/teams` + `POST/DELETE /tournaments/:id/teams`).
 - Backend / API
   - [ x ] Relacja `Tournament <-> Team` (np. tabela łącząca).
@@ -648,7 +648,7 @@ To jest profesjonalizm. **Max. 2 taski w Progress**.
 </details>
 
 <details style="margin-left: 1.5em">
-<summary><h3 style="display:inline; margin:0">US6: Plan rozgrywek meczów</h3></summary>
+<summary><h3 style="display:inline; margin:0">US6: Plan rozgrywek meczów - DONE</h3></summary>
 
 **User Story**
 
@@ -663,20 +663,20 @@ To jest profesjonalizm. **Max. 2 taski w Progress**.
 **Zadania techniczne**
 
 - Frontend
-  - [ ] Widok listy meczów turnieju + akcje: dodaj/edytuj/usuń.
+  - [ x ] Widok listy meczów turnieju + akcje: dodaj/edytuj/usuń.
   - [ ] Formularz meczu (walidacja: A ≠ B, czas wymagany, boisko wymagane).
-  - [ ] Edycja wyniku meczu.
-  - [ ] Integracja z API (np. `GET/POST/PATCH/DELETE /tournaments/:id/matches`).
+  - [ x ] Edycja wyniku meczu.
+  - [ x ] Integracja z API (np. `GET/POST/PATCH/DELETE /tournaments/:id/matches`).
 - Backend / API
-  - [ ] Model/encja `Match` + walidacja spójności (np. drużyny różne).
-  - [ ] Endpointy CRUD dla meczów + endpoint do aktualizacji wyniku.
+  - [ x ] Model/encja `Match` + walidacja spójności (np. drużyny różne).
+  - [ x ] Endpointy CRUD dla meczów + endpoint do aktualizacji wyniku.
 - Testy
-  - [ ] Scenariusze: dodanie meczu, walidacja A=B, aktualizacja wyniku, sortowanie.
+  - [ x ] Scenariusze: dodanie meczu, walidacja A=B, aktualizacja wyniku, sortowanie.
 
 </details>
 
 <details style="margin-left: 1.5em">
-<summary><h3 style="display:inline; margin:0">US7: Sędziowie (boiskowi i stolikowi) w turnieju</h3></summary>
+<summary><h3 style="display:inline; margin:0">US7: Sędziowie (boiskowi i stolikowi) w turnieju - DONE</h3></summary>
 
 **User Story**
 
@@ -690,18 +690,18 @@ To jest profesjonalizm. **Max. 2 taski w Progress**.
 **Zadania techniczne**
 
 - Frontend
-  - [ ] Widok „Sędziowie turnieju” (lista + dodaj/usuń).
-  - [ ] Integracja z API (np. `GET /seasons/:seasonId/referees` + `POST/DELETE /tournaments/:id/referees`).
+  - [ x ] Widok „Sędziowie turnieju” (lista + dodaj/usuń).
+  - [ x ] Integracja z API (np. `GET /seasons/:seasonId/referees` + `POST/DELETE /tournaments/:id/referees`).
 - Backend / API
-  - [ ] Relacja `Tournament <-> Referee`.
-  - [ ] Endpointy do przypisywania/odpinania sędziów.
+  - [ x ] Relacja `Tournament <-> Referee`.
+  - [ x ] Endpointy do przypisywania/odpinania sędziów.
 - Testy
-  - [ ] Scenariusze: przypisanie, odpięcie, brak duplikatów.
+  - [ x ] Scenariusze: przypisanie, odpięcie, brak duplikatów.
 
 </details>
 
 <details style="margin-left: 1.5em">
-<summary><h3 style="display:inline; margin:0">US8: Klasyfikatorzy w turnieju</h3></summary>
+<summary><h3 style="display:inline; margin:0">US8: Klasyfikatorzy w turnieju - DONE</h3></summary>
 
 **User Story**
 
@@ -715,13 +715,13 @@ To jest profesjonalizm. **Max. 2 taski w Progress**.
 **Zadania techniczne**
 
 - Frontend
-  - [ ] Widok „Klasyfikatorzy turnieju” (lista + dodaj/usuń).
-  - [ ] Integracja z API (np. `GET /seasons/:seasonId/classifiers` + `POST/DELETE /tournaments/:id/classifiers`).
+  - [ x ] Widok „Klasyfikatorzy turnieju” (lista + dodaj/usuń).
+  - [ x ] Integracja z API (np. `GET /seasons/:seasonId/classifiers` + `POST/DELETE /tournaments/:id/classifiers`).
 - Backend / API
-  - [ ] Relacja `Tournament <-> Classifier`.
-  - [ ] Endpointy do przypisywania/odpinania klasyfikatorów.
+  - [ x ] Relacja `Tournament <-> Classifier`.
+  - [ x ] Endpointy do przypisywania/odpinania klasyfikatorów.
 - Testy
-  - [ ] Scenariusze: przypisanie, odpięcie, brak duplikatów.
+  - [ x ] Scenariusze: przypisanie, odpięcie, brak duplikatów.
 
 </details>
 
