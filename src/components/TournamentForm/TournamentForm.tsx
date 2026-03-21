@@ -7,6 +7,8 @@ import { useEffect, useState } from "react";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import { plPL } from "@mui/x-date-pickers/locales";
+import { pl } from "date-fns/locale";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import DataLoadAlert from "@/components/ui/DataLoadAlert";
@@ -157,7 +159,11 @@ function TournamentFormContent({ tournamentId }: Props) {
                 )}
               />
             </Grid>
-            <LocalizationProvider dateAdapter={AdapterDateFns}>
+            <LocalizationProvider
+              dateAdapter={AdapterDateFns}
+              adapterLocale={pl}
+              localeText={plPL.components.MuiLocalizationProvider.defaultProps.localeText}
+            >
               <Grid size={{ xs: 12, sm: 6 }}>
                 <Controller
                   name="startDate"
@@ -165,6 +171,7 @@ function TournamentFormContent({ tournamentId }: Props) {
                   render={({ field }) => (
                     <DatePicker
                       {...field}
+                      value={field.value ?? null}
                       label="Data Rozpoczęcia"
                       slotProps={{
                         textField: {
@@ -184,6 +191,7 @@ function TournamentFormContent({ tournamentId }: Props) {
                   render={({ field }) => (
                     <DatePicker
                       {...field}
+                      value={field.value ?? null}
                       label="Data Zakończenia"
                       slotProps={{
                         textField: {
