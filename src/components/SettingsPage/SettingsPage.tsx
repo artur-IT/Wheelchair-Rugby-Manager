@@ -38,8 +38,10 @@ import { Trash2 } from "lucide-react";
 import type { Season, Team, Person } from "@/types";
 import { useDefaultSeason } from "@/components/hooks/useDefaultSeason";
 import ConfirmationDialog from "@/components/ui/ConfirmationDialog";
+import DataLoadAlert from "@/components/ui/DataLoadAlert";
 import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
 import AppShell from "@/components/AppShell/AppShell";
+import { getErrorMessageFromResponse } from "@/lib/apiHttp";
 
 interface ApiErrorBody {
   error?: {
@@ -84,21 +86,38 @@ function SeasonsManager({ onSeasonChange }: { onSeasonChange: (seasonId: string)
   const [deleting, setDeleting] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loadKey, setLoadKey] = useState(0);
   const { defaultSeasonId, saveDefault } = useDefaultSeason();
 
   // Fetch seasons; pre-select the saved default or first season
   useEffect(() => {
+    let cancelled = false;
+    setLoaded(false);
+    setError(null);
     fetch("/api/seasons")
-      .then((r) => r.json())
-      .then((data: Season[]) => {
+      .then(async (r) => {
+        if (!r.ok) {
+          const msg = await getErrorMessageFromResponse(r, "Nie udało się pobrać sezonów");
+          if (!cancelled) setError(msg);
+          return;
+        }
+        const data: Season[] = await r.json();
+        if (cancelled) return;
         setSeasons(data);
         if (data.length === 0) return;
         const savedExists = data.some((s) => s.id === defaultSeasonId);
         setSelectedId(savedExists ? (defaultSeasonId as string) : data[0].id);
       })
-      .catch(() => setError("Nie udało się pobrać sezonów"))
-      .finally(() => setLoaded(true));
-  }, [defaultSeasonId]);
+      .catch(() => {
+        if (!cancelled) setError("Nie udało się pobrać sezonów. Sprawdź połączenie.");
+      })
+      .finally(() => {
+        if (!cancelled) setLoaded(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [defaultSeasonId, loadKey]);
 
   const handleDeleteConfirmed = async () => {
     setConfirmOpen(false);
@@ -124,6 +143,12 @@ function SeasonsManager({ onSeasonChange }: { onSeasonChange: (seasonId: string)
   }, [onSeasonChange, selectedId]);
 
   if (!loaded) return <CircularProgress size={20} sx={{ mb: 3 }} />;
+
+  if (error && seasons.length === 0) {
+    return (
+      <DataLoadAlert message={error} onRetry={() => setLoadKey((k) => k + 1)} sx={{ mb: 3 }} />
+    );
+  }
 
   if (seasons.length === 0) {
     return (
@@ -252,6 +277,7 @@ function TeamsTab({ seasonId }: { seasonId: string }) {
   const [teams, setTeams] = useState<Team[]>([]);
   const [loadingTeams, setLoadingTeams] = useState(true);
   const [teamsError, setTeamsError] = useState<string | null>(null);
+  const [loadKey, setLoadKey] = useState(0);
 
   useEffect(() => {
     if (!seasonId) {
@@ -268,7 +294,10 @@ function TeamsTab({ seasonId }: { seasonId: string }) {
       setTeamsError(null);
       try {
         const res = await fetch(`/api/teams?seasonId=${encodeURIComponent(seasonId)}`, { signal: controller.signal });
-        if (!res.ok) throw new Error("Nie udało się pobrać drużyn");
+        if (!res.ok) {
+          const msg = await getErrorMessageFromResponse(res, "Nie udało się pobrać drużyn");
+          throw new Error(msg);
+        }
         const data: Team[] = await res.json();
         setTeams(data);
       } catch (error) {
@@ -282,7 +311,7 @@ function TeamsTab({ seasonId }: { seasonId: string }) {
     fetchTeams();
 
     return () => controller.abort();
-  }, [seasonId]);
+  }, [seasonId, loadKey]);
 
   if (!seasonId) {
     return (
@@ -301,7 +330,7 @@ function TeamsTab({ seasonId }: { seasonId: string }) {
   }
 
   if (teamsError) {
-    return <Alert severity="error">{teamsError}</Alert>;
+    return <DataLoadAlert message={teamsError} onRetry={() => setLoadKey((k) => k + 1)} />;
   }
 
   if (teams.length === 0) {
@@ -473,6 +502,7 @@ function PersonnelTab({ seasonId, config }: PersonnelTabProps) {
   const [people, setPeople] = useState<Person[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loadKey, setLoadKey] = useState(0);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogError, setDialogError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -497,7 +527,10 @@ function PersonnelTab({ seasonId, config }: PersonnelTabProps) {
         const response = await fetch(`${apiEndpoint}?seasonId=${encodeURIComponent(seasonId)}`, {
           signal: controller.signal,
         });
-        if (!response.ok) throw new Error(messages.loadError);
+        if (!response.ok) {
+          const msg = await getErrorMessageFromResponse(response, messages.loadError);
+          throw new Error(msg);
+        }
         const data: Person[] = await response.json();
         if (!controller.signal.aborted) setPeople(data);
       } catch (loadError) {
@@ -511,7 +544,7 @@ function PersonnelTab({ seasonId, config }: PersonnelTabProps) {
     loadPeople();
 
     return () => controller.abort();
-  }, [seasonId, apiEndpoint, messages.loadError, messages.loadFallback]);
+  }, [seasonId, apiEndpoint, loadKey, messages.loadError, messages.loadFallback]);
 
   const handleAddClick = () => {
     setEditingPerson(null);
@@ -643,7 +676,7 @@ function PersonnelTab({ seasonId, config }: PersonnelTabProps) {
   }
 
   if (error) {
-    return <Alert severity="error">{error}</Alert>;
+    return <DataLoadAlert message={error} onRetry={() => setLoadKey((k) => k + 1)} />;
   }
 
   return (

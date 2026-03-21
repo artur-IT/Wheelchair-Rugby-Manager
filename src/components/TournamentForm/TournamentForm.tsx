@@ -7,6 +7,8 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import DataLoadAlert from "@/components/ui/DataLoadAlert";
+import { getErrorMessageFromResponse } from "@/lib/apiHttp";
 import { tournamentFormSchema, type TournamentFormData } from "@/lib/validateInputs";
 import type { Tournament } from "@/types";
 import { tournamentToTournamentFormDefaults } from "@/lib/tournamentFormMapping";
@@ -29,6 +31,8 @@ function TournamentFormContent({ tournamentId }: Props) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [prefillLoading, setPrefillLoading] = useState(!!tournamentId);
   const [formError, setFormError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loadNonce, setLoadNonce] = useState(0);
 
   const {
     control,
@@ -63,18 +67,20 @@ function TournamentFormContent({ tournamentId }: Props) {
 
     async function loadTournament() {
       setPrefillLoading(true);
+      setLoadError(null);
       setFormError(null);
       try {
         const res = await fetch(`/api/tournaments/${tournamentId}`, { signal: controller.signal });
         if (!res.ok) {
-          throw new Error("Nie udało się pobrać turnieju do edycji");
+          const msg = await getErrorMessageFromResponse(res, "Nie udało się pobrać turnieju do edycji");
+          throw new Error(msg);
         }
 
         const data: Tournament = await res.json();
         reset(tournamentToTournamentFormDefaults(data));
       } catch (err) {
         if (controller.signal.aborted) return;
-        setFormError(err instanceof Error ? err.message : "Wystąpił błąd podczas pobierania turnieju");
+        setLoadError(err instanceof Error ? err.message : "Wystąpił błąd podczas pobierania turnieju");
       } finally {
         if (!controller.signal.aborted) setPrefillLoading(false);
       }
@@ -82,7 +88,7 @@ function TournamentFormContent({ tournamentId }: Props) {
 
     loadTournament();
     return () => controller.abort();
-  }, [tournamentId, reset]);
+  }, [tournamentId, reset, loadNonce]);
 
   const onSubmit = async (data: TournamentFormData) => {
     setFormError(null);
@@ -97,7 +103,8 @@ function TournamentFormContent({ tournamentId }: Props) {
       });
 
       if (!response.ok) {
-        setFormError("Nie udało się zapisać turnieju");
+        const msg = await getErrorMessageFromResponse(response, "Nie udało się zapisać turnieju");
+        setFormError(msg);
         return;
       }
 
@@ -110,6 +117,14 @@ function TournamentFormContent({ tournamentId }: Props) {
   };
 
   const title = tournamentId ? "Edytuj Turniej" : "Nowy Turniej";
+
+  if (tournamentId && loadError && !prefillLoading) {
+    return (
+      <Paper sx={{ p: 4, maxWidth: 600, mx: "auto", borderRadius: 3 }}>
+        <DataLoadAlert message={loadError} onRetry={() => setLoadNonce((n) => n + 1)} />
+      </Paper>
+    );
+  }
 
   return (
     <Paper sx={{ p: 4, maxWidth: 600, mx: "auto", borderRadius: 3 }}>

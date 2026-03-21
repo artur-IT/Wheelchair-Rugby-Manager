@@ -26,6 +26,7 @@ import AppShell from "@/components/AppShell/AppShell";
 import { TeamFormContent } from "@/components/TeamForm/TeamForm";
 import TeamNewPlayer, { type PlayerRow } from "@/components/TeamNewPlayer/TeamNewPlayer";
 import ConfirmationDialog from "@/components/ui/ConfirmationDialog";
+import DataLoadAlert from "@/components/ui/DataLoadAlert";
 import { playerClassificationSchema } from "@/lib/validateInputs";
 import type { Team, Player } from "@/types";
 
@@ -83,6 +84,7 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
   const [team, setTeam] = useState<Team | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [loadKey, setLoadKey] = useState(0);
   const [editOpen, setEditOpen] = useState(false);
   const [editingPlayer, setEditingPlayer] = useState<Player | null>(null);
   const [deleteConfirmPlayer, setDeleteConfirmPlayer] = useState<Player | null>(null);
@@ -129,7 +131,7 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
     fetchTeam();
 
     return () => controller.abort();
-  }, [id]);
+  }, [id, loadKey]);
 
   useEffect(() => {
     if (editingPlayer) {
@@ -153,7 +155,7 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
   }
 
   if (error) {
-    return <Alert severity="error">{error}</Alert>;
+    return <DataLoadAlert message={error} onRetry={() => setLoadKey((k) => k + 1)} />;
   }
 
   if (!team) {
