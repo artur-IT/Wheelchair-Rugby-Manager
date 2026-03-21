@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { SetStateAction } from "react";
 import { buildMatchDayOptions, formatDayOptionLabel, getMatchDayTimestamp } from "./matchPlanHelpers";
+import { getErrorMessageFromResponse } from "@/lib/apiHttp";
 import type { Match, Tournament } from "@/types";
 
 interface UseTournamentDetailsResult {
   tournament: Tournament | null;
   loading: boolean;
   error: string | null;
+  refetchTournament: () => void;
   matches: Match[];
   matchesLoading: boolean;
   matchesError: string | null;
@@ -23,6 +25,7 @@ export default function useTournamentDetails(id: string): UseTournamentDetailsRe
   const [tournament, setTournament] = useState<Tournament | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [refetchKey, setRefetchKey] = useState(0);
 
   const [matches, setMatches] = useState<Match[]>([]);
   const [matchesLoading, setMatchesLoading] = useState(false);
@@ -47,7 +50,8 @@ export default function useTournamentDetails(id: string): UseTournamentDetailsRe
           return;
         }
         if (!res.ok) {
-          throw new Error("Nie udało się pobrać turnieju");
+          const msg = await getErrorMessageFromResponse(res, "Nie udało się pobrać turnieju");
+          throw new Error(msg);
         }
         const data: Tournament = await res.json();
         setTournament(data);
@@ -62,7 +66,11 @@ export default function useTournamentDetails(id: string): UseTournamentDetailsRe
     }
     load();
     return () => controller.abort();
-  }, [id]);
+  }, [id, refetchKey]);
+
+  const refetchTournament = useCallback(() => {
+    setRefetchKey((k) => k + 1);
+  }, []);
 
   const refreshTournament = useCallback(async (nextId: string) => {
     const controller = new AbortController();
@@ -72,7 +80,10 @@ export default function useTournamentDetails(id: string): UseTournamentDetailsRe
         setTournament(null);
         return;
       }
-      if (!refreshed.ok) throw new Error("Nie udało się odświeżyć turnieju");
+      if (!refreshed.ok) {
+        const msg = await getErrorMessageFromResponse(refreshed, "Nie udało się odświeżyć turnieju");
+        throw new Error(msg);
+      }
       const updated: Tournament = await refreshed.json();
       setTournament(updated);
     } catch (err) {
@@ -87,8 +98,8 @@ export default function useTournamentDetails(id: string): UseTournamentDetailsRe
     try {
       const res = await fetch(`/api/tournaments/${tournamentId}/matches`);
       if (!res.ok) {
-        const data = (await res.json().catch(() => null)) as { error?: string } | null;
-        throw new Error(data?.error || "Nie udało się pobrać meczów");
+        const msg = await getErrorMessageFromResponse(res, "Nie udało się pobrać meczów");
+        throw new Error(msg);
       }
       const list: Match[] = await res.json();
       setMatches(list);
@@ -127,6 +138,7 @@ export default function useTournamentDetails(id: string): UseTournamentDetailsRe
     tournament,
     loading,
     error,
+    refetchTournament,
     matches,
     matchesLoading,
     matchesError,

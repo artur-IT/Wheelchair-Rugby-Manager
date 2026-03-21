@@ -24,6 +24,8 @@ import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import type { SelectChangeEvent } from "@mui/material";
 import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
 import AppShell from "@/components/AppShell/AppShell";
+import DataLoadAlert from "@/components/ui/DataLoadAlert";
+import { getErrorMessageFromResponse } from "@/lib/apiHttp";
 import type { Season, Team } from "@/types";
 import {
   sanitizePhone,
@@ -128,6 +130,8 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
   const isEdit = mode === "edit" && initialTeam;
 
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [seasonsLoadError, setSeasonsLoadError] = useState<string | null>(null);
+  const [seasonsLoadNonce, setSeasonsLoadNonce] = useState(0);
   const [seasons, setSeasons] = useState<Season[]>([]);
   const [seasonId, setSeasonId] = useState<string>("");
   const [loadingSeasons, setLoadingSeasons] = useState(true);
@@ -198,9 +202,15 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
   // Fetch seasons and when edit mode pre-fill from initialTeam
   useEffect(() => {
     async function fetchSeasons() {
+      setLoadingSeasons(true);
+      setSeasonsLoadError(null);
       try {
         const res = await fetch("/api/seasons");
-        if (!res.ok) throw new Error("Nie udało się pobrać sezonów");
+        if (!res.ok) {
+          const msg = await getErrorMessageFromResponse(res, "Nie udało się pobrać sezonów");
+          setSeasonsLoadError(msg);
+          return;
+        }
         const data: Season[] = await res.json();
         setSeasons(data);
         if (isEdit && initialTeam) {
@@ -246,13 +256,13 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
           setSeasonId(data[0].id);
         }
       } catch {
-        setSubmitError("Nie udało się pobrać sezonów. Upewnij się, że istnieje co najmniej jeden sezon.");
+        setSeasonsLoadError("Nie udało się pobrać sezonów. Sprawdź połączenie.");
       } finally {
         setLoadingSeasons(false);
       }
     }
     fetchSeasons();
-  }, [isEdit, reset]); // eslint-disable-line react-hooks/exhaustive-deps -- initialTeam only for edit, run once
+  }, [isEdit, reset, seasonsLoadNonce]); // eslint-disable-line react-hooks/exhaustive-deps -- initialTeam only for edit, run once
 
   const onSubmit = async (data: TeamFormValues) => {
     setSubmitError(null);
@@ -406,6 +416,10 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
       <Typography variant="h5" sx={{ fontWeight: "bold", mb: 3 }}>
         {isEdit ? "Edytuj drużynę" : "Nowa Drużyna"}
       </Typography>
+
+      {seasonsLoadError ? (
+        <DataLoadAlert message={seasonsLoadError} onRetry={() => setSeasonsLoadNonce((n) => n + 1)} sx={{ mb: 2 }} />
+      ) : null}
 
       {submitError && (
         <Alert severity="error" sx={{ mb: 2 }}>

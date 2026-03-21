@@ -9,6 +9,7 @@ import {
   pad2,
   timeToMinutes,
 } from "@/components/TournamentDetails/hooks/matchPlanHelpers";
+import { getErrorMessageFromResponse } from "@/lib/apiHttp";
 
 interface RefereePlanDraft {
   id?: string;
@@ -135,8 +136,8 @@ export default function useRefereePlanManager({
     try {
       const res = await fetch(`/api/tournaments/${tournamentId}/referee-plan`);
       if (!res.ok) {
-        const data = (await res.json().catch(() => null)) as { error?: string } | null;
-        throw new Error(data?.error || "Nie udało się pobrać planu sędziów");
+        const msg = await getErrorMessageFromResponse(res, "Nie udało się pobrać planu sędziów");
+        throw new Error(msg);
       }
 
       const list: RefereePlanMatch[] = await res.json();

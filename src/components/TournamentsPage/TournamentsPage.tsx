@@ -10,13 +10,13 @@ import {
   Typography,
   Chip,
   CircularProgress,
-  Alert,
   IconButton,
   Tooltip,
 } from "@mui/material";
 import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
 import AppShell from "@/components/AppShell/AppShell";
 import ConfirmationDialog from "@/components/ui/ConfirmationDialog";
+import DataLoadAlert from "@/components/ui/DataLoadAlert";
 import { formatAddressForDisplay } from "@/lib/addressDisplay";
 import type { Tournament } from "@/types";
 
@@ -49,6 +49,7 @@ function TournamentsContent() {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [loadKey, setLoadKey] = useState(0);
   const [tournamentToDelete, setTournamentToDelete] = useState<Tournament | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -81,7 +82,7 @@ function TournamentsContent() {
 
     loadTournaments();
     return () => controller.abort();
-  }, []);
+  }, [loadKey]);
 
   function openDeleteDialog(tournament: Tournament) {
     setDeleteError(null);
@@ -149,11 +150,7 @@ function TournamentsContent() {
         </Button>
       </Box>
 
-      {error && (
-        <Alert severity="error" sx={{ mb: 3 }}>
-          {error}
-        </Alert>
-      )}
+      <DataLoadAlert message={error} onRetry={() => setLoadKey((k) => k + 1)} sx={{ mb: 3 }} />
 
       {loading ? (
         <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>

@@ -5,6 +5,8 @@ import { z } from "zod/v4";
 import { Box, Button, TextField, Typography, Paper, Alert, CircularProgress } from "@mui/material";
 import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
 import AppShell from "@/components/AppShell/AppShell";
+import DataLoadAlert from "@/components/ui/DataLoadAlert";
+import { getErrorMessageFromResponse } from "@/lib/apiHttp";
 import { requiredSeasonNameSchema } from "@/lib/validateInputs";
 
 const seasonSchema = z.object({
@@ -36,6 +38,8 @@ export default function SeasonForm({ id }: Props) {
 function SeasonFormContent({ id }: Props) {
   const isEdit = !!id;
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loadNonce, setLoadNonce] = useState(0);
   const [loading, setLoading] = useState(isEdit);
 
   const {
@@ -49,12 +53,21 @@ function SeasonFormContent({ id }: Props) {
   // In edit mode: fetch existing season and pre-fill the form
   useEffect(() => {
     if (!isEdit) return;
+    setLoading(true);
+    setLoadError(null);
     fetch(`/api/seasons/${id}`)
-      .then((r) => r.json())
-      .then((data: SeasonFormValues) => reset(data))
-      .catch(() => setSubmitError("Nie udało się pobrać danych sezonu"))
+      .then(async (r) => {
+        if (!r.ok) {
+          const msg = await getErrorMessageFromResponse(r, "Nie udało się pobrać danych sezonu");
+          setLoadError(msg);
+          return;
+        }
+        const data: SeasonFormValues = await r.json();
+        reset(data);
+      })
+      .catch(() => setLoadError("Nie udało się pobrać danych sezonu. Sprawdź połączenie."))
       .finally(() => setLoading(false));
-  }, [id, isEdit, reset]);
+  }, [id, isEdit, reset, loadNonce]);
 
   const onSubmit = async (data: SeasonFormValues) => {
     setSubmitError(null);
@@ -83,6 +96,14 @@ function SeasonFormContent({ id }: Props) {
       <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
         <CircularProgress />
       </Box>
+    );
+  }
+
+  if (isEdit && loadError) {
+    return (
+      <Paper sx={{ p: 4, maxWidth: 480, mx: "auto", borderRadius: 3 }}>
+        <DataLoadAlert message={loadError} onRetry={() => setLoadNonce((n) => n + 1)} />
+      </Paper>
     );
   }
 

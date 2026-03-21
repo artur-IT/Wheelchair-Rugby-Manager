@@ -1,17 +1,5 @@
-import {
-  Alert,
-  Box,
-  Button,
-  CircularProgress,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Typography,
-} from "@mui/material";
+import { Box, Button, CircularProgress, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from "@mui/material";
+import DataLoadAlert from "@/components/ui/DataLoadAlert";
 import type { Match, Person, RefereeRole, Tournament } from "@/types";
 import { MATCH_DURATION_MS } from "@/components/TournamentDetails/hooks/matchPlanHelpers";
 
@@ -21,6 +9,7 @@ interface TournamentRefereePlanPanelProps {
   refereePlanByMatchId: Record<string, Partial<Record<RefereeRole, string>>>;
   refereePlanLoading: boolean;
   refereePlanError: string | null;
+  onRetryRefereePlan?: () => void;
   scheduleTableDayTimestamps: number[];
   getMatchDayTimestamp: (scheduledAtIso: string) => number;
   getScheduleDayLabel: (timestamp: number) => string;
@@ -83,7 +72,7 @@ export default function TournamentRefereePlanPanel({
           <CircularProgress size={24} />
         </Box>
       ) : refereePlanError ? (
-        <Alert severity="error">{refereePlanError}</Alert>
+        <DataLoadAlert message={refereePlanError} onRetry={onRetryRefereePlan} />
       ) : scheduleTableDayTimestamps.length === 0 ? (
         <Box
           sx={{

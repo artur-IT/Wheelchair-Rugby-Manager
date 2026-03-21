@@ -1,17 +1,5 @@
-import {
-  Alert,
-  Box,
-  Button,
-  CircularProgress,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Typography,
-} from "@mui/material";
+import { Box, Button, CircularProgress, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Typography } from "@mui/material";
+import DataLoadAlert from "@/components/ui/DataLoadAlert";
 import type { Match, Tournament } from "@/types";
 import { MATCH_DURATION_MS } from "@/components/TournamentDetails/hooks/matchPlanHelpers";
 
@@ -20,6 +8,7 @@ interface TournamentMatchesPlanPanelProps {
   matches: Match[];
   matchesLoading: boolean;
   matchesError: string | null;
+  onRetryMatches?: () => void;
   scheduleTableDayTimestamps: number[];
   parseJerseyInfo: (jerseyInfo?: string) => { teamA: "jasne" | "ciemne"; teamB: "jasne" | "ciemne" };
   jerseyValueToNounLabel: (value: "jasne" | "ciemne") => string;
@@ -38,6 +27,7 @@ export default function TournamentMatchesPlanPanel({
   matches,
   matchesLoading,
   matchesError,
+  onRetryMatches,
   scheduleTableDayTimestamps,
   parseJerseyInfo,
   jerseyValueToNounLabel,
@@ -68,7 +58,7 @@ export default function TournamentMatchesPlanPanel({
           <CircularProgress size={24} />
         </Box>
       ) : matchesError ? (
-        <Alert severity="error">{matchesError}</Alert>
+        <DataLoadAlert message={matchesError} onRetry={onRetryMatches} />
       ) : scheduleTableDayTimestamps.length === 0 ? (
         <Box
           sx={{

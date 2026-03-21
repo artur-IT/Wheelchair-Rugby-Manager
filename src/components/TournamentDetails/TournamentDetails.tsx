@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { MapPin } from "lucide-react";
-import { Box, Typography, Paper, Link as MuiLink, CircularProgress, Alert } from "@mui/material";
+import { Box, Typography, Paper, Link as MuiLink, CircularProgress } from "@mui/material";
 import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
 import AppShell from "@/components/AppShell/AppShell";
 import ConfirmationDialog from "@/components/ui/ConfirmationDialog";
+import DataLoadAlert from "@/components/ui/DataLoadAlert";
 import TournamentHeader from "@/components/TournamentDetails/TournamentHeader";
 import TournamentMatchesPlanPanel from "@/components/TournamentDetails/TournamentMatchesPlanPanel";
 import TournamentRefereePlanPanel from "@/components/TournamentDetails/TournamentRefereePlanPanel";
@@ -41,6 +42,7 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
     tournament,
     loading,
     error,
+    refetchTournament,
     matches,
     matchesLoading,
     matchesError,
@@ -88,11 +90,7 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
   }
 
   if (error) {
-    return (
-      <Alert severity="error" sx={{ mb: 3 }}>
-        {error}
-      </Alert>
-    );
+    return <DataLoadAlert message={error} onRetry={refetchTournament} sx={{ mb: 3 }} />;
   }
 
   if (!tournament) {
@@ -362,6 +360,7 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
             matches={matches}
             matchesLoading={matchesLoading}
             matchesError={matchesError}
+            onRetryMatches={() => void refreshMatches(tournament.id)}
             scheduleTableDayTimestamps={scheduleTableDayTimestamps}
             parseJerseyInfo={parseJerseyInfo}
             jerseyValueToNounLabel={jerseyValueToNounLabel}
@@ -381,6 +380,7 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
             refereePlanByMatchId={refereePlanManager.refereePlanByMatchId}
             refereePlanLoading={refereePlanManager.refereePlanLoading}
             refereePlanError={refereePlanManager.refereePlanError}
+            onRetryRefereePlan={() => void refereePlanManager.refreshRefereePlan(tournament.id)}
             scheduleTableDayTimestamps={scheduleTableDayTimestamps}
             getMatchDayTimestamp={getMatchDayTimestamp}
             getScheduleDayLabel={getScheduleDayLabel}

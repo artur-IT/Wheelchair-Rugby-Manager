@@ -515,7 +515,7 @@ To jest profesjonalizm. **Max. 2 taski w Progress**.
 
 **Cel:** Dodanie zarządzania turniejami do aplikacji.
 
-### 🏆 Tournament Management
+### 🏆 Tournament Management - DONE
 
 <details style="margin-left: 1.5em">
 <summary><h3 style="display:inline; margin:0">US1: Turniej (CRUD) - DONE</h3></summary>
@@ -726,7 +726,7 @@ To jest profesjonalizm. **Max. 2 taski w Progress**.
 </details>
 
 <details style="margin-left: 1.5em">
-<summary><h3 style="display:inline; margin:0">US9: Wolontariusze w turnieju</h3></summary>
+<summary><h3 style="display:inline; margin:0">US9: Wolontariusze w turnieju - PÓŹNIEJ w v.2 (opcjonalnie)</h3></summary>
 
 **User Story**
 
@@ -783,10 +783,10 @@ To jest profesjonalizm. **Max. 2 taski w Progress**.
 
 **Cel:** Dodanie dashboardu do aplikacji.
 
-### 📊 Dashboard
+### 📊 Dashboard - DONE
 
 <details style="margin-left: 1.5em">
-<summary><h3 style="display:inline; margin:0">US1: Podgląd całego wydarzenia (Dashboard)</h3></summary>
+<summary><h3 style="display:inline; margin:0">US1: Podgląd całego wydarzenia (Dashboard) - DONE</h3></summary>
 
 **User Story**
 
@@ -801,20 +801,20 @@ To jest profesjonalizm. **Max. 2 taski w Progress**.
 **Zadania techniczne**
 
 - Frontend
-  - [ ] Widok i routing dashboardu (np. `/tournaments/:tournamentId/dashboard`).
-  - [ ] Układ sekcji + komponenty „kafelki”/sekcje.
-  - [ ] Obsługa stanów: loading / empty / error.
-  - [ ] Integracja z API (pobranie danych turnieju w 1-2 requestach).
+  - [ x ] Widok i routing dashboardu (np. `/tournaments/:tournamentId/dashboard`).
+  - [ x ] Układ sekcji + komponenty „kafelki”/sekcje.
+  - [ x ] Obsługa stanów: loading / empty / error.
+  - [ x ] Integracja z API (pobranie danych turnieju w 1-2 requestach).
 - Backend / API
-  - [ ] Endpoint do pobrania danych dashboardu (np. `GET /tournaments/:id/dashboard`).
-  - [ ] Optymalizacja: agregacja danych, żeby nie robić wielu ciężkich zapytań.
+  - [ x ] Endpoint do pobrania danych dashboardu (np. `GET /tournaments/:id/dashboard`).
+  - [ x ] Optymalizacja: agregacja danych, żeby nie robić wielu ciężkich zapytań.
 - Testy
-  - [ ] Scenariusze: brak danych, częściowe dane, błąd API.
+  - [ x ] Scenariusze: brak danych, częściowe dane, błąd API.
 
 </details>
 
 <details style="margin-left: 1.5em">
-<summary><h3 style="display:inline; margin:0">US2: Podgląd planu rozgrywek meczów</h3></summary>
+<summary><h3 style="display:inline; margin:0">US2: Podgląd planu rozgrywek meczów - DONE</h3></summary>
 
 **User Story**
 
@@ -829,18 +829,18 @@ To jest profesjonalizm. **Max. 2 taski w Progress**.
 **Zadania techniczne**
 
 - Frontend
-  - [ ] Sekcja „Plan meczów” na dashboardzie.
-  - [ ] Komponent listy/harmonogramu (sortowanie po czasie).
-  - [ ] Integracja z API (np. `GET /tournaments/:id/matches`).
+  - [ x ] Sekcja „Plan meczów” na dashboardzie.
+  - [ x ] Komponent listy/harmonogramu (sortowanie po czasie).
+  - [ x ] Integracja z API (np. `GET /tournaments/:id/matches`).
 - Backend / API
-  - [ ] Endpoint do listy meczów + sortowanie po czasie.
+  - [ x ] Endpoint do listy meczów + sortowanie po czasie.
 - Testy
-  - [ ] Scenariusze: brak meczów, wiele meczów, poprawna kolejność.
+  - [ x ] Scenariusze: brak meczów, wiele meczów, poprawna kolejność.
 
 </details>
 
 <details style="margin-left: 1.5em">
-<summary><h3 style="display:inline; margin:0">US3: Podgląd logistyki (hala, hotel, wyżywienie)</h3></summary>
+<summary><h3 style="display:inline; margin:0">US3: Podgląd logistyki (hala, hotel, wyżywienie) - DONE</h3></summary>
 
 **User Story**
 
@@ -855,19 +855,19 @@ To jest profesjonalizm. **Max. 2 taski w Progress**.
 **Zadania techniczne**
 
 - Frontend
-  - [ ] Sekcja „Logistyka” na dashboardzie.
-  - [ ] Komponent adresu hali (kopiowanie adresu / link do mapy — opcjonalnie).
-  - [ ] Komponent zakwaterowania + wyżywienia (czytelny opis).
-  - [ ] Integracja z API (np. `GET /tournaments/:id/venue`, `.../accommodation`, `.../meals` lub 1 endpoint zbiorczy).
+  - [ x ] Sekcja „Logistyka” na dashboardzie.
+  - [ x ] Komponent adresu hali (kopiowanie adresu / link do mapy — opcjonalnie).
+  - [ x ] Komponent zakwaterowania + wyżywienia (czytelny opis).
+  - [ x ] Integracja z API (np. `GET /tournaments/:id/venue`, `.../accommodation`, `.../meals` lub 1 endpoint zbiorczy).
 - Backend / API
-  - [ ] Endpointy do pobierania danych: hala, zakwaterowanie, wyżywienie.
+  - [ x ] Endpointy do pobierania danych: hala, zakwaterowanie, wyżywienie.
 - Testy
-  - [ ] Scenariusze: brak zakwaterowania/wyżywienia, tylko część danych, komplet danych.
+  - [ x ] Scenariusze: brak zakwaterowania/wyżywienia, tylko część danych, komplet danych.
 
 </details>
 
 <details style="margin-left: 1.5em">
-<summary><h3 style="display:inline; margin:0">US4: Podgląd list osób (drużyny, sędziowie, klasyfikatorzy, wolontariusze)</h3></summary>
+<summary><h3 style="display:inline; margin:0">US4: Podgląd list osób (drużyny, sędziowie, klasyfikatorzy, wolontariusze) - DONE</h3></summary>
 
 **User Story**
 
@@ -883,14 +883,14 @@ To jest profesjonalizm. **Max. 2 taski w Progress**.
 **Zadania techniczne**
 
 - Frontend
-  - [ ] Sekcja „Listy osób” na dashboardzie (podsekcje: drużyny, sędziowie, klasyfikatorzy, wolontariusze).
-  - [ ] Proste listy (np. tabela lub lista) + czytelne nagłówki.
-  - [ ] Integracja z API (np. `GET /tournaments/:id/teams`, `.../referees`, `.../classifiers`, `.../volunteers` lub 1 endpoint zbiorczy).
+  - [ x ] Sekcja „Listy osób” na dashboardzie (podsekcje: drużyny, sędziowie, klasyfikatorzy, wolontariusze).
+  - [ x ] Proste listy (np. tabela lub lista) + czytelne nagłówki.
+  - [ x ] Integracja z API (np. `GET /tournaments/:id/teams`, `.../referees`, `.../classifiers`, `.../volunteers` lub 1 endpoint zbiorczy).
 - Backend / API
-  - [ ] Endpointy do pobrania list przypisanych do turnieju.
-  - [ ] Spójne sortowanie (np. alfabetycznie po nazwisku/nazwie).
+  - [ x ] Endpointy do pobrania list przypisanych do turnieju.
+  - [ x ] Spójne sortowanie (np. alfabetycznie po nazwisku/nazwie).
 - Testy
-  - [ ] Scenariusze: puste listy, duże listy, sortowanie.
+  - [ x ] Scenariusze: puste listy, duże listy, sortowanie.
 
 </details>
 
