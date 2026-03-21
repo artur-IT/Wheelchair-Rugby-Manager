@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { Plus, Calendar, MapPin, Trash2 } from "lucide-react";
 import { motion } from "motion/react";
 import {
@@ -13,20 +14,25 @@ import {
   IconButton,
   Tooltip,
 } from "@mui/material";
-import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
 import AppShell from "@/components/AppShell/AppShell";
+import QueryProvider from "@/components/QueryProvider/QueryProvider";
+import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
 import ConfirmationDialog from "@/components/ui/ConfirmationDialog";
 import DataLoadAlert from "@/components/ui/DataLoadAlert";
+import { deleteTournamentById, fetchTournamentsList } from "@/lib/api/tournaments";
 import { formatAddressForDisplay } from "@/lib/addressDisplay";
+import { queryKeys } from "@/lib/queryKeys";
 import type { Tournament } from "@/types";
 
 export default function TournamentsPage() {
   return (
-    <ThemeRegistry>
-      <AppShell currentPath="/tournaments">
-        <TournamentsContent />
-      </AppShell>
-    </ThemeRegistry>
+    <QueryProvider>
+      <ThemeRegistry>
+        <AppShell currentPath="/tournaments">
+          <TournamentsContent />
+        </AppShell>
+      </ThemeRegistry>
+    </QueryProvider>
   );
 }
 
@@ -46,74 +52,44 @@ function formatDateRange(start: string, end?: string) {
 }
 
 function TournamentsContent() {
-  const [tournaments, setTournaments] = useState<Tournament[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [loadKey, setLoadKey] = useState(0);
+  const queryClient = useQueryClient();
   const [tournamentToDelete, setTournamentToDelete] = useState<Tournament | null>(null);
-  const [deleteLoading, setDeleteLoading] = useState(false);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const controller = new AbortController();
+  const {
+    data: tournaments = [],
+    isPending: loading,
+    isError,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: queryKeys.tournaments.list(),
+    queryFn: ({ signal }) => fetchTournamentsList(signal),
+  });
 
-    async function loadTournaments() {
-      setLoading(true);
-      setError(null);
+  const deleteMutation = useMutation({
+    mutationFn: deleteTournamentById,
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.tournaments.list() });
+      setTournamentToDelete(null);
+    },
+  });
 
-      try {
-        const res = await fetch("/api/tournaments", { signal: controller.signal });
-        if (!res.ok) {
-          throw new Error("Nie udało się pobrać turniejów");
-        }
-
-        const data: Tournament[] = await res.json();
-        if (controller.signal.aborted) return;
-        setTournaments(data);
-      } catch (err) {
-        if (controller.signal.aborted) return;
-        setError(err instanceof Error ? err.message : "Wystąpił błąd podczas pobierania turniejów");
-      } finally {
-        if (!controller.signal.aborted) {
-          setLoading(false);
-        }
-      }
-    }
-
-    loadTournaments();
-    return () => controller.abort();
-  }, [loadKey]);
+  const listError = isError && error instanceof Error ? error.message : null;
 
   function openDeleteDialog(tournament: Tournament) {
-    setDeleteError(null);
+    deleteMutation.reset();
     setTournamentToDelete(tournament);
   }
 
   function closeDeleteDialog() {
-    if (deleteLoading) return;
+    if (deleteMutation.isPending) return;
+    deleteMutation.reset();
     setTournamentToDelete(null);
-    setDeleteError(null);
   }
 
-  async function confirmDeleteTournament() {
+  function confirmDeleteTournament() {
     if (!tournamentToDelete) return;
-    setDeleteLoading(true);
-    setDeleteError(null);
-
-    try {
-      const res = await fetch(`/api/tournaments/${tournamentToDelete.id}`, { method: "DELETE" });
-      if (!res.ok) {
-        const data = (await res.json().catch(() => null)) as { error?: string } | null;
-        throw new Error(data?.error || "Nie udało się usunąć turnieju");
-      }
-
-      setTournaments((prev) => prev.filter((t) => t.id !== tournamentToDelete.id));
-      setTournamentToDelete(null);
-    } catch (err) {
-      setDeleteError(err instanceof Error ? err.message : "Nie udało się usunąć turnieju");
-    } finally {
-      setDeleteLoading(false);
-    }
+    deleteMutation.mutate(tournamentToDelete.id);
   }
 
   function getTournamentStatus(
@@ -128,6 +104,8 @@ function TournamentsContent() {
     if (now > end) return { label: "Zakończony", color: "default" };
     return { label: "W trakcie", color: "success" };
   }
+
+  const deleteErrorMessage = deleteMutation.error instanceof Error ? deleteMutation.error.message : null;
 
   return (
     <Box>
@@ -150,13 +128,13 @@ function TournamentsContent() {
         </Button>
       </Box>
 
-      <DataLoadAlert message={error} onRetry={() => setLoadKey((k) => k + 1)} sx={{ mb: 3 }} />
+      <DataLoadAlert message={listError} onRetry={() => void refetch()} sx={{ mb: 3 }} />
 
       {loading ? (
         <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
           <CircularProgress />
         </Box>
-      ) : tournaments.length === 0 ? (
+      ) : isError ? null : tournaments.length === 0 ? (
         <Box
           sx={{
             py: 6,
@@ -230,7 +208,7 @@ function TournamentsContent() {
                           aria-label={`Usuń turniej ${t.name}`}
                           color="error"
                           onClick={() => openDeleteDialog(t)}
-                          disabled={deleteLoading && tournamentToDelete?.id === t.id}
+                          disabled={deleteMutation.isPending && tournamentToDelete?.id === t.id}
                           size="small"
                           sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2 }}
                         >
@@ -258,8 +236,8 @@ function TournamentsContent() {
         }
         onClose={closeDeleteDialog}
         onConfirm={confirmDeleteTournament}
-        loading={deleteLoading}
-        errorMessage={deleteError}
+        loading={deleteMutation.isPending}
+        errorMessage={deleteErrorMessage}
         confirmLabel="Usuń"
         cancelLabel="Anuluj"
       />

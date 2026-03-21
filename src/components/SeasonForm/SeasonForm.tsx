@@ -1,3 +1,4 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -5,8 +6,10 @@ import { z } from "zod/v4";
 import { Box, Button, TextField, Typography, Paper, Alert, CircularProgress } from "@mui/material";
 import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
 import AppShell from "@/components/AppShell/AppShell";
+import QueryProvider from "@/components/QueryProvider/QueryProvider";
 import DataLoadAlert from "@/components/ui/DataLoadAlert";
-import { getErrorMessageFromResponse } from "@/lib/apiHttp";
+import { createSeason, fetchSeasonById, updateSeason, type SeasonUpsertBody } from "@/lib/api/seasons";
+import { queryKeys } from "@/lib/queryKeys";
 import { requiredSeasonNameSchema } from "@/lib/validateInputs";
 
 const seasonSchema = z.object({
@@ -25,73 +28,85 @@ interface Props {
   id?: string;
 }
 
+function redirectToSettings() {
+  window.location.assign("/settings");
+}
+
 export default function SeasonForm({ id }: Props) {
   return (
-    <ThemeRegistry>
-      <AppShell currentPath="/settings">
-        <SeasonFormContent id={id} />
-      </AppShell>
-    </ThemeRegistry>
+    <QueryProvider>
+      <ThemeRegistry>
+        <AppShell currentPath="/settings">
+          <SeasonFormContent id={id} />
+        </AppShell>
+      </ThemeRegistry>
+    </QueryProvider>
   );
 }
 
 function SeasonFormContent({ id }: Props) {
+  const queryClient = useQueryClient();
   const isEdit = !!id;
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [loadNonce, setLoadNonce] = useState(0);
-  const [loading, setLoading] = useState(isEdit);
 
   const {
     register,
     handleSubmit,
     reset,
     formState: { errors, isSubmitting },
-    // Zod 4.3 types incompatible with @hookform/resolvers — runtime works correctly
   } = useForm<SeasonFormValues>({ resolver: zodResolver(seasonSchema as never) });
 
-  // In edit mode: fetch existing season and pre-fill the form
+  const {
+    data: seasonData,
+    isPending: loading,
+    isError: loadIsError,
+    error: loadErrorObj,
+    refetch,
+  } = useQuery({
+    queryKey: queryKeys.seasons.detail(id ?? "__none__"),
+    queryFn: ({ signal }) => {
+      if (!id) return Promise.reject(new Error("Brak id sezonu"));
+      return fetchSeasonById(id, signal);
+    },
+    enabled: isEdit,
+  });
+
+  const loadError = loadIsError && loadErrorObj instanceof Error ? loadErrorObj.message : null;
+
   useEffect(() => {
-    if (!isEdit) return;
-    setLoading(true);
-    setLoadError(null);
-    fetch(`/api/seasons/${id}`)
-      .then(async (r) => {
-        if (!r.ok) {
-          const msg = await getErrorMessageFromResponse(r, "Nie udało się pobrać danych sezonu");
-          setLoadError(msg);
-          return;
-        }
-        const data: SeasonFormValues = await r.json();
-        reset(data);
-      })
-      .catch(() => setLoadError("Nie udało się pobrać danych sezonu. Sprawdź połączenie."))
-      .finally(() => setLoading(false));
-  }, [id, isEdit, reset, loadNonce]);
+    if (!seasonData) return;
+    reset({
+      name: seasonData.name,
+      year: seasonData.year,
+      description: seasonData.description ?? "",
+    });
+  }, [seasonData, reset]);
 
-  const onSubmit = async (data: SeasonFormValues) => {
-    setSubmitError(null);
-    try {
-      const url = isEdit ? `/api/seasons/${id}` : "/api/seasons";
-      const method = isEdit ? "PATCH" : "POST";
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => null);
-        throw new Error(err?.error?.formErrors?.[0] ?? "Nie udało się zapisać sezonu");
-      }
-
-      window.location.href = "/settings";
-    } catch (err) {
+  const submitMutation = useMutation({
+    mutationFn: (data: SeasonFormValues) => {
+      const body: SeasonUpsertBody = {
+        name: data.name,
+        year: data.year,
+        description: data.description,
+      };
+      return isEdit && id ? updateSeason(id, body) : createSeason(body);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.seasons.list() });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all });
+      redirectToSettings();
+    },
+    onError: (err: unknown) => {
       setSubmitError(err instanceof Error ? err.message : "Wystąpił nieoczekiwany błąd");
-    }
+    },
+  });
+
+  const onSubmit = (data: SeasonFormValues) => {
+    setSubmitError(null);
+    submitMutation.mutate(data);
   };
 
-  if (loading) {
+  if (loading && isEdit) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
         <CircularProgress />
@@ -99,10 +114,10 @@ function SeasonFormContent({ id }: Props) {
     );
   }
 
-  if (isEdit && loadError) {
+  if (isEdit && loadError && !loading) {
     return (
       <Paper sx={{ p: 4, maxWidth: 480, mx: "auto", borderRadius: 3 }}>
-        <DataLoadAlert message={loadError} onRetry={() => setLoadNonce((n) => n + 1)} />
+        <DataLoadAlert message={loadError} onRetry={() => void refetch()} />
       </Paper>
     );
   }
@@ -150,8 +165,14 @@ function SeasonFormContent({ id }: Props) {
           <Button variant="outlined" fullWidth component="a" href="/settings">
             Anuluj
           </Button>
-          <Button variant="contained" color="success" type="submit" fullWidth disabled={isSubmitting}>
-            {isSubmitting ? <CircularProgress size={24} /> : "Zapisz Sezon"}
+          <Button
+            variant="contained"
+            color="success"
+            type="submit"
+            fullWidth
+            disabled={isSubmitting || submitMutation.isPending}
+          >
+            {isSubmitting || submitMutation.isPending ? <CircularProgress size={24} /> : "Zapisz Sezon"}
           </Button>
         </Box>
       </form>

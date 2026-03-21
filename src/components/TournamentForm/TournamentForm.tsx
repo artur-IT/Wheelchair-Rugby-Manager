@@ -1,6 +1,8 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Box, Button, Grid, TextField, Typography, Paper, Divider, CircularProgress, Alert } from "@mui/material";
 import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
 import AppShell from "@/components/AppShell/AppShell";
+import QueryProvider from "@/components/QueryProvider/QueryProvider";
 import { useEffect, useState } from "react";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -8,31 +10,34 @@ import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import DataLoadAlert from "@/components/ui/DataLoadAlert";
-import { getErrorMessageFromResponse } from "@/lib/apiHttp";
+import { createTournament, fetchTournamentById, updateTournament } from "@/lib/api/tournaments";
+import { queryKeys } from "@/lib/queryKeys";
 import { tournamentFormSchema, type TournamentFormData } from "@/lib/validateInputs";
-import type { Tournament } from "@/types";
 import { tournamentToTournamentFormDefaults } from "@/lib/tournamentFormMapping";
 
 interface Props {
   tournamentId?: string;
 }
 
+function redirectToTournamentsList() {
+  window.location.assign("/tournaments");
+}
+
 export default function TournamentForm({ tournamentId }: Props) {
   return (
-    <ThemeRegistry>
-      <AppShell currentPath="/tournaments">
-        <TournamentFormContent tournamentId={tournamentId} />
-      </AppShell>
-    </ThemeRegistry>
+    <QueryProvider>
+      <ThemeRegistry>
+        <AppShell currentPath="/tournaments">
+          <TournamentFormContent tournamentId={tournamentId} />
+        </AppShell>
+      </ThemeRegistry>
+    </QueryProvider>
   );
 }
 
 function TournamentFormContent({ tournamentId }: Props) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [prefillLoading, setPrefillLoading] = useState(!!tournamentId);
+  const queryClient = useQueryClient();
   const [formError, setFormError] = useState<string | null>(null);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [loadNonce, setLoadNonce] = useState(0);
 
   const {
     control,
@@ -60,68 +65,60 @@ function TournamentFormContent({ tournamentId }: Props) {
     },
   });
 
+  const {
+    data: tournamentForEdit,
+    isPending: prefillLoading,
+    isError: loadIsError,
+    error: loadErrorObj,
+    refetch,
+  } = useQuery({
+    queryKey: queryKeys.tournaments.detail(tournamentId ?? "__none__"),
+    queryFn: ({ signal }) => {
+      if (!tournamentId) return Promise.reject(new Error("Brak id turnieju"));
+      return fetchTournamentById(tournamentId, signal);
+    },
+    enabled: Boolean(tournamentId),
+  });
+
+  const loadError = loadIsError && loadErrorObj instanceof Error ? loadErrorObj.message : null;
+
   useEffect(() => {
-    if (!tournamentId) return;
-
-    const controller = new AbortController();
-
-    async function loadTournament() {
-      setPrefillLoading(true);
-      setLoadError(null);
+    if (tournamentForEdit) {
+      reset(tournamentToTournamentFormDefaults(tournamentForEdit));
       setFormError(null);
-      try {
-        const res = await fetch(`/api/tournaments/${tournamentId}`, { signal: controller.signal });
-        if (!res.ok) {
-          const msg = await getErrorMessageFromResponse(res, "Nie udało się pobrać turnieju do edycji");
-          throw new Error(msg);
-        }
-
-        const data: Tournament = await res.json();
-        reset(tournamentToTournamentFormDefaults(data));
-      } catch (err) {
-        if (controller.signal.aborted) return;
-        setLoadError(err instanceof Error ? err.message : "Wystąpił błąd podczas pobierania turnieju");
-      } finally {
-        if (!controller.signal.aborted) setPrefillLoading(false);
-      }
     }
+  }, [tournamentForEdit, reset]);
 
-    loadTournament();
-    return () => controller.abort();
-  }, [tournamentId, reset, loadNonce]);
+  const submitMutation = useMutation({
+    mutationFn: (data: TournamentFormData) =>
+      tournamentId ? updateTournament(tournamentId, data) : createTournament(data),
+    onSuccess: async (saved) => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.tournaments.list() });
+      if (saved.seasonId) {
+        await queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.season(saved.seasonId) });
+      } else {
+        await queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all });
+      }
+      redirectToTournamentsList();
+    },
+    onError: (e: unknown) => {
+      setFormError(e instanceof Error ? e.message : "Nie udało się zapisać turnieju");
+    },
+  });
 
-  const onSubmit = async (data: TournamentFormData) => {
+  const onSubmit = (data: TournamentFormData) => {
     setFormError(null);
-    try {
-      setIsSubmitting(true);
-      const response = await fetch(tournamentId ? `/api/tournaments/${tournamentId}` : "/api/tournaments", {
-        method: tournamentId ? "PUT" : "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        const msg = await getErrorMessageFromResponse(response, "Nie udało się zapisać turnieju");
-        setFormError(msg);
-        return;
-      }
-
-      window.location.href = "/tournaments";
-    } catch {
-      setFormError("Nie udało się zapisać turnieju");
-    } finally {
-      setIsSubmitting(false);
-    }
+    submitMutation.mutate(data);
   };
+
+  const isSubmitting = submitMutation.isPending;
 
   const title = tournamentId ? "Edytuj Turniej" : "Nowy Turniej";
 
   if (tournamentId && loadError && !prefillLoading) {
     return (
       <Paper sx={{ p: 4, maxWidth: 600, mx: "auto", borderRadius: 3 }}>
-        <DataLoadAlert message={loadError} onRetry={() => setLoadNonce((n) => n + 1)} />
+        <DataLoadAlert message={loadError} onRetry={() => void refetch()} />
       </Paper>
     );
   }

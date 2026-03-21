@@ -1,3 +1,4 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import {
   Box,
@@ -21,12 +22,15 @@ import {
   TextField,
   Link,
 } from "@mui/material";
-import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
 import AppShell from "@/components/AppShell/AppShell";
+import QueryProvider from "@/components/QueryProvider/QueryProvider";
+import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
 import { TeamFormContent } from "@/components/TeamForm/TeamForm";
 import TeamNewPlayer, { type PlayerRow } from "@/components/TeamNewPlayer/TeamNewPlayer";
 import ConfirmationDialog from "@/components/ui/ConfirmationDialog";
 import DataLoadAlert from "@/components/ui/DataLoadAlert";
+import { deleteTeamById, fetchTeamById } from "@/lib/api/teams";
+import { queryKeys } from "@/lib/queryKeys";
 import { playerClassificationSchema } from "@/lib/validateInputs";
 import type { Team, Player } from "@/types";
 
@@ -72,19 +76,42 @@ interface TeamDetailsProps {
 
 export default function TeamDetails({ id }: TeamDetailsProps) {
   return (
-    <ThemeRegistry>
-      <AppShell currentPath="/settings">
-        <TeamDetailsContent id={id} />
-      </AppShell>
-    </ThemeRegistry>
+    <QueryProvider>
+      <ThemeRegistry>
+        <AppShell currentPath="/settings">
+          <TeamDetailsContent id={id} />
+        </AppShell>
+      </ThemeRegistry>
+    </QueryProvider>
   );
 }
 
 function TeamDetailsContent({ id }: TeamDetailsProps) {
-  const [team, setTeam] = useState<Team | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [loadKey, setLoadKey] = useState(0);
+  const queryClient = useQueryClient();
+  const teamQueryKey = queryKeys.teams.detail(id);
+
+  const {
+    data: team,
+    isPending: loading,
+    isError,
+    error: queryError,
+    refetch,
+  } = useQuery({
+    queryKey: teamQueryKey,
+    queryFn: ({ signal }) => fetchTeamById(id, signal),
+  });
+
+  const deleteTeamMutation = useMutation({
+    mutationFn: deleteTeamById,
+    onSuccess: () => {
+      window.location.href = "/settings";
+    },
+  });
+
+  const setTeamInCache = (updated: Team) => {
+    queryClient.setQueryData(teamQueryKey, updated);
+  };
+
   const [editOpen, setEditOpen] = useState(false);
   const [editingPlayer, setEditingPlayer] = useState<Player | null>(null);
   const [deleteConfirmPlayer, setDeleteConfirmPlayer] = useState<Player | null>(null);
@@ -99,39 +126,6 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
   const [addingNewPlayer, setAddingNewPlayer] = useState(false);
   const [newPlayerForm, setNewPlayerForm] = useState<PlayerRow | null>(null);
   const [deleteTeamDialogOpen, setDeleteTeamDialogOpen] = useState(false);
-  const [deleteTeamLoading, setDeleteTeamLoading] = useState(false);
-  const [deleteTeamError, setDeleteTeamError] = useState<string | null>(null);
-
-  // Fetch current team from DB (single team by id)
-  useEffect(() => {
-    const controller = new AbortController();
-
-    async function fetchTeam() {
-      setLoading(true);
-      setError(null);
-      try {
-        const res = await fetch(`/api/teams/${id}`, { signal: controller.signal });
-        if (!res.ok) {
-          if (res.status === 404) {
-            setTeam(null);
-            return;
-          }
-          throw new Error("Nie udało się pobrać drużyny");
-        }
-        const data: Team = await res.json();
-        setTeam(data);
-      } catch (fetchError) {
-        if (controller.signal.aborted) return;
-        setError(fetchError instanceof Error ? fetchError.message : "Wystąpił błąd pobierania");
-      } finally {
-        if (!controller.signal.aborted) setLoading(false);
-      }
-    }
-
-    fetchTeam();
-
-    return () => controller.abort();
-  }, [id, loadKey]);
 
   useEffect(() => {
     if (editingPlayer) {
@@ -154,8 +148,9 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
     );
   }
 
-  if (error) {
-    return <DataLoadAlert message={error} onRetry={() => setLoadKey((k) => k + 1)} />;
+  if (isError) {
+    const message = queryError instanceof Error ? queryError.message : "Wystąpił błąd pobierania";
+    return <DataLoadAlert message={message} onRetry={() => void refetch()} />;
   }
 
   if (!team) {
@@ -170,38 +165,27 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
   const handleEditClose = () => setEditOpen(false);
 
   const handleEditSaved = (updated: Team) => {
-    setTeam(updated);
+    setTeamInCache(updated);
     setEditOpen(false);
   };
 
   const handleDeleteTeamClick = () => {
-    setDeleteTeamError(null);
+    deleteTeamMutation.reset();
     setDeleteTeamDialogOpen(true);
   };
 
   const handleDeleteTeamClose = () => {
+    if (deleteTeamMutation.isPending) return;
+    deleteTeamMutation.reset();
     setDeleteTeamDialogOpen(false);
-    setDeleteTeamError(null);
   };
 
-  // Delete team record and redirect back to settings on success.
-  const handleDeleteTeamConfirm = async () => {
+  const handleDeleteTeamConfirm = () => {
     if (!team) return;
-    setDeleteTeamLoading(true);
-    setDeleteTeamError(null);
-    try {
-      const res = await fetch(`/api/teams/${team.id}`, { method: "DELETE" });
-      const data = await res.json().catch(() => null);
-      if (!res.ok) {
-        throw new Error(data?.error ?? "Nie udało się usunąć drużyny");
-      }
-      window.location.href = "/settings";
-    } catch (err) {
-      setDeleteTeamError(err instanceof Error ? err.message : "Wystąpił błąd podczas usuwania drużyny");
-    } finally {
-      setDeleteTeamLoading(false);
-    }
+    deleteTeamMutation.mutate(team.id);
   };
+
+  const deleteTeamErrorMessage = deleteTeamMutation.error instanceof Error ? deleteTeamMutation.error.message : null;
 
   // const handleEditPlayer = (player: Player) => setEditingPlayer(player); good old code (before Code Rabbit)
   const handleEditPlayer = (player: Player) => {
@@ -247,7 +231,7 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
         );
       }
       const updated: Team = await res.json();
-      setTeam(updated);
+      setTeamInCache(updated);
       return true;
     } catch (e) {
       setPlayerActionError(e instanceof Error ? e.message : "Wystąpił błąd");
@@ -523,14 +507,14 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
         open={deleteTeamDialogOpen}
         onClose={handleDeleteTeamClose}
         onConfirm={handleDeleteTeamConfirm}
-        loading={deleteTeamLoading}
+        loading={deleteTeamMutation.isPending}
         title="Usuń drużynę"
         description={
           <Typography>
             Operacja usunie drużynę <strong>{team.name}</strong> z bazy danych. Czy na pewno chcesz kontynuować?
           </Typography>
         }
-        errorMessage={deleteTeamError}
+        errorMessage={deleteTeamErrorMessage}
         confirmLabel="Usuń drużynę"
       />
 

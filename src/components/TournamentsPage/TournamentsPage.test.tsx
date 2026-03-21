@@ -29,10 +29,15 @@ describe("TournamentsPage", () => {
       classifiers: [],
     };
 
+    let listCalls = 0;
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = typeof input === "string" ? input : input.toString();
       if (url === "/api/tournaments" && (!init || init.method == null)) {
-        return new Response(JSON.stringify([tournamentA, tournamentB]), { status: 200 });
+        listCalls += 1;
+        if (listCalls === 1) {
+          return new Response(JSON.stringify([tournamentA, tournamentB]), { status: 200 });
+        }
+        return new Response(JSON.stringify([tournamentB]), { status: 200 });
       }
       if (url === "/api/tournaments/t1" && init?.method === "DELETE") {
         return new Response(JSON.stringify({ ok: true }), { status: 200 });
