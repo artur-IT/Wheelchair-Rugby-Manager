@@ -1,6 +1,7 @@
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
-import type { Match, RefereePlanMatch, RefereeRole, Tournament } from "@/types";
+import type { Match, RefereeRole, Tournament } from "@/types";
 import {
   MATCH_DURATION_MINUTES,
   MatchDayOption,
@@ -9,7 +10,8 @@ import {
   pad2,
   timeToMinutes,
 } from "@/components/TournamentDetails/hooks/matchPlanHelpers";
-import { getErrorMessageFromResponse } from "@/lib/apiHttp";
+import { fetchTournamentRefereePlan } from "@/lib/api/tournaments";
+import { queryKeys } from "@/lib/queryKeys";
 
 interface RefereePlanDraft {
   id?: string;
@@ -99,11 +101,29 @@ export default function useRefereePlanManager({
   matchDayOptions,
   refreshMatches,
 }: UseRefereePlanManagerArgs): RefereePlanManager {
-  const [refereePlanByMatchId, setRefereePlanByMatchId] = useState<
-    Record<string, Partial<Record<RefereeRole, string>>>
-  >({});
-  const [refereePlanLoading, setRefereePlanLoading] = useState(false);
-  const [refereePlanError, setRefereePlanError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+  const tid = tournament?.id;
+
+  const {
+    data: refereePlanRows = [],
+    isPending: refereePlanLoading,
+    isError: refereePlanQueryError,
+    error: refereePlanErr,
+  } = useQuery({
+    queryKey: queryKeys.tournaments.refereePlan(tid ?? "__none__"),
+    queryFn: ({ signal }) => fetchTournamentRefereePlan(tid, signal),
+    enabled: Boolean(tid),
+  });
+
+  const refereePlanError = refereePlanQueryError && refereePlanErr instanceof Error ? refereePlanErr.message : null;
+
+  const refereePlanByMatchId = useMemo(() => {
+    const mapping: Record<string, Partial<Record<RefereeRole, string>>> = {};
+    for (const row of refereePlanRows) {
+      mapping[row.matchId] = row.refereeAssignments;
+    }
+    return mapping;
+  }, [refereePlanRows]);
 
   const [addRefereePlanOpen, setAddRefereePlanOpen] = useState(false);
   const [createRefereePlanLoading, setCreateRefereePlanLoading] = useState(false);
@@ -130,34 +150,12 @@ export default function useRefereePlanManager({
     setNewRefereePlanEndTime(getRefereePlanEndFromStart(newRefereePlanStartTime));
   }, [newRefereePlanStartTime]);
 
-  const refreshRefereePlan = useCallback(async (tournamentId: string) => {
-    setRefereePlanLoading(true);
-    setRefereePlanError(null);
-    try {
-      const res = await fetch(`/api/tournaments/${tournamentId}/referee-plan`);
-      if (!res.ok) {
-        const msg = await getErrorMessageFromResponse(res, "Nie udało się pobrać planu sędziów");
-        throw new Error(msg);
-      }
-
-      const list: RefereePlanMatch[] = await res.json();
-      const mapping: Record<string, Partial<Record<RefereeRole, string>>> = {};
-      for (const row of list) {
-        mapping[row.matchId] = row.refereeAssignments;
-      }
-      setRefereePlanByMatchId(mapping);
-    } catch (e) {
-      setRefereePlanError(e instanceof Error ? e.message : "Nie udało się pobrać planu sędziów");
-      setRefereePlanByMatchId({});
-    } finally {
-      setRefereePlanLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (!tournament?.id) return;
-    void refreshRefereePlan(tournament.id);
-  }, [tournament?.id, refreshRefereePlan]);
+  const refreshRefereePlan = useCallback(
+    async (tournamentId: string) => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.tournaments.refereePlan(tournamentId) });
+    },
+    [queryClient]
+  );
 
   const newRefereePlanDayOptionsForSelect = useMemo(() => {
     if (allowedNewRefereePlanDayTimestamps) {

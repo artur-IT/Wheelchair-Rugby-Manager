@@ -3,8 +3,13 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   createTournament,
   deleteTournamentById,
+  deleteTournamentMatch,
   fetchTournamentById,
+  fetchTournamentByIdOrNull,
+  fetchTournamentMatches,
+  fetchTournamentRefereePlan,
   fetchTournamentsList,
+  setTournamentTeams,
   updateTournament,
 } from "./tournaments";
 import type { TournamentFormData } from "@/lib/validateInputs";
@@ -71,6 +76,56 @@ describe("tournaments API helpers", () => {
       vi.fn(async () => new Response(JSON.stringify(body), { status: 200 }))
     );
     await expect(fetchTournamentById("t1")).resolves.toEqual(body);
+  });
+
+  it("fetchTournamentByIdOrNull returns null on 404", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response(JSON.stringify({ error: "Nie znaleziono" }), { status: 404 }))
+    );
+    await expect(fetchTournamentByIdOrNull("missing")).resolves.toBeNull();
+  });
+
+  it("fetchTournamentMatches returns list on OK", async () => {
+    const body = [{ id: "m1", tournamentId: "t1", teamAId: "a", teamBId: "b", scheduledAt: "", status: "SCHEDULED" }];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response(JSON.stringify(body), { status: 200 }))
+    );
+    await expect(fetchTournamentMatches("t1")).resolves.toEqual(body);
+  });
+
+  it("fetchTournamentRefereePlan returns list on OK", async () => {
+    const body = [{ matchId: "m1", scheduledAt: "", teamAId: "a", teamBId: "b", refereeAssignments: {} }];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response(JSON.stringify(body), { status: 200 }))
+    );
+    await expect(fetchTournamentRefereePlan("t1")).resolves.toEqual(body);
+  });
+
+  it("deleteTournamentMatch sends DELETE", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url, init) => {
+        expect(String(url)).toContain("/api/tournaments/t1/matches/m1");
+        expect(init?.method).toBe("DELETE");
+        return new Response(JSON.stringify({ ok: true }), { status: 200 });
+      })
+    );
+    await expect(deleteTournamentMatch("t1", "m1")).resolves.toBeUndefined();
+  });
+
+  it("setTournamentTeams sends POST with teamIds", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_url, init) => {
+        expect(init?.method).toBe("POST");
+        expect(JSON.parse(String(init?.body))).toEqual({ teamIds: ["a", "b"] });
+        return new Response(JSON.stringify({ ok: true }), { status: 200 });
+      })
+    );
+    await expect(setTournamentTeams("t1", ["a", "b"])).resolves.toBeUndefined();
   });
 
   it("createTournament sends POST and returns JSON", async () => {

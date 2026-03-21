@@ -1,7 +1,9 @@
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { SetStateAction } from "react";
 import { buildMatchDayOptions, formatDayOptionLabel, getMatchDayTimestamp } from "./matchPlanHelpers";
-import { getErrorMessageFromResponse } from "@/lib/apiHttp";
+import { fetchTournamentByIdOrNull, fetchTournamentMatches } from "@/lib/api/tournaments";
+import { queryKeys } from "@/lib/queryKeys";
 import type { Match, Tournament } from "@/types";
 
 interface UseTournamentDetailsResult {
@@ -22,101 +24,63 @@ interface UseTournamentDetailsResult {
 }
 
 export default function useTournamentDetails(id: string): UseTournamentDetailsResult {
-  const [tournament, setTournament] = useState<Tournament | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [refetchKey, setRefetchKey] = useState(0);
-
-  const [matches, setMatches] = useState<Match[]>([]);
-  const [matchesLoading, setMatchesLoading] = useState(false);
-  const [matchesError, setMatchesError] = useState<string | null>(null);
-
+  const queryClient = useQueryClient();
   const [scheduleDayTimestamps, setScheduleDayTimestamps] = useState<number[]>([]);
+
+  const {
+    data: tournament = null,
+    isPending: loading,
+    isError: tournamentQueryError,
+    error: tournamentErr,
+  } = useQuery({
+    queryKey: queryKeys.tournaments.detail(id),
+    queryFn: ({ signal }) => fetchTournamentByIdOrNull(id, signal),
+  });
+
+  const error = tournamentQueryError && tournamentErr instanceof Error ? tournamentErr.message : null;
+
+  const tournamentId = tournament?.id;
+
+  const {
+    data: matches = [],
+    isPending: matchesLoading,
+    isError: matchesQueryError,
+    error: matchesErr,
+  } = useQuery({
+    queryKey: queryKeys.tournaments.matches(tournamentId ?? "__none__"),
+    queryFn: ({ signal }) => fetchTournamentMatches(tournamentId, signal),
+    enabled: Boolean(tournamentId),
+  });
+
+  const matchesError = matchesQueryError && matchesErr instanceof Error ? matchesErr.message : null;
+
+  useEffect(() => {
+    if (!tournamentId) return;
+    setScheduleDayTimestamps([]);
+  }, [tournamentId]);
+
+  const refetchTournament = useCallback(() => {
+    void queryClient.invalidateQueries({ queryKey: queryKeys.tournaments.detail(id) });
+  }, [queryClient, id]);
+
+  const refreshTournament = useCallback(
+    async (nextId: string) => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.tournaments.detail(nextId) });
+    },
+    [queryClient]
+  );
+
+  const refreshMatches = useCallback(
+    async (tid: string) => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.tournaments.matches(tid) });
+    },
+    [queryClient]
+  );
 
   const matchDayOptions = useMemo(
     () => buildMatchDayOptions(tournament?.startDate ?? "", tournament?.endDate ?? ""),
     [tournament?.startDate, tournament?.endDate]
   );
-
-  useEffect(() => {
-    const controller = new AbortController();
-    async function load() {
-      setLoading(true);
-      setError(null);
-      try {
-        const res = await fetch(`/api/tournaments/${id}`, { signal: controller.signal });
-        if (res.status === 404) {
-          setTournament(null);
-          return;
-        }
-        if (!res.ok) {
-          const msg = await getErrorMessageFromResponse(res, "Nie udało się pobrać turnieju");
-          throw new Error(msg);
-        }
-        const data: Tournament = await res.json();
-        setTournament(data);
-      } catch (err) {
-        if (controller.signal.aborted) return;
-        setError(err instanceof Error ? err.message : "Wystąpił błąd podczas pobierania turnieju");
-      } finally {
-        if (!controller.signal.aborted) {
-          setLoading(false);
-        }
-      }
-    }
-    load();
-    return () => controller.abort();
-  }, [id, refetchKey]);
-
-  const refetchTournament = useCallback(() => {
-    setRefetchKey((k) => k + 1);
-  }, []);
-
-  const refreshTournament = useCallback(async (nextId: string) => {
-    const controller = new AbortController();
-    try {
-      const refreshed = await fetch(`/api/tournaments/${nextId}`, { signal: controller.signal });
-      if (refreshed.status === 404) {
-        setTournament(null);
-        return;
-      }
-      if (!refreshed.ok) {
-        const msg = await getErrorMessageFromResponse(refreshed, "Nie udało się odświeżyć turnieju");
-        throw new Error(msg);
-      }
-      const updated: Tournament = await refreshed.json();
-      setTournament(updated);
-    } catch (err) {
-      if (controller.signal.aborted) return;
-      throw err;
-    }
-  }, []);
-
-  const refreshMatches = useCallback(async (tournamentId: string) => {
-    setMatchesLoading(true);
-    setMatchesError(null);
-    try {
-      const res = await fetch(`/api/tournaments/${tournamentId}/matches`);
-      if (!res.ok) {
-        const msg = await getErrorMessageFromResponse(res, "Nie udało się pobrać meczów");
-        throw new Error(msg);
-      }
-      const list: Match[] = await res.json();
-      setMatches(list);
-    } catch (e) {
-      setMatchesError(e instanceof Error ? e.message : "Nie udało się pobrać meczów");
-      setMatches([]);
-    } finally {
-      setMatchesLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    const tournamentId = tournament?.id;
-    if (!tournamentId) return;
-    setScheduleDayTimestamps([]);
-    void refreshMatches(tournamentId);
-  }, [refreshMatches, tournament?.id]);
 
   const matchesDayTimestamps = useMemo(
     () => Array.from(new Set(matches.map((m) => getMatchDayTimestamp(m.scheduledAt)))).sort((a, b) => a - b),

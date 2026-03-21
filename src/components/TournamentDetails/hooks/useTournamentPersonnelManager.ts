@@ -1,9 +1,20 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import {
+  removeClassifierFromTournament,
+  removeRefereeFromTournament,
+  removeTeamFromTournament,
+  setTournamentClassifiers,
+  setTournamentReferees,
+  setTournamentTeams,
+} from "@/lib/api/tournaments";
+import { fetchTeamsBySeason } from "@/lib/api/teams";
+import { fetchPersonnelBySeason } from "@/lib/api/personnel";
+import { queryKeys } from "@/lib/queryKeys";
 import type { Person, Team, Tournament } from "@/types";
 
 interface UseTournamentPersonnelManagerArgs {
   tournament: Tournament | null;
-  refreshTournament: (tournamentId: string) => Promise<void>;
 }
 
 interface TeamsSection {
@@ -66,48 +77,134 @@ interface ClassifiersSection {
   confirmRemoveClassifier: () => Promise<void>;
 }
 
-export default function useTournamentPersonnelManager({
-  tournament,
-  refreshTournament,
-}: UseTournamentPersonnelManagerArgs) {
-  // Teams dialog state
+export default function useTournamentPersonnelManager({ tournament }: UseTournamentPersonnelManagerArgs) {
+  const queryClient = useQueryClient();
+  const seasonId = tournament?.seasonId;
+
   const [addTeamsOpen, setAddTeamsOpen] = useState(false);
-  const [availableTeams, setAvailableTeams] = useState<Team[]>([]);
-  const [availableTeamsLoading, setAvailableTeamsLoading] = useState(false);
-  const [availableTeamsError, setAvailableTeamsError] = useState<string | null>(null);
   const [selectedTeamIds, setSelectedTeamIds] = useState<string[]>([]);
-  const [saveTeamsLoading, setSaveTeamsLoading] = useState(false);
   const [saveTeamsError, setSaveTeamsError] = useState<string | null>(null);
   const [teamToRemove, setTeamToRemove] = useState<Team | null>(null);
-  const [removeTeamLoading, setRemoveTeamLoading] = useState(false);
   const [removeTeamError, setRemoveTeamError] = useState<string | null>(null);
+
+  const {
+    data: availableTeams = [],
+    isPending: availableTeamsLoading,
+    isError: teamsQueryError,
+    error: teamsErr,
+  } = useQuery({
+    queryKey: queryKeys.teams.bySeason(seasonId ?? "__none__"),
+    queryFn: ({ signal }) => {
+      if (!seasonId) return Promise.reject(new Error("Missing season"));
+      return fetchTeamsBySeason(seasonId, signal);
+    },
+    enabled: Boolean(seasonId && addTeamsOpen),
+  });
+
+  const availableTeamsError = teamsQueryError && teamsErr instanceof Error ? teamsErr.message : null;
+
+  const saveTeamsMutation = useMutation({
+    mutationFn: ({ tournamentId, teamIds }: { tournamentId: string; teamIds: string[] }) =>
+      setTournamentTeams(tournamentId, teamIds),
+    onSuccess: (_, { tournamentId }) => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.tournaments.detail(tournamentId) });
+    },
+  });
+
+  const removeTeamMutation = useMutation({
+    mutationFn: ({ tournamentId, teamId }: { tournamentId: string; teamId: string }) =>
+      removeTeamFromTournament(tournamentId, teamId),
+    onSuccess: (_, { tournamentId }) => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.tournaments.detail(tournamentId) });
+    },
+  });
+
+  const [addRefereesOpen, setAddRefereesOpen] = useState(false);
+  const [selectedRefereeIds, setSelectedRefereeIds] = useState<string[]>([]);
+  const [saveRefereesError, setSaveRefereesError] = useState<string | null>(null);
+  const [refereeToRemove, setRefereeToRemove] = useState<Person | null>(null);
+  const [removeRefereeError, setRemoveRefereeError] = useState<string | null>(null);
+
+  const {
+    data: availableReferees = [],
+    isPending: availableRefereesLoading,
+    isError: refereesQueryError,
+    error: refereesErr,
+  } = useQuery({
+    queryKey: queryKeys.referees.bySeason(seasonId ?? "__none__"),
+    queryFn: ({ signal }) => {
+      if (!seasonId) return Promise.reject(new Error("Missing season"));
+      return fetchPersonnelBySeason("/api/referees", seasonId, "Nie udało się pobrać sędziów", signal);
+    },
+    enabled: Boolean(seasonId && addRefereesOpen),
+  });
+
+  const availableRefereesError = refereesQueryError && refereesErr instanceof Error ? refereesErr.message : null;
+
+  const saveRefereesMutation = useMutation({
+    mutationFn: ({ tournamentId, refereeIds }: { tournamentId: string; refereeIds: string[] }) =>
+      setTournamentReferees(tournamentId, refereeIds),
+    onSuccess: (_, { tournamentId }) => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.tournaments.detail(tournamentId) });
+    },
+  });
+
+  const removeRefereeMutation = useMutation({
+    mutationFn: ({ tournamentId, refereeId }: { tournamentId: string; refereeId: string }) =>
+      removeRefereeFromTournament(tournamentId, refereeId),
+    onSuccess: (_, { tournamentId }) => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.tournaments.detail(tournamentId) });
+    },
+  });
+
+  const [addClassifiersOpen, setAddClassifiersOpen] = useState(false);
+  const [selectedClassifierIds, setSelectedClassifierIds] = useState<string[]>([]);
+  const [saveClassifiersError, setSaveClassifiersError] = useState<string | null>(null);
+  const [classifierToRemove, setClassifierToRemove] = useState<Person | null>(null);
+  const [removeClassifierError, setRemoveClassifierError] = useState<string | null>(null);
+
+  const {
+    data: availableClassifiers = [],
+    isPending: availableClassifiersLoading,
+    isError: classifiersQueryError,
+    error: classifiersErr,
+  } = useQuery({
+    queryKey: queryKeys.classifiers.bySeason(seasonId ?? "__none__"),
+    queryFn: ({ signal }) => {
+      if (!seasonId) return Promise.reject(new Error("Missing season"));
+      return fetchPersonnelBySeason("/api/classifiers", seasonId, "Nie udało się pobrać klasyfikatorów", signal);
+    },
+    enabled: Boolean(seasonId && addClassifiersOpen),
+  });
+
+  const availableClassifiersError =
+    classifiersQueryError && classifiersErr instanceof Error ? classifiersErr.message : null;
+
+  const saveClassifiersMutation = useMutation({
+    mutationFn: ({ tournamentId, classifierIds }: { tournamentId: string; classifierIds: string[] }) =>
+      setTournamentClassifiers(tournamentId, classifierIds),
+    onSuccess: (_, { tournamentId }) => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.tournaments.detail(tournamentId) });
+    },
+  });
+
+  const removeClassifierMutation = useMutation({
+    mutationFn: ({ tournamentId, classifierId }: { tournamentId: string; classifierId: string }) =>
+      removeClassifierFromTournament(tournamentId, classifierId),
+    onSuccess: (_, { tournamentId }) => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.tournaments.detail(tournamentId) });
+    },
+  });
 
   function openAddTeamsDialog() {
     if (!tournament) return;
     setAddTeamsOpen(true);
-    setAvailableTeamsError(null);
     setSaveTeamsError(null);
     setSelectedTeamIds(tournament.teams.map((t) => t.id));
-
-    if (availableTeamsLoading) return;
-    if (availableTeams.length > 0) return;
-
-    setAvailableTeamsLoading(true);
-    fetch(`/api/teams?seasonId=${encodeURIComponent(tournament.seasonId)}`)
-      .then((res) => {
-        if (!res.ok) throw new Error("Nie udało się pobrać drużyn");
-        return res.json();
-      })
-      .then((teams: Team[]) => setAvailableTeams(teams))
-      .catch((err: unknown) => {
-        const message = err instanceof Error ? err.message : "Nie udało się pobrać drużyn";
-        setAvailableTeamsError(message);
-      })
-      .finally(() => setAvailableTeamsLoading(false));
   }
 
   function closeAddTeamsDialog() {
-    if (saveTeamsLoading) return;
+    if (saveTeamsMutation.isPending) return;
     setAddTeamsOpen(false);
     setSaveTeamsError(null);
   }
@@ -123,26 +220,13 @@ export default function useTournamentPersonnelManager({
       return;
     }
 
-    setSaveTeamsLoading(true);
     setSaveTeamsError(null);
     try {
-      const res = await fetch(`/api/tournaments/${tournament.id}/teams`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ teamIds: selectedTeamIds }),
-      });
-      if (!res.ok) {
-        const data = (await res.json().catch(() => null)) as { error?: string } | null;
-        throw new Error(data?.error || "Nie udało się dodać drużyn");
-      }
-
-      await refreshTournament(tournament.id);
+      await saveTeamsMutation.mutateAsync({ tournamentId: tournament.id, teamIds: selectedTeamIds });
       setAddTeamsOpen(false);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Nie udało się dodać drużyn";
       setSaveTeamsError(message);
-    } finally {
-      setSaveTeamsLoading(false);
     }
   }
 
@@ -152,7 +236,7 @@ export default function useTournamentPersonnelManager({
   }
 
   function closeRemoveTeamDialog() {
-    if (removeTeamLoading) return;
+    if (removeTeamMutation.isPending) return;
     setTeamToRemove(null);
     setRemoveTeamError(null);
   }
@@ -160,61 +244,25 @@ export default function useTournamentPersonnelManager({
   async function confirmRemoveTeam() {
     if (!tournament || !teamToRemove) return;
 
-    setRemoveTeamLoading(true);
     setRemoveTeamError(null);
     try {
-      const res = await fetch(`/api/tournaments/${tournament.id}/teams/${teamToRemove.id}`, { method: "DELETE" });
-      if (!res.ok) {
-        const data = (await res.json().catch(() => null)) as { error?: string } | null;
-        throw new Error(data?.error || "Nie udało się usunąć drużyny z turnieju");
-      }
-
-      await refreshTournament(tournament.id);
+      await removeTeamMutation.mutateAsync({ tournamentId: tournament.id, teamId: teamToRemove.id });
       setTeamToRemove(null);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Nie udało się usunąć drużyny z turnieju";
       setRemoveTeamError(message);
-    } finally {
-      setRemoveTeamLoading(false);
     }
   }
-
-  // Referee dialog state
-  const [addRefereesOpen, setAddRefereesOpen] = useState(false);
-  const [availableReferees, setAvailableReferees] = useState<Person[]>([]);
-  const [availableRefereesLoading, setAvailableRefereesLoading] = useState(false);
-  const [availableRefereesError, setAvailableRefereesError] = useState<string | null>(null);
-  const [selectedRefereeIds, setSelectedRefereeIds] = useState<string[]>([]);
-  const [saveRefereesLoading, setSaveRefereesLoading] = useState(false);
-  const [saveRefereesError, setSaveRefereesError] = useState<string | null>(null);
-  const [refereeToRemove, setRefereeToRemove] = useState<Person | null>(null);
-  const [removeRefereeLoading, setRemoveRefereeLoading] = useState(false);
-  const [removeRefereeError, setRemoveRefereeError] = useState<string | null>(null);
 
   function openAddRefereesDialog() {
     if (!tournament) return;
     setAddRefereesOpen(true);
-    setAvailableRefereesError(null);
     setSaveRefereesError(null);
     setSelectedRefereeIds(tournament.referees.map((r) => r.id));
-    if (availableRefereesLoading || availableReferees.length > 0) return;
-
-    setAvailableRefereesLoading(true);
-    fetch(`/api/referees?seasonId=${encodeURIComponent(tournament.seasonId)}`)
-      .then((res) => {
-        if (!res.ok) throw new Error("Nie udało się pobrać sędziów");
-        return res.json();
-      })
-      .then((list: Person[]) => setAvailableReferees(list))
-      .catch((err: unknown) => {
-        const message = err instanceof Error ? err.message : "Nie udało się pobrać sędziów";
-        setAvailableRefereesError(message);
-      })
-      .finally(() => setAvailableRefereesLoading(false));
   }
 
   function closeAddRefereesDialog() {
-    if (saveRefereesLoading) return;
+    if (saveRefereesMutation.isPending) return;
     setAddRefereesOpen(false);
     setSaveRefereesError(null);
   }
@@ -232,26 +280,13 @@ export default function useTournamentPersonnelManager({
       return;
     }
 
-    setSaveRefereesLoading(true);
     setSaveRefereesError(null);
     try {
-      const res = await fetch(`/api/tournaments/${tournament.id}/referees`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ refereeIds: selectedRefereeIds }),
-      });
-      if (!res.ok) {
-        const data = (await res.json().catch(() => null)) as { error?: string } | null;
-        throw new Error(data?.error || "Nie udało się dodać sędziów");
-      }
-
-      await refreshTournament(tournament.id);
+      await saveRefereesMutation.mutateAsync({ tournamentId: tournament.id, refereeIds: selectedRefereeIds });
       setAddRefereesOpen(false);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Nie udało się dodać sędziów";
       setSaveRefereesError(message);
-    } finally {
-      setSaveRefereesLoading(false);
     }
   }
 
@@ -261,70 +296,32 @@ export default function useTournamentPersonnelManager({
   }
 
   function closeRemoveRefereeDialog() {
-    if (removeRefereeLoading) return;
+    if (removeRefereeMutation.isPending) return;
     setRefereeToRemove(null);
     setRemoveRefereeError(null);
   }
 
   async function confirmRemoveReferee() {
     if (!tournament || !refereeToRemove) return;
-    setRemoveRefereeLoading(true);
     setRemoveRefereeError(null);
     try {
-      const res = await fetch(`/api/tournaments/${tournament.id}/referees/${refereeToRemove.id}`, {
-        method: "DELETE",
-      });
-      if (!res.ok) {
-        const data = (await res.json().catch(() => null)) as { error?: string } | null;
-        throw new Error(data?.error || "Nie udało się usunąć sędziego z turnieju");
-      }
-
-      await refreshTournament(tournament.id);
+      await removeRefereeMutation.mutateAsync({ tournamentId: tournament.id, refereeId: refereeToRemove.id });
       setRefereeToRemove(null);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Nie udało się usunąć sędziego z turnieju";
       setRemoveRefereeError(message);
-    } finally {
-      setRemoveRefereeLoading(false);
     }
   }
-
-  // Classifier dialog state
-  const [addClassifiersOpen, setAddClassifiersOpen] = useState(false);
-  const [availableClassifiers, setAvailableClassifiers] = useState<Person[]>([]);
-  const [availableClassifiersLoading, setAvailableClassifiersLoading] = useState(false);
-  const [availableClassifiersError, setAvailableClassifiersError] = useState<string | null>(null);
-  const [selectedClassifierIds, setSelectedClassifierIds] = useState<string[]>([]);
-  const [saveClassifiersLoading, setSaveClassifiersLoading] = useState(false);
-  const [saveClassifiersError, setSaveClassifiersError] = useState<string | null>(null);
-  const [classifierToRemove, setClassifierToRemove] = useState<Person | null>(null);
-  const [removeClassifierLoading, setRemoveClassifierLoading] = useState(false);
-  const [removeClassifierError, setRemoveClassifierError] = useState<string | null>(null);
 
   function openAddClassifiersDialog() {
     if (!tournament) return;
     setAddClassifiersOpen(true);
-    setAvailableClassifiersError(null);
     setSaveClassifiersError(null);
     setSelectedClassifierIds(tournament.classifiers.map((c) => c.id));
-    if (availableClassifiersLoading || availableClassifiers.length > 0) return;
-
-    setAvailableClassifiersLoading(true);
-    fetch(`/api/classifiers?seasonId=${encodeURIComponent(tournament.seasonId)}`)
-      .then((res) => {
-        if (!res.ok) throw new Error("Nie udało się pobrać klasyfikatorów");
-        return res.json();
-      })
-      .then((list: Person[]) => setAvailableClassifiers(list))
-      .catch((err: unknown) => {
-        const message = err instanceof Error ? err.message : "Nie udało się pobrać klasyfikatorów";
-        setAvailableClassifiersError(message);
-      })
-      .finally(() => setAvailableClassifiersLoading(false));
   }
 
   function closeAddClassifiersDialog() {
-    if (saveClassifiersLoading) return;
+    if (saveClassifiersMutation.isPending) return;
     setAddClassifiersOpen(false);
     setSaveClassifiersError(null);
   }
@@ -342,26 +339,16 @@ export default function useTournamentPersonnelManager({
       return;
     }
 
-    setSaveClassifiersLoading(true);
     setSaveClassifiersError(null);
     try {
-      const res = await fetch(`/api/tournaments/${tournament.id}/classifiers`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ classifierIds: selectedClassifierIds }),
+      await saveClassifiersMutation.mutateAsync({
+        tournamentId: tournament.id,
+        classifierIds: selectedClassifierIds,
       });
-      if (!res.ok) {
-        const data = (await res.json().catch(() => null)) as { error?: string } | null;
-        throw new Error(data?.error || "Nie udało się dodać klasyfikatorów");
-      }
-
-      await refreshTournament(tournament.id);
       setAddClassifiersOpen(false);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Nie udało się dodać klasyfikatorów";
       setSaveClassifiersError(message);
-    } finally {
-      setSaveClassifiersLoading(false);
     }
   }
 
@@ -371,31 +358,23 @@ export default function useTournamentPersonnelManager({
   }
 
   function closeRemoveClassifierDialog() {
-    if (removeClassifierLoading) return;
+    if (removeClassifierMutation.isPending) return;
     setClassifierToRemove(null);
     setRemoveClassifierError(null);
   }
 
   async function confirmRemoveClassifier() {
     if (!tournament || !classifierToRemove) return;
-    setRemoveClassifierLoading(true);
     setRemoveClassifierError(null);
     try {
-      const res = await fetch(`/api/tournaments/${tournament.id}/classifiers/${classifierToRemove.id}`, {
-        method: "DELETE",
+      await removeClassifierMutation.mutateAsync({
+        tournamentId: tournament.id,
+        classifierId: classifierToRemove.id,
       });
-      if (!res.ok) {
-        const data = (await res.json().catch(() => null)) as { error?: string } | null;
-        throw new Error(data?.error || "Nie udało się usunąć klasyfikatora z turnieju");
-      }
-
-      await refreshTournament(tournament.id);
       setClassifierToRemove(null);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Nie udało się usunąć klasyfikatora z turnieju";
       setRemoveClassifierError(message);
-    } finally {
-      setRemoveClassifierLoading(false);
     }
   }
 
@@ -405,10 +384,10 @@ export default function useTournamentPersonnelManager({
     availableTeamsLoading,
     availableTeamsError,
     selectedTeamIds,
-    saveTeamsLoading,
+    saveTeamsLoading: saveTeamsMutation.isPending,
     saveTeamsError,
     teamToRemove,
-    removeTeamLoading,
+    removeTeamLoading: removeTeamMutation.isPending,
     removeTeamError,
     openAddTeamsDialog,
     closeAddTeamsDialog,
@@ -425,10 +404,10 @@ export default function useTournamentPersonnelManager({
     availableRefereesLoading,
     availableRefereesError,
     selectedRefereeIds,
-    saveRefereesLoading,
+    saveRefereesLoading: saveRefereesMutation.isPending,
     saveRefereesError,
     refereeToRemove,
-    removeRefereeLoading,
+    removeRefereeLoading: removeRefereeMutation.isPending,
     removeRefereeError,
     openAddRefereesDialog,
     closeAddRefereesDialog,
@@ -445,10 +424,10 @@ export default function useTournamentPersonnelManager({
     availableClassifiersLoading,
     availableClassifiersError,
     selectedClassifierIds,
-    saveClassifiersLoading,
+    saveClassifiersLoading: saveClassifiersMutation.isPending,
     saveClassifiersError,
     classifierToRemove,
-    removeClassifierLoading,
+    removeClassifierLoading: removeClassifierMutation.isPending,
     removeClassifierError,
     openAddClassifiersDialog,
     closeAddClassifiersDialog,
