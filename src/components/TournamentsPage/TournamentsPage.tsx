@@ -17,6 +17,7 @@ import {
 import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
 import AppShell from "@/components/AppShell/AppShell";
 import ConfirmationDialog from "@/components/ui/ConfirmationDialog";
+import { formatAddressForDisplay } from "@/lib/addressDisplay";
 import type { Tournament } from "@/types";
 
 export default function TournamentsPage() {
@@ -213,7 +214,7 @@ function TournamentsContent() {
                           <MapPin size={16} />
                           <Typography variant="body2" color="textSecondary">
                             {t.venue.name}
-                            {t.venue.address ? `, ${t.venue.address}` : ""}
+                            {t.venue.address ? `, ${formatAddressForDisplay(t.venue.address, ", ")}` : ""}
                           </Typography>
                         </Box>
                       )}

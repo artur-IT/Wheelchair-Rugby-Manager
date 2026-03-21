@@ -1,5 +1,6 @@
 import { Box, Paper, Typography, Link as MuiLink } from "@mui/material";
 import { MapPin } from "lucide-react";
+import { formatAddressForDisplay, resolvePlaceMapsHref } from "@/lib/addressDisplay";
 import type { Accommodation, SportsHall, Tournament } from "@/types";
 
 interface TournamentVenueCardsProps {
@@ -9,6 +10,9 @@ interface TournamentVenueCardsProps {
 }
 
 export default function TournamentVenueCards({ tournament, venue, accommodation }: TournamentVenueCardsProps) {
+  const venueMapsHref = resolvePlaceMapsHref(venue);
+  const accommodationMapsHref = resolvePlaceMapsHref(accommodation);
+
   return (
     <Box
       sx={{
@@ -45,9 +49,9 @@ export default function TournamentVenueCards({ tournament, venue, accommodation 
           <Typography color="textSecondary" sx={{ mb: 2 }}>
             {venue.address}
           </Typography>
-          {venue.mapUrl ? (
+          {venueMapsHref ? (
             <MuiLink
-              href={venue.mapUrl}
+              href={venueMapsHref}
               target="_blank"
               rel="noreferrer"
               underline="hover"
@@ -84,17 +88,17 @@ export default function TournamentVenueCards({ tournament, venue, accommodation 
             </Typography>
           </Box>
           <Typography sx={{ fontWeight: 600 }}>{accommodation.name}</Typography>
-          <Typography color="textSecondary" sx={{ mb: 2 }}>
-            {accommodation.address}
+          <Typography color="textSecondary" sx={{ mb: 2, whiteSpace: "pre-line" }}>
+            {formatAddressForDisplay(accommodation.address)}
           </Typography>
           {tournament.parking ? (
             <Typography sx={{ mb: 2 }}>
               <strong>Parking:</strong> {tournament.parking}
             </Typography>
           ) : null}
-          {accommodation.mapUrl ? (
+          {accommodationMapsHref ? (
             <MuiLink
-              href={accommodation.mapUrl}
+              href={accommodationMapsHref}
               target="_blank"
               rel="noreferrer"
               underline="hover"
@@ -138,4 +142,3 @@ export default function TournamentVenueCards({ tournament, venue, accommodation 
     </Box>
   );
 }
-

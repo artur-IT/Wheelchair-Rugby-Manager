@@ -752,7 +752,7 @@ To jest profesjonalizm. **Max. 2 taski w Progress**.
 </details>
 
 <details style="margin-left: 1.5em">
-<summary><h3 style="display:inline; margin:0">US10: Plan sędziowania dla sędziów</h3></summary>
+<summary><h3 style="display:inline; margin:0">US10: Plan sędziowania dla sędziów - DONE</h3></summary>
 
 **User Story**
 
@@ -767,15 +767,15 @@ To jest profesjonalizm. **Max. 2 taski w Progress**.
 **Zadania techniczne**
 
 - Frontend
-  - [ ] Widok „Plan sędziowania” (lista pozycji + dodaj/edytuj/usuń).
-  - [ ] Formularz: wybór meczu + wybór sędziów (2 boiskowi + 1 stolikowy).
-  - [ ] Integracja z API (np. `GET/POST/PATCH/DELETE /tournaments/:id/referee-assignments`).
+  - [ x ] Widok „Plan sędziowania” (lista pozycji + dodaj/edytuj/usuń).
+  - [ x ] Formularz: wybór meczu + wybór sędziów (2 boiskowi + 1 stolikowy).
+  - [ x ] Integracja z API (np. `GET/POST/PATCH/DELETE /tournaments/:id/referee-assignments`).
 - Backend / API
-  - [ ] Model/encja `RefereeAssignment` powiązana z `Match`.
-  - [ ] Walidacja serwerowa (brak duplikatów, wymagane obsady).
-  - [ ] Endpointy CRUD dla planu sędziowania.
+  - [ x ] Model/encja `RefereeAssignment` powiązana z `Match`.
+  - [ x ] Walidacja serwerowa (brak duplikatów, wymagane obsady).
+  - [ x ] Endpointy CRUD dla planu sędziowania.
 - Testy
-  - [ ] Scenariusze: przypisanie sędziów, walidacja duplikatów, lista planu.
+  - [ x ] Scenariusze: przypisanie sędziów, walidacja duplikatów, lista planu.
 
 </details>
 

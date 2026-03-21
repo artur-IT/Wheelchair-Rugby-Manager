@@ -64,9 +64,10 @@ export default function useTournamentDetails(id: string): UseTournamentDetailsRe
     return () => controller.abort();
   }, [id]);
 
-  const refreshTournament = useCallback(
-    async (nextId: string) => {
-      const refreshed = await fetch(`/api/tournaments/${nextId}`);
+  const refreshTournament = useCallback(async (nextId: string) => {
+    const controller = new AbortController();
+    try {
+      const refreshed = await fetch(`/api/tournaments/${nextId}`, { signal: controller.signal });
       if (refreshed.status === 404) {
         setTournament(null);
         return;
@@ -74,9 +75,11 @@ export default function useTournamentDetails(id: string): UseTournamentDetailsRe
       if (!refreshed.ok) throw new Error("Nie udało się odświeżyć turnieju");
       const updated: Tournament = await refreshed.json();
       setTournament(updated);
-    },
-    []
-  );
+    } catch (err) {
+      if (controller.signal.aborted) return;
+      throw err;
+    }
+  }, []);
 
   const refreshMatches = useCallback(async (tournamentId: string) => {
     setMatchesLoading(true);
@@ -105,19 +108,18 @@ export default function useTournamentDetails(id: string): UseTournamentDetailsRe
   }, [refreshMatches, tournament?.id]);
 
   const matchesDayTimestamps = useMemo(
-    () =>
-      Array.from(new Set(matches.map((m) => getMatchDayTimestamp(m.scheduledAt)))).sort((a, b) => a - b),
+    () => Array.from(new Set(matches.map((m) => getMatchDayTimestamp(m.scheduledAt)))).sort((a, b) => a - b),
     [matches]
   );
 
   const scheduleTableDayTimestamps = useMemo(
-    () =>
-      Array.from(new Set([...scheduleDayTimestamps, ...matchesDayTimestamps])).sort((a, b) => a - b),
+    () => Array.from(new Set([...scheduleDayTimestamps, ...matchesDayTimestamps])).sort((a, b) => a - b),
     [matchesDayTimestamps, scheduleDayTimestamps]
   );
 
   const getScheduleDayLabel = useCallback(
-    (timestamp: number) => matchDayOptions.find((o) => o.timestamp === timestamp)?.label ?? formatDayOptionLabel(timestamp),
+    (timestamp: number) =>
+      matchDayOptions.find((o) => o.timestamp === timestamp)?.label ?? formatDayOptionLabel(timestamp),
     [matchDayOptions]
   );
 

@@ -17,6 +17,7 @@ import useRefereePlanManager from "@/components/TournamentDetails/hooks/useRefer
 import useTournamentDetails from "@/components/TournamentDetails/hooks/useTournamentDetails";
 import { getMatchDayTimestamp, parseJerseyInfo } from "@/components/TournamentDetails/hooks/matchPlanHelpers";
 import useTournamentPersonnelManager from "@/components/TournamentDetails/hooks/useTournamentPersonnelManager";
+import { formatAddressForDisplay, resolvePlaceMapsHref } from "@/lib/addressDisplay";
 import type { Match, Person } from "@/types";
 
 const getPersonDisplayName = (person: Person) => `${person.firstName ?? ""} ${person.lastName ?? ""}`.trim() || "—";
@@ -214,6 +215,8 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
 
   const venue = tournament.venue;
   const accommodation = tournament.accommodation;
+  const venueMapsHref = resolvePlaceMapsHref(venue);
+  const accommodationMapsHref = resolvePlaceMapsHref(accommodation);
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
@@ -230,7 +233,7 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
           <Box
             sx={{
               display: "grid",
-              gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+              gridTemplateColumns: { xs: "1fr", md: "1fr 1fr 1fr" },
               gap: 3,
             }}
           >
@@ -259,12 +262,12 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
                   </Typography>
                 </Box>
                 <Typography sx={{ fontWeight: 600 }}>{venue.name}</Typography>
-                <Typography color="textSecondary" sx={{ mb: 2 }}>
-                  {venue.address}
+                <Typography color="textSecondary" sx={{ mb: 1, whiteSpace: "pre-line" }}>
+                  {formatAddressForDisplay(venue.address)}
                 </Typography>
-                {venue.mapUrl ? (
+                {venueMapsHref ? (
                   <MuiLink
-                    href={venue.mapUrl}
+                    href={venueMapsHref}
                     target="_blank"
                     rel="noreferrer"
                     underline="hover"
@@ -301,17 +304,17 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
                   </Typography>
                 </Box>
                 <Typography sx={{ fontWeight: 600 }}>{accommodation.name}</Typography>
-                <Typography color="textSecondary" sx={{ mb: 2 }}>
-                  {accommodation.address}
+                <Typography color="textSecondary" sx={{ mb: 1, whiteSpace: "pre-line" }}>
+                  {formatAddressForDisplay(accommodation.address)}
                 </Typography>
                 {tournament.parking ? (
-                  <Typography sx={{ mb: 2 }}>
+                  <Typography sx={{ mb: 1 }}>
                     <strong>Parking:</strong> {tournament.parking}
                   </Typography>
                 ) : null}
-                {accommodation.mapUrl ? (
+                {accommodationMapsHref ? (
                   <MuiLink
-                    href={accommodation.mapUrl}
+                    href={accommodationMapsHref}
                     target="_blank"
                     rel="noreferrer"
                     underline="hover"
