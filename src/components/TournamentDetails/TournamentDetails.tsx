@@ -88,8 +88,10 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
 
   const deleteMatchDayMutation = useMutation({
     mutationFn: async ({ tournamentId, matchIds }: { tournamentId: string; matchIds: string[] }) => {
-      for (const matchId of matchIds) {
-        await deleteTournamentMatch(tournamentId, matchId);
+      const results = await Promise.allSettled(matchIds.map((matchId) => deleteTournamentMatch(tournamentId, matchId)));
+      const failures = results.filter((r) => r.status === "rejected");
+      if (failures.length > 0) {
+        throw new Error(`Nie udało się usunąć ${failures.length} z ${matchIds.length} meczów`);
       }
     },
     onSuccess: (_, { tournamentId }) => {

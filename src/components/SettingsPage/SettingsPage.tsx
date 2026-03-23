@@ -40,14 +40,14 @@ import type { Season, Person } from "@/types";
 import { useDefaultSeason } from "@/components/hooks/useDefaultSeason";
 import ConfirmationDialog from "@/components/ui/ConfirmationDialog";
 import DataLoadAlert from "@/components/ui/DataLoadAlert";
+import MutationErrorAlert from "@/components/ui/MutationErrorAlert";
 import AppShell from "@/components/AppShell/AppShell";
 import QueryProvider from "@/components/QueryProvider/QueryProvider";
 import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
-import { fetchPersonnelBySeason } from "@/lib/api/personnel";
+import { createPersonnel, deletePersonnel, fetchPersonnelBySeason, updatePersonnel } from "@/lib/api/personnel";
 import { fetchSeasonsList, deleteSeasonById } from "@/lib/api/seasons";
 import { fetchTeamsBySeason } from "@/lib/api/teams";
 import { queryKeys } from "@/lib/queryKeys";
-import { parseFormErrorFromResponse } from "@/lib/apiHttp";
 
 type TabValue = "teams" | "referees" | "classifiers";
 
@@ -387,11 +387,8 @@ interface PersonnelConfig {
   messages: {
     loadError: string;
     loadFallback: string;
-    createError: string;
     createFallback: string;
-    updateError: string;
     updateFallback: string;
-    deleteError: string;
     deleteFallback: string;
   };
 }
@@ -411,11 +408,8 @@ const REFEREES_CONFIG: PersonnelConfig = {
   messages: {
     loadError: "Nie udało się pobrać sędziów",
     loadFallback: "Wystąpił błąd podczas pobierania sędziów",
-    createError: "Nie udało się dodać sędziego",
     createFallback: "Wystąpił błąd podczas zapisu sędziego",
-    updateError: "Nie udało się zaktualizować sędziego",
     updateFallback: "Wystąpił błąd podczas zapisu sędziego",
-    deleteError: "Nie udało się usunąć sędziego",
     deleteFallback: "Wystąpił błąd podczas usuwania",
   },
 };
@@ -435,11 +429,8 @@ const CLASSIFIERS_CONFIG: PersonnelConfig = {
   messages: {
     loadError: "Nie udało się pobrać klasyfikatorów",
     loadFallback: "Wystąpił błąd podczas pobierania klasyfikatorów",
-    createError: "Nie udało się dodać klasyfikatora",
     createFallback: "Wystąpił błąd podczas zapisu klasyfikatora",
-    updateError: "Nie udało się zaktualizować klasyfikatora",
     updateFallback: "Wystąpił błąd podczas zapisu klasyfikatora",
-    deleteError: "Nie udało się usunąć klasyfikatora",
     deleteFallback: "Wystąpił błąd podczas usuwania",
   },
 };
@@ -491,77 +482,105 @@ function PersonnelTab({ seasonId, config }: PersonnelTabProps) {
   const createMutation = useMutation({
     mutationFn: async (payload: PersonFormPayload) => {
       if (!seasonId) throw new Error("Brak sezonu");
-      const requestBody = {
+      return createPersonnel(apiEndpoint, {
         firstName: payload.firstName,
         lastName: payload.lastName,
         email: payload.email,
         phone: payload.phone,
         seasonId,
-      };
-      const response = await fetch(apiEndpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(requestBody),
       });
-      if (!response.ok) {
-        const message = await parseFormErrorFromResponse(response, messages.createError);
-        throw new Error(message);
+    },
+    onMutate: async (payload) => {
+      const targetSeasonId = seasonId; // capture at mutation time
+      await queryClient.cancelQueries({ queryKey: queryKey(targetSeasonId) });
+      const previousPeople = queryClient.getQueryData<Person[]>(queryKey(targetSeasonId)) ?? [];
+      const optimisticPerson: Person = {
+        id: `optimistic-${crypto.randomUUID()}`,
+        firstName: payload.firstName,
+        lastName: payload.lastName,
+        email: payload.email ?? undefined,
+        phone: payload.phone ?? null,
+      };
+      queryClient.setQueryData<Person[]>(queryKey(targetSeasonId), (current) => [...(current ?? []), optimisticPerson]);
+      return { previousPeople, targetSeasonId };
+    },
+    onError: (e: unknown, _vars, context) => {
+      const targetSeasonId = context?.targetSeasonId;
+      if (context?.previousPeople) {
+        queryClient.setQueryData(queryKey(targetSeasonId), context.previousPeople);
       }
-      return response.json() as Promise<Person>;
+      setDialogError(e instanceof Error ? e.message : messages.createFallback);
     },
     onSuccess: () => {
-      invalidateList();
       setDialogOpen(false);
       setEditingPerson(null);
       setDialogError(null);
     },
-    onError: (e: unknown) => {
-      setDialogError(e instanceof Error ? e.message : messages.createFallback);
+    onSettled: () => {
+      invalidateList();
     },
   });
 
   const updateMutation = useMutation({
     mutationFn: async ({ id, payload }: { id: string; payload: PersonFormPayload }) => {
-      const response = await fetch(`${apiEndpoint}/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          firstName: payload.firstName,
-          lastName: payload.lastName,
-          email: payload.email,
-          phone: payload.phone,
-        }),
-      });
-      if (!response.ok) {
-        const message = await parseFormErrorFromResponse(response, messages.updateError);
-        throw new Error(message);
+      return updatePersonnel(apiEndpoint, id, payload);
+    },
+    onMutate: async ({ id, payload }) => {
+      await queryClient.cancelQueries({ queryKey: queryKey(seasonId) });
+      const previousPeople = queryClient.getQueryData<Person[]>(queryKey(seasonId)) ?? [];
+      queryClient.setQueryData<Person[]>(queryKey(seasonId), (current) =>
+        (current ?? []).map((person) =>
+          person.id === id
+            ? {
+                ...person,
+                firstName: payload.firstName,
+                lastName: payload.lastName,
+                email: payload.email,
+                phone: payload.phone,
+              }
+            : person
+        )
+      );
+      return { previousPeople };
+    },
+    onError: (e: unknown, _vars, context) => {
+      if (context?.previousPeople) {
+        queryClient.setQueryData(queryKey(seasonId), context.previousPeople);
       }
-      return response.json() as Promise<Person>;
+      setDialogError(e instanceof Error ? e.message : messages.updateFallback);
     },
     onSuccess: () => {
-      invalidateList();
       setDialogOpen(false);
       setEditingPerson(null);
       setDialogError(null);
     },
-    onError: (e: unknown) => {
-      setDialogError(e instanceof Error ? e.message : messages.updateFallback);
+    onSettled: () => {
+      invalidateList();
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const response = await fetch(`${apiEndpoint}/${id}`, {
-        method: "DELETE",
-      });
-      if (!response.ok) {
-        const message = await parseFormErrorFromResponse(response, messages.deleteError);
-        throw new Error(message);
+      await deletePersonnel(apiEndpoint, id);
+    },
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: queryKey(seasonId) });
+      const previousPeople = queryClient.getQueryData<Person[]>(queryKey(seasonId)) ?? [];
+      queryClient.setQueryData<Person[]>(queryKey(seasonId), (current) =>
+        (current ?? []).filter((person) => person.id !== id)
+      );
+      return { previousPeople };
+    },
+    onError: (_error, _id, context) => {
+      if (context?.previousPeople) {
+        queryClient.setQueryData(queryKey(seasonId), context.previousPeople);
       }
     },
     onSuccess: () => {
-      invalidateList();
       setDeleteTarget(null);
+    },
+    onSettled: () => {
+      invalidateList();
     },
   });
 
@@ -633,10 +652,10 @@ function PersonnelTab({ seasonId, config }: PersonnelTabProps) {
 
   return (
     <>
-      {deleteMutation.isError && deleteMutation.error instanceof Error ? (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {deleteMutation.error.message}
-        </Alert>
+      {deleteMutation.isError ? (
+        <Box sx={{ mb: 2 }}>
+          <MutationErrorAlert error={deleteMutation.error} fallbackMessage={messages.deleteFallback} />
+        </Box>
       ) : null}
       {people.length === 0 && (
         <Alert

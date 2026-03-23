@@ -1,6 +1,13 @@
 import { getErrorMessageFromResponse } from "@/lib/apiHttp";
 import type { Person } from "@/types";
 
+interface PersonnelPayload {
+  firstName: string;
+  lastName: string;
+  email?: string | null;
+  phone?: string | null;
+}
+
 /** GET /api/referees?seasonId=… or /api/classifiers?seasonId=… */
 export async function fetchPersonnelBySeason(
   apiEndpoint: string,
@@ -14,4 +21,48 @@ export async function fetchPersonnelBySeason(
     throw new Error(msg);
   }
   return res.json() as Promise<Person[]>;
+}
+
+/** POST /api/referees or /api/classifiers or /api/coaches */
+export async function createPersonnel(
+  apiEndpoint: string,
+  payload: PersonnelPayload & { seasonId: string }
+): Promise<Person> {
+  const res = await fetch(apiEndpoint, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const msg = await getErrorMessageFromResponse(res, "Nie udało się zapisać osoby");
+    throw new Error(msg);
+  }
+  return res.json() as Promise<Person>;
+}
+
+/** PATCH /api/referees/:id or /api/classifiers/:id */
+export async function updatePersonnel(
+  apiEndpoint: string,
+  id: string,
+  payload: PersonnelPayload
+): Promise<Person> {
+  const res = await fetch(`${apiEndpoint}/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const msg = await getErrorMessageFromResponse(res, "Nie udało się zaktualizować osoby");
+    throw new Error(msg);
+  }
+  return res.json() as Promise<Person>;
+}
+
+/** DELETE /api/referees/:id or /api/classifiers/:id */
+export async function deletePersonnel(apiEndpoint: string, id: string): Promise<void> {
+  const res = await fetch(`${apiEndpoint}/${id}`, { method: "DELETE" });
+  if (!res.ok) {
+    const msg = await getErrorMessageFromResponse(res, "Nie udało się usunąć osoby");
+    throw new Error(msg);
+  }
 }

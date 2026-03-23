@@ -2,6 +2,27 @@ import { getErrorMessageFromResponse } from "@/lib/apiHttp";
 import type { TournamentFormData } from "@/lib/validateInputs";
 import type { Match, RefereePlanMatch, Tournament } from "@/types";
 
+interface TournamentMatchPayload {
+  teamAId: string;
+  teamBId: string;
+  scheduledAt: string;
+  court?: string;
+  jerseyInfo?: string;
+  scoreA?: number;
+  scoreB?: number;
+}
+
+interface TournamentRefereePlanPayload {
+  teamAId: string;
+  teamBId: string;
+  scheduledAt: string;
+  court?: string;
+  referee1Id?: string;
+  referee2Id?: string;
+  tablePenaltyId?: string;
+  tableClockId?: string;
+}
+
 /** GET /api/tournaments/:id — 404 returns null (details screen). */
 export async function fetchTournamentByIdOrNull(id: string, signal?: AbortSignal): Promise<Tournament | null> {
   const res = await fetch(`/api/tournaments/${id}`, { signal });
@@ -93,6 +114,38 @@ export async function deleteTournamentMatch(tournamentId: string, matchId: strin
   }
 }
 
+/** POST /api/tournaments/:tournamentId/matches */
+export async function createTournamentMatch(tournamentId: string, body: TournamentMatchPayload): Promise<Match> {
+  const res = await fetch(`/api/tournaments/${tournamentId}/matches`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const msg = await getErrorMessageFromResponse(res, "Nie udało się utworzyć meczu");
+    throw new Error(msg);
+  }
+  return res.json() as Promise<Match>;
+}
+
+/** PUT /api/tournaments/:tournamentId/matches/:matchId */
+export async function updateTournamentMatch(
+  tournamentId: string,
+  matchId: string,
+  body: TournamentMatchPayload
+): Promise<Match> {
+  const res = await fetch(`/api/tournaments/${tournamentId}/matches/${matchId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const msg = await getErrorMessageFromResponse(res, "Nie udało się zaktualizować meczu");
+    throw new Error(msg);
+  }
+  return res.json() as Promise<Match>;
+}
+
 /** POST /api/tournaments/:tournamentId/teams */
 export async function setTournamentTeams(tournamentId: string, teamIds: string[]): Promise<void> {
   const res = await fetch(`/api/tournaments/${tournamentId}/teams`, {
@@ -157,6 +210,41 @@ export async function removeClassifierFromTournament(tournamentId: string, class
     const msg = await getErrorMessageFromResponse(res, "Nie udało się usunąć klasyfikatora z turnieju");
     throw new Error(msg);
   }
+}
+
+/** POST /api/tournaments/:tournamentId/referee-plan */
+export async function createTournamentRefereePlanEntry(
+  tournamentId: string,
+  body: TournamentRefereePlanPayload
+): Promise<RefereePlanMatch> {
+  const res = await fetch(`/api/tournaments/${tournamentId}/referee-plan`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const msg = await getErrorMessageFromResponse(res, "Nie udało się utworzyć wpisu w planie sędziów");
+    throw new Error(msg);
+  }
+  return res.json() as Promise<RefereePlanMatch>;
+}
+
+/** PUT /api/tournaments/:tournamentId/referee-plan/:matchId */
+export async function updateTournamentRefereePlanEntry(
+  tournamentId: string,
+  matchId: string,
+  body: TournamentRefereePlanPayload
+): Promise<RefereePlanMatch> {
+  const res = await fetch(`/api/tournaments/${tournamentId}/referee-plan/${matchId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const msg = await getErrorMessageFromResponse(res, "Nie udało się zapisać wpisu w planie sędziów");
+    throw new Error(msg);
+  }
+  return res.json() as Promise<RefereePlanMatch>;
 }
 
 /** DELETE /api/tournaments/:id */

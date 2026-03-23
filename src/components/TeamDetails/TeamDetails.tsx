@@ -29,7 +29,7 @@ import { TeamFormContent } from "@/components/TeamForm/TeamForm";
 import TeamNewPlayer, { type PlayerRow } from "@/components/TeamNewPlayer/TeamNewPlayer";
 import ConfirmationDialog from "@/components/ui/ConfirmationDialog";
 import DataLoadAlert from "@/components/ui/DataLoadAlert";
-import { deleteTeamById, fetchTeamById } from "@/lib/api/teams";
+import { deleteTeamById, fetchTeamById, updateTeamById } from "@/lib/api/teams";
 import { queryKeys } from "@/lib/queryKeys";
 import { playerClassificationSchema } from "@/lib/validateInputs";
 import type { Team, Player } from "@/types";
@@ -107,6 +107,17 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
       window.location.href = "/settings";
     },
   });
+  const updatePlayersMutation = useMutation({
+    mutationFn: async (playersPayload: {
+      firstName: string;
+      lastName: string;
+      classification?: number;
+      number?: number;
+    }) => {
+      if (!team) throw new Error("Nie znaleziono drużyny");
+      return updateTeamById(team.id, buildTeamUpdateBody(team, playersPayload));
+    },
+  });
 
   const setTeamInCache = (updated: Team) => {
     queryClient.setQueryData(teamQueryKey, updated);
@@ -115,7 +126,6 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
   const [editOpen, setEditOpen] = useState(false);
   const [editingPlayer, setEditingPlayer] = useState<Player | null>(null);
   const [deleteConfirmPlayer, setDeleteConfirmPlayer] = useState<Player | null>(null);
-  const [playerActionLoading, setPlayerActionLoading] = useState(false);
   const [playerActionError, setPlayerActionError] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<{
     firstName: string;
@@ -199,12 +209,14 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
   };
 
   const handleEditPlayerClose = () => {
+    updatePlayersMutation.reset();
     setEditingPlayer(null);
     setPlayerActionError(null);
   };
 
   const handleDeletePlayerClick = (player: Player) => setDeleteConfirmPlayer(player);
   const handleDeleteConfirmClose = () => {
+    updatePlayersMutation.reset();
     setDeleteConfirmPlayer(null);
     setPlayerActionError(null);
   };
@@ -213,31 +225,15 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
     playersPayload: { firstName: string; lastName: string; classification?: number; number?: number }[]
   ): Promise<boolean> => {
     if (!team) return false;
-    setPlayerActionLoading(true);
+    updatePlayersMutation.reset();
     setPlayerActionError(null);
     try {
-      const res = await fetch(`/api/teams/${team.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(buildTeamUpdateBody(team, playersPayload)),
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => null);
-        // Zod flatten() puts field errors in fieldErrors, generic in formErrors
-        const fieldErrors = err?.error?.fieldErrors;
-        const firstFieldError = fieldErrors ? Object.values(fieldErrors).flat()[0] : undefined;
-        throw new Error(
-          firstFieldError ?? err?.error?.formErrors?.[0] ?? err?.error ?? "Nie udało się zaktualizować drużyny"
-        );
-      }
-      const updated: Team = await res.json();
+      const updated = await updatePlayersMutation.mutateAsync(playersPayload);
       setTeamInCache(updated);
       return true;
     } catch (e) {
       setPlayerActionError(e instanceof Error ? e.message : "Wystąpił błąd");
       return false;
-    } finally {
-      setPlayerActionLoading(false);
     }
   };
 
@@ -310,6 +306,7 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
   };
 
   const handleAddPlayerClose = () => {
+    updatePlayersMutation.reset();
     setAddingNewPlayer(false);
     setNewPlayerForm(null);
     setPlayerActionError(null);
@@ -426,7 +423,7 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
         onClose={handleAddPlayerClose}
         onSave={handleAddPlayerSave}
         playerActionError={playerActionError}
-        playerActionLoading={playerActionLoading}
+        playerActionLoading={updatePlayersMutation.isPending}
         newPlayerForm={newPlayerForm}
         setNewPlayerForm={setNewPlayerForm}
       />
@@ -478,11 +475,11 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleEditPlayerClose} disabled={playerActionLoading}>
+          <Button onClick={handleEditPlayerClose} disabled={updatePlayersMutation.isPending}>
             Anuluj
           </Button>
-          <Button variant="contained" onClick={handleEditPlayerSave} disabled={playerActionLoading || !editForm}>
-            {playerActionLoading ? <CircularProgress size={24} /> : "Zapisz"}
+          <Button variant="contained" onClick={handleEditPlayerSave} disabled={updatePlayersMutation.isPending || !editForm}>
+            {updatePlayersMutation.isPending ? <CircularProgress size={24} /> : "Zapisz"}
           </Button>
         </DialogActions>
       </Dialog>
@@ -492,7 +489,7 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
         open={Boolean(deleteConfirmPlayer)}
         onClose={handleDeleteConfirmClose}
         onConfirm={handleDeleteConfirm}
-        loading={playerActionLoading}
+        loading={updatePlayersMutation.isPending}
         title="Usuń zawodnika"
         description={
           <Typography>

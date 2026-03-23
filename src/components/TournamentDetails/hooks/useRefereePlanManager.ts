@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import type { Match, RefereeRole, Tournament } from "@/types";
@@ -10,7 +10,11 @@ import {
   pad2,
   timeToMinutes,
 } from "@/components/TournamentDetails/hooks/matchPlanHelpers";
-import { fetchTournamentRefereePlan } from "@/lib/api/tournaments";
+import {
+  createTournamentRefereePlanEntry,
+  fetchTournamentRefereePlan,
+  updateTournamentRefereePlanEntry,
+} from "@/lib/api/tournaments";
 import { queryKeys } from "@/lib/queryKeys";
 
 interface RefereePlanDraft {
@@ -126,7 +130,6 @@ export default function useRefereePlanManager({
   }, [refereePlanRows]);
 
   const [addRefereePlanOpen, setAddRefereePlanOpen] = useState(false);
-  const [createRefereePlanLoading, setCreateRefereePlanLoading] = useState(false);
   const [createRefereePlanError, setCreateRefereePlanError] = useState<string | null>(null);
   const [newRefereePlanDayTimestamp, setNewRefereePlanDayTimestamp] = useState<number | null>(null);
   const [newRefereePlanTeamAId, setNewRefereePlanTeamAId] = useState("");
@@ -142,9 +145,46 @@ export default function useRefereePlanManager({
 
   const [editRefereePlanOpen, setEditRefereePlanOpen] = useState(false);
   const [editRefereePlanDayTimestamp, setEditRefereePlanDayTimestamp] = useState<number | null>(null);
-  const [editRefereePlanLoading, setEditRefereePlanLoading] = useState(false);
   const [editRefereePlanError, setEditRefereePlanError] = useState<string | null>(null);
   const [editRefereePlanDrafts, setEditRefereePlanDrafts] = useState<RefereePlanDraft[]>([]);
+
+  const createRefereePlanMutation = useMutation({
+    mutationFn: (payload: {
+      teamAId: string;
+      teamBId: string;
+      scheduledAt: string;
+      court?: string;
+      referee1Id?: string;
+      referee2Id?: string;
+      tablePenaltyId?: string;
+      tableClockId?: string;
+    }) => {
+      if (!tid) throw new Error("Brak turnieju");
+      return createTournamentRefereePlanEntry(tid, payload);
+    },
+  });
+
+  const saveRefereePlanMutation = useMutation({
+    mutationFn: (payload: {
+      matchId?: string;
+      teamAId: string;
+      teamBId: string;
+      scheduledAt: string;
+      court?: string;
+      referee1Id?: string;
+      referee2Id?: string;
+      tablePenaltyId?: string;
+      tableClockId?: string;
+    }) => {
+      if (!tid) throw new Error("Brak turnieju");
+      const { matchId, ...body } = payload;
+      if (!matchId) return createTournamentRefereePlanEntry(tid, body);
+      return updateTournamentRefereePlanEntry(tid, matchId, body);
+    },
+  });
+
+  const createRefereePlanLoading = createRefereePlanMutation.isPending;
+  const editRefereePlanLoading = saveRefereePlanMutation.isPending;
 
   useEffect(() => {
     setNewRefereePlanEndTime(getRefereePlanEndFromStart(newRefereePlanStartTime));
@@ -182,7 +222,7 @@ export default function useRefereePlanManager({
 
     setAddRefereePlanOpen(true);
     setCreateRefereePlanError(null);
-    setCreateRefereePlanLoading(false);
+    createRefereePlanMutation.reset();
     setAllowedNewRefereePlanDayTimestamps(allowedDays ?? null);
 
     setNewRefereePlanDayTimestamp(presetDayTimestamp ?? matchDayOptions[0]?.timestamp ?? null);
@@ -261,28 +301,19 @@ export default function useRefereePlanManager({
     const tablePenaltyId = newRefereePlanTablePenaltyId.trim() === "" ? undefined : newRefereePlanTablePenaltyId.trim();
     const tableClockId = newRefereePlanTableClockId.trim() === "" ? undefined : newRefereePlanTableClockId.trim();
 
-    setCreateRefereePlanLoading(true);
+    createRefereePlanMutation.reset();
     setCreateRefereePlanError(null);
     try {
-      const res = await fetch(`/api/tournaments/${tournament.id}/referee-plan`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          teamAId: newRefereePlanTeamAId,
-          teamBId: newRefereePlanTeamBId,
-          scheduledAt,
-          court,
-          referee1Id,
-          referee2Id,
-          tablePenaltyId,
-          tableClockId,
-        }),
+      await createRefereePlanMutation.mutateAsync({
+        teamAId: newRefereePlanTeamAId,
+        teamBId: newRefereePlanTeamBId,
+        scheduledAt,
+        court,
+        referee1Id,
+        referee2Id,
+        tablePenaltyId,
+        tableClockId,
       });
-
-      if (!res.ok) {
-        const data = (await res.json().catch(() => null)) as { error?: string } | null;
-        throw new Error(data?.error || "Nie udało się utworzyć wpisu w planie sędziów");
-      }
 
       await refreshMatches(tournament.id);
       await refreshRefereePlan(tournament.id);
@@ -290,7 +321,7 @@ export default function useRefereePlanManager({
     } catch (e) {
       setCreateRefereePlanError(e instanceof Error ? e.message : "Nie udało się utworzyć wpisu w planie sędziów");
     } finally {
-      setCreateRefereePlanLoading(false);
+      createRefereePlanMutation.reset();
     }
   }
 
@@ -299,7 +330,7 @@ export default function useRefereePlanManager({
     if (matchesToEdit.length === 0) return;
 
     setEditRefereePlanError(null);
-    setEditRefereePlanLoading(false);
+    saveRefereePlanMutation.reset();
 
     const first = matchesToEdit[0];
     const d = new Date(first.scheduledAt);
@@ -378,7 +409,7 @@ export default function useRefereePlanManager({
       return;
     }
 
-    setEditRefereePlanLoading(true);
+    saveRefereePlanMutation.reset();
     setEditRefereePlanError(null);
     try {
       const day = new Date(editRefereePlanDayTimestamp);
@@ -445,30 +476,17 @@ export default function useRefereePlanManager({
         const tablePenaltyId = draft.tablePenaltyId.trim() === "" ? undefined : draft.tablePenaltyId.trim();
         const tableClockId = draft.tableClockId.trim() === "" ? undefined : draft.tableClockId.trim();
 
-        const url = draft.id
-          ? `/api/tournaments/${tournament.id}/referee-plan/${draft.id}`
-          : `/api/tournaments/${tournament.id}/referee-plan`;
-        const method = draft.id ? "PUT" : "POST";
-
-        const res = await fetch(url, {
-          method,
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            teamAId: draft.teamAId,
-            teamBId: draft.teamBId,
-            scheduledAt,
-            court,
-            referee1Id,
-            referee2Id,
-            tablePenaltyId,
-            tableClockId,
-          }),
+        await saveRefereePlanMutation.mutateAsync({
+          matchId: draft.id,
+          teamAId: draft.teamAId,
+          teamBId: draft.teamBId,
+          scheduledAt,
+          court,
+          referee1Id,
+          referee2Id,
+          tablePenaltyId,
+          tableClockId,
         });
-
-        if (!res.ok) {
-          const data = (await res.json().catch(() => null)) as { error?: string } | null;
-          throw new Error(data?.error || "Nie udało się zapisać wpisu w planie sędziów");
-        }
       }
 
       await refreshMatches(tournament.id);
@@ -477,7 +495,7 @@ export default function useRefereePlanManager({
     } catch (e) {
       setEditRefereePlanError(e instanceof Error ? e.message : "Nie udało się zapisać wpisu w planie sędziów");
     } finally {
-      setEditRefereePlanLoading(false);
+      saveRefereePlanMutation.reset();
     }
   }
 

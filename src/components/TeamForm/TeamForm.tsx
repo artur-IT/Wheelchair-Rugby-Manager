@@ -10,7 +10,6 @@ import {
   Typography,
   Paper,
   Divider,
-  Alert,
   CircularProgress,
   FormControl,
   InputLabel,
@@ -27,7 +26,10 @@ import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
 import AppShell from "@/components/AppShell/AppShell";
 import QueryProvider from "@/components/QueryProvider/QueryProvider";
 import DataLoadAlert from "@/components/ui/DataLoadAlert";
+import MutationErrorAlert from "@/components/ui/MutationErrorAlert";
+import { createPersonnel } from "@/lib/api/personnel";
 import { fetchSeasonsList } from "@/lib/api/seasons";
+import { createTeam, updateTeamById } from "@/lib/api/teams";
 import { queryKeys } from "@/lib/queryKeys";
 import type { Team } from "@/types";
 import {
@@ -59,8 +61,6 @@ const teamSchema = z.object({
   contactEmail: requiredEmailSchema,
   contactPhone: requiredPhoneSchema,
   websiteUrl: optionalWebsiteUrlSchema,
-  coachId: z.string().optional(),
-  refereeId: z.string().optional(),
   // Coach first/last name have custom required messages so max is chained inline
   coachFirstName: z
     .string()
@@ -139,7 +139,6 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
   const queryClient = useQueryClient();
   const isEdit = mode === "edit" && initialTeam;
 
-  const [submitError, setSubmitError] = useState<string | null>(null);
   const [seasonId, setSeasonId] = useState<string>("");
   const [players, setPlayers] = useState<PlayerRow[]>([]);
   const [staff, setStaff] = useState<StaffRow[]>([]);
@@ -272,53 +271,63 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
         throw new Error("Wybierz sezon przed zapisaniem drużyny.");
       }
 
-      let coachId: string | undefined =
-        isEdit && initialTeam ? (initialTeam.coachId ?? undefined) : data.coachId?.trim() || undefined;
-      let refereeId: string | undefined =
-        isEdit && initialTeam ? (initialTeam.refereeId ?? undefined) : data.refereeId?.trim() || undefined;
+      let coachId: string | undefined = isEdit && initialTeam ? (initialTeam.coachId ?? undefined) : undefined;
+      let refereeId: string | undefined = isEdit && initialTeam ? (initialTeam.refereeId ?? undefined) : undefined;
 
       if (data.coachFirstName?.trim() && data.coachLastName?.trim()) {
         const fn = (data.coachFirstName ?? "").trim();
         const ln = (data.coachLastName ?? "").trim();
-        const coachRes = await fetch("/api/coaches", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
+        const email = (data.coachEmail ?? "").trim() || null;
+        const phone = (data.coachPhone ?? "").trim() || null;
+        const matchesInitialCoach =
+          isEdit &&
+          initialTeam &&
+          Boolean(initialTeam.coachId) &&
+          fn === (initialTeam.coach?.firstName ?? "").trim() &&
+          ln === (initialTeam.coach?.lastName ?? "").trim() &&
+          email === ((initialTeam.coach?.email ?? "").trim() || null) &&
+          phone === ((initialTeam.coach?.phone != null ? String(initialTeam.coach.phone) : "").trim() || null);
+
+        if (matchesInitialCoach) {
+          coachId = initialTeam?.coachId ?? undefined;
+        } else {
+          const createdCoach = await createPersonnel("/api/coaches", {
             firstName: fn,
             lastName: ln,
-            email: (data.coachEmail ?? "").trim() || undefined,
-            phone: (data.coachPhone ?? "").trim() || undefined,
+            email,
+            phone,
             seasonId: eff,
-          }),
-        });
-        if (!coachRes.ok) {
-          const err = await coachRes.json().catch(() => null);
-          throw new Error(err?.error?.formErrors?.[0] ?? "Nie udało się dodać trenera");
+          });
+          coachId = createdCoach.id;
         }
-        const createdCoach = await coachRes.json();
-        coachId = createdCoach.id;
       }
 
       if (data.refereeFirstName?.trim() && data.refereeLastName?.trim()) {
         const fn = (data.refereeFirstName ?? "").trim();
         const ln = (data.refereeLastName ?? "").trim();
-        const refereeRes = await fetch("/api/referees", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
+        const email = (data.refereeEmail ?? "").trim() || null;
+        const phone = (data.refereePhone ?? "").trim() || null;
+        const matchesInitialReferee =
+          isEdit &&
+          initialTeam &&
+          Boolean(initialTeam.refereeId) &&
+          fn === (initialTeam.referee?.firstName ?? "").trim() &&
+          ln === (initialTeam.referee?.lastName ?? "").trim() &&
+          email === ((initialTeam.referee?.email ?? "").trim() || null) &&
+          phone === ((initialTeam.referee?.phone != null ? String(initialTeam.referee.phone) : "").trim() || null);
+
+        if (matchesInitialReferee) {
+          refereeId = initialTeam?.refereeId ?? undefined;
+        } else {
+          const createdReferee = await createPersonnel("/api/referees", {
             firstName: fn,
             lastName: ln,
-            email: (data.refereeEmail ?? "").trim() || undefined,
-            phone: (data.refereePhone ?? "").trim() || undefined,
+            email,
+            phone,
             seasonId: eff,
-          }),
-        });
-        if (!refereeRes.ok) {
-          const err = await refereeRes.json().catch(() => null);
-          throw new Error(err?.error?.formErrors?.[0] ?? "Nie udało się dodać sędziego");
+          });
+          refereeId = createdReferee.id;
         }
-        const createdReferee = await refereeRes.json();
-        refereeId = createdReferee.id;
       }
 
       const staffPayload = staff
@@ -355,28 +364,10 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
       };
 
       if (isEdit && initialTeam) {
-        const res = await fetch(`/api/teams/${initialTeam.id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        });
-        if (!res.ok) {
-          const err = await res.json().catch(() => null);
-          throw new Error(err?.error?.formErrors?.[0] ?? "Nie udało się zaktualizować drużyny");
-        }
-        return res.json() as Promise<Team>;
+        return updateTeamById(initialTeam.id, body);
       }
 
-      const res = await fetch("/api/teams", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => null);
-        throw new Error(err?.error?.formErrors?.[0] ?? "Nie udało się zapisać drużyny");
-      }
-      return undefined;
+      return createTeam(body);
     },
     onSuccess: (updated) => {
       const eff = seasonId || (isEdit && initialTeam ? initialTeam.seasonId : "");
@@ -390,19 +381,14 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
         void queryClient.invalidateQueries({ queryKey: queryKeys.teams.detail(initialTeam.id) });
       }
       if (onSuccess) {
-        if (updated !== undefined) onSuccess(updated);
-        else onSuccess();
+        onSuccess(updated);
       } else {
         redirectToSettings();
       }
     },
-    onError: (err: unknown) => {
-      setSubmitError(err instanceof Error ? err.message : "Wystąpił nieoczekiwany błąd");
-    },
   });
 
   const onSubmit = (data: TeamFormValues) => {
-    setSubmitError(null);
     submitMutation.mutate(data);
   };
 
@@ -439,11 +425,11 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
         <DataLoadAlert message={seasonsLoadError} onRetry={() => void refetchSeasons()} sx={{ mb: 2 }} />
       ) : null}
 
-      {submitError && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {submitError}
-        </Alert>
-      )}
+      {submitMutation.isError ? (
+        <Box sx={{ mb: 2 }}>
+          <MutationErrorAlert error={submitMutation.error} fallbackMessage="Nie udało się zapisać drużyny." />
+        </Box>
+      ) : null}
 
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
         {/* Season selector */}

@@ -77,6 +77,7 @@ function TournamentsContent() {
   const listError = isError && error instanceof Error ? error.message : null;
 
   function openDeleteDialog(tournament: Tournament) {
+    if (deleteMutation.isPending) return;
     deleteMutation.reset();
     setTournamentToDelete(tournament);
   }

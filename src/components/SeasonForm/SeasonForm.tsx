@@ -1,13 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod/v4";
-import { Box, Button, TextField, Typography, Paper, Alert, CircularProgress } from "@mui/material";
+import { Box, Button, TextField, Typography, Paper, CircularProgress } from "@mui/material";
 import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
 import AppShell from "@/components/AppShell/AppShell";
 import QueryProvider from "@/components/QueryProvider/QueryProvider";
 import DataLoadAlert from "@/components/ui/DataLoadAlert";
+import MutationErrorAlert from "@/components/ui/MutationErrorAlert";
 import { createSeason, fetchSeasonById, updateSeason, type SeasonUpsertBody } from "@/lib/api/seasons";
 import { queryKeys } from "@/lib/queryKeys";
 import { requiredSeasonNameSchema } from "@/lib/validateInputs";
@@ -47,7 +48,6 @@ export default function SeasonForm({ id }: Props) {
 function SeasonFormContent({ id }: Props) {
   const queryClient = useQueryClient();
   const isEdit = !!id;
-  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const {
     register,
@@ -96,13 +96,9 @@ function SeasonFormContent({ id }: Props) {
       await queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all });
       redirectToSettings();
     },
-    onError: (err: unknown) => {
-      setSubmitError(err instanceof Error ? err.message : "Wystąpił nieoczekiwany błąd");
-    },
   });
 
   const onSubmit = (data: SeasonFormValues) => {
-    setSubmitError(null);
     submitMutation.mutate(data);
   };
 
@@ -128,11 +124,11 @@ function SeasonFormContent({ id }: Props) {
         {isEdit ? "Edytuj Sezon" : "Nowy Sezon"}
       </Typography>
 
-      {submitError && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {submitError}
-        </Alert>
-      )}
+      {submitMutation.isError ? (
+        <Box sx={{ mb: 2 }}>
+          <MutationErrorAlert error={submitMutation.error} fallbackMessage="Nie udało się zapisać sezonu." />
+        </Box>
+      ) : null}
 
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mb: 3 }}>

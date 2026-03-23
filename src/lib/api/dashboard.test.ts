@@ -8,15 +8,16 @@ describe("fetchDashboardSeasonData", () => {
   });
 
   it("throws when all three requests fail", async () => {
-    const bad = new Response(JSON.stringify({ error: "fail" }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" },
-    });
     vi.stubGlobal(
       "fetch",
-      vi.fn(async () => bad)
+      vi.fn(
+        async () =>
+          new Response(JSON.stringify({ error: "fail" }), {
+            status: 500,
+            headers: { "Content-Type": "application/json" },
+          })
+      )
     );
-
     await expect(fetchDashboardSeasonData("s1")).rejects.toThrow();
   });
 

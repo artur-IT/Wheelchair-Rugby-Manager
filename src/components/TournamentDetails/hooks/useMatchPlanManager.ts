@@ -1,3 +1,4 @@
+import { useMutation } from "@tanstack/react-query";
 import { useState, useEffect, Dispatch, SetStateAction } from "react";
 import type { Match, Tournament } from "@/types";
 import {
@@ -9,6 +10,7 @@ import {
   minutesToTime,
   timeToMinutes,
 } from "@/components/TournamentDetails/hooks/matchPlanHelpers";
+import { createTournamentMatch, updateTournamentMatch } from "@/lib/api/tournaments";
 
 type JerseyColor = "jasne" | "ciemne";
 
@@ -71,7 +73,6 @@ export default function useMatchPlanManager({
   };
 
   const [addMatchOpen, setAddMatchOpen] = useState(false);
-  const [createMatchLoading, setCreateMatchLoading] = useState(false);
   const [createMatchError, setCreateMatchError] = useState<string | null>(null);
   const [allowedNewDayTimestamps, setAllowedNewDayTimestamps] = useState<number[] | null>(null);
 
@@ -92,15 +93,46 @@ export default function useMatchPlanManager({
 
   const [editMatchOpen, setEditMatchOpen] = useState(false);
   const [editMatch, setEditMatch] = useState<Match | null>(null);
-  const [editMatchLoading, setEditMatchLoading] = useState(false);
   const [editMatchError, setEditMatchError] = useState<string | null>(null);
   const [editMatchDayTimestamp, setEditMatchDayTimestamp] = useState<number | null>(null);
   const [editMatchDrafts, setEditMatchDrafts] = useState<MatchDraft[]>([]);
 
+  const createMatchMutation = useMutation({
+    mutationFn: (payload: {
+      teamAId: string;
+      teamBId: string;
+      scheduledAt: string;
+      court?: string;
+      jerseyInfo: string;
+      scoreA?: number;
+      scoreB?: number;
+    }) => createTournamentMatch(tournament.id, payload),
+  });
+
+  const saveMatchMutation = useMutation({
+    mutationFn: (payload: {
+      matchId?: string;
+      teamAId: string;
+      teamBId: string;
+      scheduledAt: string;
+      court?: string;
+      jerseyInfo: string;
+      scoreA?: number;
+      scoreB?: number;
+    }) => {
+      const { matchId, ...body } = payload;
+      if (!matchId) return createTournamentMatch(tournament.id, body);
+      return updateTournamentMatch(tournament.id, matchId, body);
+    },
+  });
+
+  const createMatchLoading = createMatchMutation.isPending;
+  const editMatchLoading = saveMatchMutation.isPending;
+
   function openAddMatchDialog(presetDayTimestamp?: number | null, allowedDays?: number[] | null) {
     setAddMatchOpen(true);
     setCreateMatchError(null);
-    setCreateMatchLoading(false);
+    createMatchMutation.reset();
 
     setNewMatchDayTimestamp(presetDayTimestamp ?? matchDayOptions[0]?.timestamp ?? null);
     setAllowedNewDayTimestamps(allowedDays ?? null);
@@ -202,27 +234,18 @@ export default function useMatchPlanManager({
     const court = newMatchCourt.trim() === "" ? undefined : newMatchCourt.trim();
     const jerseyInfo = `Team A: ${newMatchJerseyA}, Team B: ${newMatchJerseyB}`;
 
-    setCreateMatchLoading(true);
+    createMatchMutation.reset();
     setCreateMatchError(null);
     try {
-      const res = await fetch(`/api/tournaments/${tournament.id}/matches`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          teamAId: newMatchTeamAId,
-          teamBId: newMatchTeamBId,
-          scheduledAt,
-          court,
-          jerseyInfo,
-          scoreA,
-          scoreB,
-        }),
+      await createMatchMutation.mutateAsync({
+        teamAId: newMatchTeamAId,
+        teamBId: newMatchTeamBId,
+        scheduledAt,
+        court,
+        jerseyInfo,
+        scoreA,
+        scoreB,
       });
-
-      if (!res.ok) {
-        const data = (await res.json().catch(() => null)) as { error?: string } | null;
-        throw new Error(data?.error || "Nie udało się utworzyć meczu");
-      }
 
       await refreshMatches(tournament.id);
       await refreshRefereePlan(tournament.id);
@@ -231,7 +254,7 @@ export default function useMatchPlanManager({
       const message = err instanceof Error ? err.message : "Nie udało się utworzyć meczu";
       setCreateMatchError(message);
     } finally {
-      setCreateMatchLoading(false);
+      createMatchMutation.reset();
     }
   }
 
@@ -239,7 +262,7 @@ export default function useMatchPlanManager({
     if (matchesToEdit.length === 0) return;
 
     setEditMatchError(null);
-    setEditMatchLoading(false);
+    saveMatchMutation.reset();
     setEditMatch(matchesToEdit[0]);
     setEditMatchOpen(true);
 
@@ -320,7 +343,7 @@ export default function useMatchPlanManager({
     const outsideDraftMatches = matches.filter((match) => !draftIds.has(match.id));
     const plannedDraftSlots: { row: number; start: number; end: number; court?: string }[] = [];
 
-    setEditMatchLoading(true);
+    saveMatchMutation.reset();
     setEditMatchError(null);
     try {
       for (const [index, draft] of editMatchDrafts.entries()) {
@@ -419,31 +442,16 @@ export default function useMatchPlanManager({
         const court = draft.court.trim() === "" ? undefined : draft.court.trim();
         const jerseyInfo = `Team A: ${draft.jerseyA}, Team B: ${draft.jerseyB}`;
 
-        const res = await fetch(
-          draft.id
-            ? `/api/tournaments/${tournament.id}/matches/${draft.id}`
-            : `/api/tournaments/${tournament.id}/matches`,
-          {
-            method: draft.id ? "PUT" : "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              teamAId: draft.teamAId,
-              teamBId: draft.teamBId,
-              scheduledAt,
-              court,
-              jerseyInfo,
-              scoreA,
-              scoreB,
-            }),
-          }
-        );
-
-        if (!res.ok) {
-          const data = (await res.json().catch(() => null)) as { error?: string } | null;
-          throw new Error(
-            data?.error || (draft.id ? "Nie udało się zaktualizować meczu" : "Nie udało się utworzyć meczu")
-          );
-        }
+        await saveMatchMutation.mutateAsync({
+          matchId: draft.id,
+          teamAId: draft.teamAId,
+          teamBId: draft.teamBId,
+          scheduledAt,
+          court,
+          jerseyInfo,
+          scoreA,
+          scoreB,
+        });
       }
 
       await refreshMatches(tournament.id);
@@ -453,7 +461,7 @@ export default function useMatchPlanManager({
       const message = err instanceof Error ? err.message : "Nie udało się zaktualizować meczu";
       setEditMatchError(message);
     } finally {
-      setEditMatchLoading(false);
+      saveMatchMutation.reset();
     }
   }
 
