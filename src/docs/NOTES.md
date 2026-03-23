@@ -143,3 +143,10 @@ Dobrze przemyślany i zaplanowany prompt to wielka siła i ma świetny potencja�
 Ładny design - https://soleilenergia.pl/ - może by zastosować?
 
 ---
+
+### User Stories
+
+- NIE planować wszystkich User Stories na początku!
+- Planuj po 1 User Story na 1 moduł / sekcję i dopiero po zaimplementowaniu iść do następnego. Wtedy mogę dokładnie zobaczyć, co potrzebuję i co nie potrzebuję i doskonalić treść następnego US.
+
+---

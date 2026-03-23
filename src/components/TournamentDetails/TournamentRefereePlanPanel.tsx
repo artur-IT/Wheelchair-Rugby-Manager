@@ -3,6 +3,12 @@ import DataLoadAlert from "@/components/ui/DataLoadAlert";
 import type { Match, Person, RefereeRole, Tournament } from "@/types";
 import { MATCH_DURATION_MS } from "@/components/TournamentDetails/hooks/matchPlanHelpers";
 
+const outOfRangeTimeCellSx = {
+  bgcolor: "error.main",
+  color: "common.white",
+  fontWeight: 700,
+} as const;
+
 interface TournamentRefereePlanPanelProps {
   tournament: Tournament;
   matches: Match[];
@@ -20,6 +26,8 @@ interface TournamentRefereePlanPanelProps {
   setMatchDayToDelete: (timestamp: number) => void;
   deleteMatchDayLoading: boolean;
   matchDayToDelete: number | null;
+  isMatchOutOfRange?: (scheduledAtIso: string) => boolean;
+  isDayOutOfRange?: (dayTimestamp: number) => boolean;
 }
 
 export default function TournamentRefereePlanPanel({
@@ -28,6 +36,7 @@ export default function TournamentRefereePlanPanel({
   refereePlanByMatchId,
   refereePlanLoading,
   refereePlanError,
+  onRetryRefereePlan,
   scheduleTableDayTimestamps,
   getMatchDayTimestamp,
   getScheduleDayLabel,
@@ -38,6 +47,8 @@ export default function TournamentRefereePlanPanel({
   setMatchDayToDelete,
   deleteMatchDayLoading,
   matchDayToDelete,
+  isMatchOutOfRange,
+  isDayOutOfRange,
 }: TournamentRefereePlanPanelProps) {
   return (
     <Paper
@@ -119,10 +130,27 @@ export default function TournamentRefereePlanPanel({
             {scheduleTableDayTimestamps.map((dayTimestamp) => {
               const dayMatches = matches.filter((m) => getMatchDayTimestamp(m.scheduledAt) === dayTimestamp);
               const dayLabel = getScheduleDayLabel(dayTimestamp);
+              const dayHighlight = isDayOutOfRange?.(dayTimestamp) ?? false;
 
               return (
                 <Box key={dayTimestamp}>
-                  <Typography variant="h6" sx={{ fontWeight: 900, mb: 2 }}>
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      fontWeight: 900,
+                      mb: 2,
+                      ...(dayHighlight
+                        ? {
+                            color: "common.white",
+                            bgcolor: "error.main",
+                            px: 1,
+                            py: 0.5,
+                            borderRadius: 1,
+                            display: "inline-block",
+                          }
+                        : {}),
+                    }}
+                  >
                     {dayLabel}
                   </Typography>
 
@@ -206,13 +234,19 @@ export default function TournamentRefereePlanPanel({
                               ? tournament.referees.find((r) => r.id === tableClock)
                               : undefined;
 
+                            const rowOut = isMatchOutOfRange?.(m.scheduledAt) ?? false;
+
                             return (
                               <TableRow key={m.id}>
                                 <TableCell align="center" sx={{ fontWeight: 600 }}>
                                   {teamAName}
                                 </TableCell>
-                                <TableCell align="center">{startTime}</TableCell>
-                                <TableCell align="center">{endTime}</TableCell>
+                                <TableCell align="center" sx={rowOut ? outOfRangeTimeCellSx : undefined}>
+                                  {startTime}
+                                </TableCell>
+                                <TableCell align="center" sx={rowOut ? outOfRangeTimeCellSx : undefined}>
+                                  {endTime}
+                                </TableCell>
                                 <TableCell align="center" sx={{ fontWeight: 600 }}>
                                   {teamBName}
                                 </TableCell>

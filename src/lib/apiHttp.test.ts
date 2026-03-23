@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { httpStatusFallbackMessage, parseApiErrorBody } from "@/lib/apiHttp";
+import { httpStatusFallbackMessage, parseApiErrorBody, parseFormErrorFromResponse } from "@/lib/apiHttp";
 
 describe("parseApiErrorBody", () => {
   it("returns plain string error", () => {
@@ -20,6 +20,16 @@ describe("parseApiErrorBody", () => {
 
   it("returns null for empty object", () => {
     expect(parseApiErrorBody({})).toBe(null);
+  });
+});
+
+describe("parseFormErrorFromResponse", () => {
+  it("prefers formErrors over fallback", async () => {
+    const res = new Response(JSON.stringify({ error: { formErrors: ["Złe pole"] } }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+    });
+    await expect(parseFormErrorFromResponse(res, "fallback")).resolves.toBe("Złe pole");
   });
 });
 

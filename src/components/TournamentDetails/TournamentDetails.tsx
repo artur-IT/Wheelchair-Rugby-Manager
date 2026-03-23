@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { MapPin } from "lucide-react";
-import { Box, Typography, Paper, Link as MuiLink, CircularProgress } from "@mui/material";
+import { Alert, Box, Typography, Paper, Link as MuiLink, CircularProgress } from "@mui/material";
+import QueryProvider from "@/components/QueryProvider/QueryProvider";
 import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
 import AppShell from "@/components/AppShell/AppShell";
 import ConfirmationDialog from "@/components/ui/ConfirmationDialog";
@@ -19,6 +21,8 @@ import useTournamentDetails from "@/components/TournamentDetails/hooks/useTourna
 import { getMatchDayTimestamp, parseJerseyInfo } from "@/components/TournamentDetails/hooks/matchPlanHelpers";
 import useTournamentPersonnelManager from "@/components/TournamentDetails/hooks/useTournamentPersonnelManager";
 import { formatAddressForDisplay, resolvePlaceMapsHref } from "@/lib/addressDisplay";
+import { deleteTournamentMatch } from "@/lib/api/tournaments";
+import { queryKeys } from "@/lib/queryKeys";
 import type { Match, Person } from "@/types";
 
 const getPersonDisplayName = (person: Person) => `${person.firstName ?? ""} ${person.lastName ?? ""}`.trim() || "—";
@@ -31,13 +35,17 @@ export default function TournamentDetails({ id }: TournamentDetailsProps) {
   return (
     <ThemeRegistry>
       <AppShell currentPath="/tournaments">
-        <TournamentDetailsContent id={id} />
+        <QueryProvider>
+          <TournamentDetailsContent id={id} />
+        </QueryProvider>
       </AppShell>
     </ThemeRegistry>
   );
 }
 
 function TournamentDetailsContent({ id }: TournamentDetailsProps) {
+  const [showPostEditDateHint, setShowPostEditDateHint] = useState(false);
+
   const {
     tournament,
     loading,
@@ -50,9 +58,46 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
     matchDayOptions,
     scheduleTableDayTimestamps,
     getScheduleDayLabel,
-    refreshTournament,
     refreshMatches,
+    hasMatchesOutsideTournamentRange,
+    isScheduledDayOutsideTournamentRange,
+    isDayTimestampOutsideTournamentRange,
   } = useTournamentDetails(id);
+
+  useEffect(() => {
+    const key = `wr-tournament-dates-edited:${id}`;
+    try {
+      if (sessionStorage.getItem(key)) {
+        sessionStorage.removeItem(key);
+        setShowPostEditDateHint(true);
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [id]);
+
+  const queryClient = useQueryClient();
+
+  const deleteMatchMutation = useMutation({
+    mutationFn: ({ tournamentId, matchId }: { tournamentId: string; matchId: string }) =>
+      deleteTournamentMatch(tournamentId, matchId),
+    onSuccess: (_, { tournamentId }) => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.tournaments.detail(tournamentId) });
+    },
+  });
+
+  const deleteMatchDayMutation = useMutation({
+    mutationFn: async ({ tournamentId, matchIds }: { tournamentId: string; matchIds: string[] }) => {
+      const results = await Promise.allSettled(matchIds.map((matchId) => deleteTournamentMatch(tournamentId, matchId)));
+      const failures = results.filter((r) => r.status === "rejected");
+      if (failures.length > 0) {
+        throw new Error(`Nie udało się usunąć ${failures.length} z ${matchIds.length} meczów`);
+      }
+    },
+    onSuccess: (_, { tournamentId }) => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.tournaments.detail(tournamentId) });
+    },
+  });
 
   const refereePlanManager = useRefereePlanManager({
     tournament,
@@ -71,14 +116,12 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
   });
   const { addMatch, editMatch } = matchManager;
   const [matchToDelete, setMatchToDelete] = useState<Match | null>(null);
-  const [deleteMatchLoading, setDeleteMatchLoading] = useState(false);
   const [deleteMatchError, setDeleteMatchError] = useState<string | null>(null);
 
   const [matchDayToDelete, setMatchDayToDelete] = useState<number | null>(null);
-  const [deleteMatchDayLoading, setDeleteMatchDayLoading] = useState(false);
   const [deleteMatchDayError, setDeleteMatchDayError] = useState<string | null>(null);
 
-  const personnel = useTournamentPersonnelManager({ tournament, refreshTournament });
+  const personnel = useTournamentPersonnelManager({ tournament });
   const { teams, referees, classifiers } = personnel;
 
   if (loading) {
@@ -118,7 +161,7 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
   }
 
   function closeDeleteMatchDialog() {
-    if (deleteMatchLoading) return;
+    if (deleteMatchMutation.isPending) return;
     setMatchToDelete(null);
     setDeleteMatchError(null);
   }
@@ -126,18 +169,10 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
   async function confirmDeleteMatch() {
     if (!tournament || !matchToDelete) return;
     const deletedId = matchToDelete.id;
-    setDeleteMatchLoading(true);
     setDeleteMatchError(null);
 
     try {
-      const res = await fetch(`/api/tournaments/${tournament.id}/matches/${matchToDelete.id}`, { method: "DELETE" });
-      if (!res.ok) {
-        const data = (await res.json().catch(() => null)) as { error?: string } | null;
-        throw new Error(data?.error || "Nie udało się usunąć meczu");
-      }
-
-      await refreshMatches(tournament.id);
-      await refereePlanManager.refreshRefereePlan(tournament.id);
+      await deleteMatchMutation.mutateAsync({ tournamentId: tournament.id, matchId: matchToDelete.id });
       // Jeśli edytujemy plan w tym samym komponencie, usuń wiersz z formularza od razu.
       editMatch.setDrafts((prev) => prev.filter((d) => d.id !== deletedId));
       editRefereePlan.setDrafts((prev) => prev.filter((d) => d.id !== deletedId));
@@ -145,42 +180,28 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
       setMatchToDelete(null);
     } catch (e) {
       setDeleteMatchError(e instanceof Error ? e.message : "Nie udało się usunąć meczu");
-    } finally {
-      setDeleteMatchLoading(false);
     }
   }
 
   function closeDeleteMatchDayDialog() {
-    if (deleteMatchDayLoading) return;
+    if (deleteMatchDayMutation.isPending) return;
     setMatchDayToDelete(null);
     setDeleteMatchDayError(null);
   }
 
   async function confirmDeleteMatchDay() {
     if (!tournament || matchDayToDelete == null) return;
-    setDeleteMatchDayLoading(true);
     setDeleteMatchDayError(null);
 
     try {
       const dayMatches = matches.filter((m) => getMatchDayTimestamp(m.scheduledAt) === matchDayToDelete);
+      const matchIds = dayMatches.map((m) => m.id);
 
-      // Usuwamy wszystkie mecze z danego dnia (API wspiera usuwanie pojedynczego meczu).
-      for (const m of dayMatches) {
-        const res = await fetch(`/api/tournaments/${tournament.id}/matches/${m.id}`, { method: "DELETE" });
-        if (!res.ok) {
-          const data = (await res.json().catch(() => null)) as { error?: string } | null;
-          throw new Error(data?.error || "Nie udało się usunąć dnia");
-        }
-      }
-
-      await refreshMatches(tournament.id);
-      await refereePlanManager.refreshRefereePlan(tournament.id);
+      await deleteMatchDayMutation.mutateAsync({ tournamentId: tournament.id, matchIds });
       setScheduleDayTimestamps((prev) => prev.filter((ts) => ts !== matchDayToDelete));
       setMatchDayToDelete(null);
     } catch (e) {
       setDeleteMatchDayError(e instanceof Error ? e.message : "Nie udało się usunąć dnia");
-    } finally {
-      setDeleteMatchDayLoading(false);
     }
   }
 
@@ -216,9 +237,33 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
   const venueMapsHref = resolvePlaceMapsHref(venue);
   const accommodationMapsHref = resolvePlaceMapsHref(accommodation);
 
+  const showScheduleDateAlert = showPostEditDateHint || hasMatchesOutsideTournamentRange;
+
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
       <TournamentHeader id={id} tournament={tournament} formatDateRange={formatDateRange} />
+
+      {showScheduleDateAlert ? (
+        <Alert
+          severity={hasMatchesOutsideTournamentRange ? "error" : "warning"}
+          variant="outlined"
+          onClose={
+            showPostEditDateHint && !hasMatchesOutsideTournamentRange ? () => setShowPostEditDateHint(false) : undefined
+          }
+        >
+          {hasMatchesOutsideTournamentRange ? (
+            <Typography variant="body2" component="span">
+              Część meczów jest zaplanowana poza aktualnymi datami turnieju. Zaktualizuj terminy w planie rozgrywek i w
+              planie sędziów.
+            </Typography>
+          ) : (
+            <Typography variant="body2" component="span">
+              Daty turnieju zostały zmienione. Sprawdź i zaktualizuj terminy meczów w planie rozgrywek oraz w planie
+              sędziów — stare daty nie przesuwają się automatycznie.
+            </Typography>
+          )}
+        </Alert>
+      ) : null}
 
       <Box
         sx={{
@@ -370,8 +415,10 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
             openNewDayTable={openNewDayTable}
             openEditMatchDialog={editMatch.openDialog}
             setMatchDayToDelete={setMatchDayToDelete}
-            deleteMatchDayLoading={deleteMatchDayLoading}
+            deleteMatchDayLoading={deleteMatchDayMutation.isPending}
             matchDayToDelete={matchDayToDelete}
+            isMatchOutOfRange={isScheduledDayOutsideTournamentRange}
+            isDayOutOfRange={isDayTimestampOutsideTournamentRange}
           />
 
           <TournamentRefereePlanPanel
@@ -389,8 +436,10 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
             openEditRefereePlanDialog={editRefereePlan.openDialog}
             personDisplayName={getPersonDisplayName}
             setMatchDayToDelete={setMatchDayToDelete}
-            deleteMatchDayLoading={deleteMatchDayLoading}
+            deleteMatchDayLoading={deleteMatchDayMutation.isPending}
             matchDayToDelete={matchDayToDelete}
+            isMatchOutOfRange={isScheduledDayOutsideTournamentRange}
+            isDayOutOfRange={isDayTimestampOutsideTournamentRange}
           />
         </Box>
 
@@ -423,7 +472,7 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
         editMatch={editMatch}
         tournament={tournament}
         matches={matches}
-        deleteMatchLoading={deleteMatchLoading}
+        deleteMatchLoading={deleteMatchMutation.isPending}
         setMatchToDelete={setMatchToDelete}
         setDeleteMatchError={setDeleteMatchError}
       />
@@ -437,7 +486,7 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
         editRefereePlan={editRefereePlan}
         tournament={tournament}
         matches={matches}
-        deleteMatchLoading={deleteMatchLoading}
+        deleteMatchLoading={deleteMatchMutation.isPending}
         setMatchToDelete={setMatchToDelete}
         setDeleteMatchError={setDeleteMatchError}
         personDisplayName={getPersonDisplayName}
@@ -477,7 +526,7 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
         }
         onClose={closeDeleteMatchDialog}
         onConfirm={confirmDeleteMatch}
-        loading={deleteMatchLoading}
+        loading={deleteMatchMutation.isPending}
         errorMessage={deleteMatchError}
         confirmLabel="Usuń"
         cancelLabel="Anuluj"
@@ -493,7 +542,7 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
         }
         onClose={closeDeleteMatchDayDialog}
         onConfirm={confirmDeleteMatchDay}
-        loading={deleteMatchDayLoading}
+        loading={deleteMatchDayMutation.isPending}
         errorMessage={deleteMatchDayError}
         confirmLabel="Usuń"
         cancelLabel="Anuluj"

@@ -1,6 +1,35 @@
 import type { Tournament } from "@/types";
 import type { TournamentFormData } from "@/lib/validateInputs";
 
+function calendarDayKey(d: Date): string {
+  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+}
+
+function calendarKeyFromIso(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return calendarDayKey(d);
+}
+
+/** End date used for comparison when API has no endDate — matches `tournamentToTournamentFormDefaults`. */
+function effectiveEndIsoForEditComparison(prev: Tournament): string {
+  if (prev.endDate) return prev.endDate;
+  const start = new Date(prev.startDate);
+  if (Number.isNaN(start.getTime())) return prev.startDate;
+  return new Date(start.getTime() + 86400000).toISOString();
+}
+
+/** True when submitted form dates differ from saved tournament (local calendar day). */
+export function tournamentDatesChangedForEdit(prev: Tournament, next: TournamentFormData): boolean {
+  const nextStart = next.startDate instanceof Date ? next.startDate : new Date(next.startDate);
+  const nextEnd = next.endDate instanceof Date ? next.endDate : new Date(next.endDate);
+  if (Number.isNaN(nextStart.getTime()) || Number.isNaN(nextEnd.getTime())) return true;
+
+  if (calendarKeyFromIso(prev.startDate) !== calendarDayKey(nextStart)) return true;
+
+  return calendarKeyFromIso(effectiveEndIsoForEditComparison(prev)) !== calendarDayKey(nextEnd);
+}
+
 const ZIP_CODE_REGEX = /^\d{2}-\d{3}$/;
 
 export function parseAddressParts(address: string): { street: string; zipCode: string; city: string } {

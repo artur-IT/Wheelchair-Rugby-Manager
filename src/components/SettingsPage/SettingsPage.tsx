@@ -1,4 +1,5 @@
-import { forwardRef, useState, useEffect } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { forwardRef, useState, useEffect, useMemo } from "react";
 import type { ChangeEvent } from "react";
 import { sanitizePhone, MAX_SHORT_TEXT } from "@/lib/validateInputs";
 import { Users, UserCircle, ChevronRight, Pencil, Star } from "lucide-react";
@@ -35,41 +36,30 @@ import {
 } from "@mui/material";
 import type { SelectChangeEvent, TabProps } from "@mui/material";
 import { Trash2 } from "lucide-react";
-import type { Season, Team, Person } from "@/types";
+import type { Season, Person } from "@/types";
 import { useDefaultSeason } from "@/components/hooks/useDefaultSeason";
 import ConfirmationDialog from "@/components/ui/ConfirmationDialog";
 import DataLoadAlert from "@/components/ui/DataLoadAlert";
-import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
+import MutationErrorAlert from "@/components/ui/MutationErrorAlert";
 import AppShell from "@/components/AppShell/AppShell";
-import { getErrorMessageFromResponse } from "@/lib/apiHttp";
-
-interface ApiErrorBody {
-  error?: {
-    formErrors?: string[];
-    fieldErrors?: Record<string, string[]>;
-  };
-}
-
-// Parses validation responses so we can show meaningful messages in dialogs.
-async function extractErrorMessage(response: Response, fallback: string) {
-  const errorBody = (await response.json().catch(() => null)) as ApiErrorBody | null;
-  const fieldErrors = (errorBody?.error?.fieldErrors ?? {}) as Record<string, string[] | undefined>;
-  const fieldMessages = Object.values(fieldErrors).reduce<string[]>((acc, errors) => {
-    if (errors) acc.push(...errors);
-    return acc;
-  }, []);
-  return errorBody?.error?.formErrors?.[0] ?? fieldMessages[0] ?? fallback;
-}
+import QueryProvider from "@/components/QueryProvider/QueryProvider";
+import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
+import { createPersonnel, deletePersonnel, fetchPersonnelBySeason, updatePersonnel } from "@/lib/api/personnel";
+import { fetchSeasonsList, deleteSeasonById } from "@/lib/api/seasons";
+import { fetchTeamsBySeason } from "@/lib/api/teams";
+import { queryKeys } from "@/lib/queryKeys";
 
 type TabValue = "teams" | "referees" | "classifiers";
 
 export default function SettingsPage() {
   return (
-    <ThemeRegistry>
-      <AppShell currentPath="/settings">
-        <SettingsContent />
-      </AppShell>
-    </ThemeRegistry>
+    <QueryProvider>
+      <ThemeRegistry>
+        <AppShell currentPath="/settings">
+          <SettingsContent />
+        </AppShell>
+      </ThemeRegistry>
+    </QueryProvider>
   );
 }
 
@@ -80,74 +70,64 @@ const StyledTab = forwardRef<HTMLAnchorElement, TabProps>((props, ref) => (
 StyledTab.displayName = "StyledTab";
 
 function SeasonsManager({ onSeasonChange }: { onSeasonChange: (seasonId: string) => void }) {
-  const [seasons, setSeasons] = useState<Season[]>([]);
-  const [selectedId, setSelectedId] = useState<string>("");
-  const [loaded, setLoaded] = useState(false);
-  const [deleting, setDeleting] = useState(false);
+  const queryClient = useQueryClient();
+  const [selectedId, setSelectedId] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [loadKey, setLoadKey] = useState(0);
   const { defaultSeasonId, saveDefault } = useDefaultSeason();
 
-  // Fetch seasons; pre-select the saved default or first season
-  useEffect(() => {
-    let cancelled = false;
-    setLoaded(false);
-    setError(null);
-    fetch("/api/seasons")
-      .then(async (r) => {
-        if (!r.ok) {
-          const msg = await getErrorMessageFromResponse(r, "Nie udało się pobrać sezonów");
-          if (!cancelled) setError(msg);
-          return;
-        }
-        const data: Season[] = await r.json();
-        if (cancelled) return;
-        setSeasons(data);
-        if (data.length === 0) return;
-        const savedExists = data.some((s) => s.id === defaultSeasonId);
-        setSelectedId(savedExists ? (defaultSeasonId as string) : data[0].id);
-      })
-      .catch(() => {
-        if (!cancelled) setError("Nie udało się pobrać sezonów. Sprawdź połączenie.");
-      })
-      .finally(() => {
-        if (!cancelled) setLoaded(true);
+  const {
+    data: seasonsData,
+    isPending: seasonsLoading,
+    isError: seasonsQueryFailed,
+    error: seasonsQueryError,
+    refetch: refetchSeasons,
+  } = useQuery({
+    queryKey: queryKeys.seasons.list(),
+    queryFn: ({ signal }) => fetchSeasonsList(signal),
+  });
+
+  const deleteSeasonMutation = useMutation({
+    mutationFn: deleteSeasonById,
+    onSuccess: (_, deletedId) => {
+      queryClient.setQueryData<Season[]>(queryKeys.seasons.list(), (old) =>
+        (old ?? []).filter((s) => s.id !== deletedId)
+      );
+      setSelectedId((prev) => {
+        if (prev !== deletedId) return prev;
+        const remaining = queryClient.getQueryData<Season[]>(queryKeys.seasons.list()) ?? [];
+        return remaining[0]?.id ?? "";
       });
-    return () => {
-      cancelled = true;
-    };
-  }, [defaultSeasonId, loadKey]);
+      void queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all });
+    },
+  });
 
-  const handleDeleteConfirmed = async () => {
-    setConfirmOpen(false);
-    setDeleting(true);
-    try {
-      const res = await fetch(`/api/seasons/${selectedId}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Nie udało się usunąć sezonu");
-      const updated = seasons.filter((s) => s.id !== selectedId);
-      setSeasons(updated);
-      setSelectedId(updated[0]?.id ?? "");
-      setError(null);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Błąd usuwania");
-    } finally {
-      setDeleting(false);
+  const seasons = useMemo(() => seasonsData ?? [], [seasonsData]);
+  const loadError = seasonsQueryFailed && seasonsQueryError instanceof Error ? seasonsQueryError.message : null;
+
+  useEffect(() => {
+    if (seasons.length === 0) {
+      setSelectedId("");
+      return;
     }
-  };
-
-  const selectedSeason = seasons.find((s) => s.id === selectedId);
+    const savedExists = Boolean(defaultSeasonId && seasons.some((s) => s.id === defaultSeasonId));
+    setSelectedId(savedExists ? (defaultSeasonId ?? "") : seasons[0].id);
+  }, [seasons, defaultSeasonId]);
 
   useEffect(() => {
     onSeasonChange(selectedId);
   }, [onSeasonChange, selectedId]);
 
-  if (!loaded) return <CircularProgress size={20} sx={{ mb: 3 }} />;
+  const handleDeleteConfirmed = () => {
+    setConfirmOpen(false);
+    deleteSeasonMutation.mutate(selectedId);
+  };
 
-  if (error && seasons.length === 0) {
-    return (
-      <DataLoadAlert message={error} onRetry={() => setLoadKey((k) => k + 1)} sx={{ mb: 3 }} />
-    );
+  const selectedSeason = seasons.find((s) => s.id === selectedId);
+
+  if (seasonsLoading) return <CircularProgress size={20} sx={{ mb: 3 }} />;
+
+  if (loadError && seasons.length === 0) {
+    return <DataLoadAlert message={loadError} onRetry={() => void refetchSeasons()} sx={{ mb: 3 }} />;
   }
 
   if (seasons.length === 0) {
@@ -206,10 +186,10 @@ function SeasonsManager({ onSeasonChange }: { onSeasonChange: (seasonId: string)
         <IconButton
           color="error"
           onClick={() => setConfirmOpen(true)}
-          disabled={deleting || !selectedId}
+          disabled={deleteSeasonMutation.isPending || !selectedId}
           title="Usuń sezon"
         >
-          {deleting ? <CircularProgress size={20} /> : <Trash2 size={18} />}
+          {deleteSeasonMutation.isPending ? <CircularProgress size={20} /> : <Trash2 size={18} />}
         </IconButton>
 
         {/* Add new season */}
@@ -217,11 +197,11 @@ function SeasonsManager({ onSeasonChange }: { onSeasonChange: (seasonId: string)
           + Nowy sezon
         </Button>
 
-        {error && (
+        {deleteSeasonMutation.isError && deleteSeasonMutation.error instanceof Error ? (
           <Alert severity="error" sx={{ py: 0 }}>
-            {error}
+            {deleteSeasonMutation.error.message}
           </Alert>
-        )}
+        ) : null}
       </Box>
 
       {/* Delete confirmation dialog */}
@@ -229,7 +209,7 @@ function SeasonsManager({ onSeasonChange }: { onSeasonChange: (seasonId: string)
         open={confirmOpen}
         onClose={() => setConfirmOpen(false)}
         onConfirm={handleDeleteConfirmed}
-        loading={deleting}
+        loading={deleteSeasonMutation.isPending}
         title="Usuń sezon"
         description={
           <DialogContentText>
@@ -274,44 +254,22 @@ function SettingsContent() {
 
 /*  TEAMS TAB */
 function TeamsTab({ seasonId }: { seasonId: string }) {
-  const [teams, setTeams] = useState<Team[]>([]);
-  const [loadingTeams, setLoadingTeams] = useState(true);
-  const [teamsError, setTeamsError] = useState<string | null>(null);
-  const [loadKey, setLoadKey] = useState(0);
+  const {
+    data: teams = [],
+    isPending: loadingTeams,
+    isError: teamsQueryFailed,
+    error: teamsQueryError,
+    refetch: refetchTeams,
+  } = useQuery({
+    queryKey: queryKeys.teams.bySeason(seasonId || "__none__"),
+    queryFn: ({ signal }) => {
+      if (!seasonId) return Promise.reject(new Error("Brak sezonu"));
+      return fetchTeamsBySeason(seasonId, signal);
+    },
+    enabled: Boolean(seasonId),
+  });
 
-  useEffect(() => {
-    if (!seasonId) {
-      setTeams([]);
-      setLoadingTeams(false);
-      setTeamsError(null);
-      return;
-    }
-
-    const controller = new AbortController();
-
-    async function fetchTeams() {
-      setLoadingTeams(true);
-      setTeamsError(null);
-      try {
-        const res = await fetch(`/api/teams?seasonId=${encodeURIComponent(seasonId)}`, { signal: controller.signal });
-        if (!res.ok) {
-          const msg = await getErrorMessageFromResponse(res, "Nie udało się pobrać drużyn");
-          throw new Error(msg);
-        }
-        const data: Team[] = await res.json();
-        setTeams(data);
-      } catch (error) {
-        if (controller.signal.aborted) return;
-        setTeamsError(error instanceof Error ? error.message : "Wystąpił błąd podczas pobierania drużyn");
-      } finally {
-        if (!controller.signal.aborted) setLoadingTeams(false);
-      }
-    }
-
-    fetchTeams();
-
-    return () => controller.abort();
-  }, [seasonId, loadKey]);
+  const teamsError = teamsQueryFailed && teamsQueryError instanceof Error ? teamsQueryError.message : null;
 
   if (!seasonId) {
     return (
@@ -330,7 +288,7 @@ function TeamsTab({ seasonId }: { seasonId: string }) {
   }
 
   if (teamsError) {
-    return <DataLoadAlert message={teamsError} onRetry={() => setLoadKey((k) => k + 1)} />;
+    return <DataLoadAlert message={teamsError} onRetry={() => void refetchTeams()} />;
   }
 
   if (teams.length === 0) {
@@ -416,6 +374,7 @@ interface PersonnelTableProps {
 
 interface PersonnelConfig {
   apiEndpoint: string;
+  queryKey: (seasonId: string) => readonly unknown[];
   title: string;
   noSeasonMessage: string;
   emptyMessage: string;
@@ -428,17 +387,15 @@ interface PersonnelConfig {
   messages: {
     loadError: string;
     loadFallback: string;
-    createError: string;
     createFallback: string;
-    updateError: string;
     updateFallback: string;
-    deleteError: string;
     deleteFallback: string;
   };
 }
 
 const REFEREES_CONFIG: PersonnelConfig = {
   apiEndpoint: "/api/referees",
+  queryKey: (seasonId) => queryKeys.referees.bySeason(seasonId),
   title: "Sędziowie",
   noSeasonMessage: "Wybierz sezon, aby zarządzać sędziami.",
   emptyMessage: "Brak zapisanych sędziów. Dodaj pierwszego sędziego, aby rozdzielać mecze.",
@@ -451,17 +408,15 @@ const REFEREES_CONFIG: PersonnelConfig = {
   messages: {
     loadError: "Nie udało się pobrać sędziów",
     loadFallback: "Wystąpił błąd podczas pobierania sędziów",
-    createError: "Nie udało się dodać sędziego",
     createFallback: "Wystąpił błąd podczas zapisu sędziego",
-    updateError: "Nie udało się zaktualizować sędziego",
     updateFallback: "Wystąpił błąd podczas zapisu sędziego",
-    deleteError: "Nie udało się usunąć sędziego",
     deleteFallback: "Wystąpił błąd podczas usuwania",
   },
 };
 
 const CLASSIFIERS_CONFIG: PersonnelConfig = {
   apiEndpoint: "/api/classifiers",
+  queryKey: (seasonId) => queryKeys.classifiers.bySeason(seasonId),
   title: "Klasyfikatorzy",
   noSeasonMessage: "Wybierz sezon, aby zarządzać klasyfikatorami.",
   emptyMessage: "Brak zapisanych klasyfikatorów. Dodaj pierwszą osobę, aby uruchomić egzaminy.",
@@ -474,11 +429,8 @@ const CLASSIFIERS_CONFIG: PersonnelConfig = {
   messages: {
     loadError: "Nie udało się pobrać klasyfikatorów",
     loadFallback: "Wystąpił błąd podczas pobierania klasyfikatorów",
-    createError: "Nie udało się dodać klasyfikatora",
     createFallback: "Wystąpił błąd podczas zapisu klasyfikatora",
-    updateError: "Nie udało się zaktualizować klasyfikatora",
     updateFallback: "Wystąpił błąd podczas zapisu klasyfikatora",
-    deleteError: "Nie udało się usunąć klasyfikatora",
     deleteFallback: "Wystąpił błąd podczas usuwania",
   },
 };
@@ -489,8 +441,10 @@ interface PersonnelTabProps {
 }
 
 function PersonnelTab({ seasonId, config }: PersonnelTabProps) {
+  const queryClient = useQueryClient();
   const {
     apiEndpoint,
+    queryKey,
     title,
     noSeasonMessage,
     emptyMessage,
@@ -499,56 +453,144 @@ function PersonnelTab({ seasonId, config }: PersonnelTabProps) {
     deleteDialogTitle,
     messages,
   } = config;
-  const [people, setPeople] = useState<Person[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [loadKey, setLoadKey] = useState(0);
+
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogError, setDialogError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
   const [editingPerson, setEditingPerson] = useState<Person | null>(null);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Person | null>(null);
 
-  useEffect(() => {
-    if (!seasonId) {
-      setPeople([]);
-      setError(null);
-      setLoading(false);
-      return;
-    }
+  const invalidateList = () => {
+    if (!seasonId) return;
+    void queryClient.invalidateQueries({ queryKey: queryKey(seasonId) });
+  };
 
-    const controller = new AbortController();
+  const {
+    data: people = [],
+    isPending: loading,
+    isError,
+    error: queryError,
+    refetch,
+  } = useQuery({
+    queryKey: queryKey(seasonId || "__none__"),
+    queryFn: ({ signal }) => {
+      if (!seasonId) return Promise.reject(new Error("Brak sezonu"));
+      return fetchPersonnelBySeason(apiEndpoint, seasonId, messages.loadError, signal);
+    },
+    enabled: Boolean(seasonId),
+  });
 
-    async function loadPeople() {
-      setLoading(true);
-      setError(null);
-      try {
-        const response = await fetch(`${apiEndpoint}?seasonId=${encodeURIComponent(seasonId)}`, {
-          signal: controller.signal,
-        });
-        if (!response.ok) {
-          const msg = await getErrorMessageFromResponse(response, messages.loadError);
-          throw new Error(msg);
-        }
-        const data: Person[] = await response.json();
-        if (!controller.signal.aborted) setPeople(data);
-      } catch (loadError) {
-        if (controller.signal.aborted) return;
-        setError(loadError instanceof Error ? loadError.message : messages.loadFallback);
-      } finally {
-        if (!controller.signal.aborted) setLoading(false);
+  const createMutation = useMutation({
+    mutationFn: async (payload: PersonFormPayload) => {
+      if (!seasonId) throw new Error("Brak sezonu");
+      return createPersonnel(apiEndpoint, {
+        firstName: payload.firstName,
+        lastName: payload.lastName,
+        email: payload.email,
+        phone: payload.phone,
+        seasonId,
+      });
+    },
+    onMutate: async (payload) => {
+      const targetSeasonId = seasonId; // capture at mutation time
+      await queryClient.cancelQueries({ queryKey: queryKey(targetSeasonId) });
+      const previousPeople = queryClient.getQueryData<Person[]>(queryKey(targetSeasonId)) ?? [];
+      const optimisticPerson: Person = {
+        id: `optimistic-${crypto.randomUUID()}`,
+        firstName: payload.firstName,
+        lastName: payload.lastName,
+        email: payload.email ?? undefined,
+        phone: payload.phone ?? null,
+      };
+      queryClient.setQueryData<Person[]>(queryKey(targetSeasonId), (current) => [...(current ?? []), optimisticPerson]);
+      return { previousPeople, targetSeasonId };
+    },
+    onError: (e: unknown, _vars, context) => {
+      const targetSeasonId = context?.targetSeasonId;
+      if (context?.previousPeople) {
+        queryClient.setQueryData(queryKey(targetSeasonId), context.previousPeople);
       }
-    }
+      setDialogError(e instanceof Error ? e.message : messages.createFallback);
+    },
+    onSuccess: () => {
+      setDialogOpen(false);
+      setEditingPerson(null);
+      setDialogError(null);
+    },
+    onSettled: () => {
+      invalidateList();
+    },
+  });
 
-    loadPeople();
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, payload }: { id: string; payload: PersonFormPayload }) => {
+      return updatePersonnel(apiEndpoint, id, payload);
+    },
+    onMutate: async ({ id, payload }) => {
+      await queryClient.cancelQueries({ queryKey: queryKey(seasonId) });
+      const previousPeople = queryClient.getQueryData<Person[]>(queryKey(seasonId)) ?? [];
+      queryClient.setQueryData<Person[]>(queryKey(seasonId), (current) =>
+        (current ?? []).map((person) =>
+          person.id === id
+            ? {
+                ...person,
+                firstName: payload.firstName,
+                lastName: payload.lastName,
+                email: payload.email,
+                phone: payload.phone,
+              }
+            : person
+        )
+      );
+      return { previousPeople };
+    },
+    onError: (e: unknown, _vars, context) => {
+      if (context?.previousPeople) {
+        queryClient.setQueryData(queryKey(seasonId), context.previousPeople);
+      }
+      setDialogError(e instanceof Error ? e.message : messages.updateFallback);
+    },
+    onSuccess: () => {
+      setDialogOpen(false);
+      setEditingPerson(null);
+      setDialogError(null);
+    },
+    onSettled: () => {
+      invalidateList();
+    },
+  });
 
-    return () => controller.abort();
-  }, [seasonId, apiEndpoint, loadKey, messages.loadError, messages.loadFallback]);
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await deletePersonnel(apiEndpoint, id);
+    },
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: queryKey(seasonId) });
+      const previousPeople = queryClient.getQueryData<Person[]>(queryKey(seasonId)) ?? [];
+      queryClient.setQueryData<Person[]>(queryKey(seasonId), (current) =>
+        (current ?? []).filter((person) => person.id !== id)
+      );
+      return { previousPeople };
+    },
+    onError: (_error, _id, context) => {
+      if (context?.previousPeople) {
+        queryClient.setQueryData(queryKey(seasonId), context.previousPeople);
+      }
+    },
+    onSuccess: () => {
+      setDeleteTarget(null);
+    },
+    onSettled: () => {
+      invalidateList();
+    },
+  });
+
+  const submitting = createMutation.isPending || updateMutation.isPending;
 
   const handleAddClick = () => {
     setEditingPerson(null);
     setDialogError(null);
+    createMutation.reset();
+    updateMutation.reset();
     setDialogOpen(true);
   };
 
@@ -556,108 +598,37 @@ function PersonnelTab({ seasonId, config }: PersonnelTabProps) {
     setDialogOpen(false);
     setDialogError(null);
     setEditingPerson(null);
-  };
-
-  const handleCreatePerson = async (payload: PersonFormPayload) => {
-    if (!seasonId) return;
-    setSubmitting(true);
-    setDialogError(null);
-
-    try {
-      const requestBody = {
-        firstName: payload.firstName,
-        lastName: payload.lastName,
-        email: payload.email,
-        phone: payload.phone,
-        seasonId,
-      };
-      const response = await fetch(apiEndpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(requestBody),
-      });
-      if (!response.ok) {
-        const message = await extractErrorMessage(response, messages.createError);
-        throw new Error(message);
-      }
-      const created: Person = await response.json();
-      setPeople((current) => [created, ...current]);
-      setDialogOpen(false);
-      setEditingPerson(null);
-    } catch (submissionError) {
-      setDialogError(submissionError instanceof Error ? submissionError.message : messages.createFallback);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleUpdatePerson = async (id: string, payload: PersonFormPayload) => {
-    setSubmitting(true);
-    setDialogError(null);
-
-    try {
-      const response = await fetch(`${apiEndpoint}/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          firstName: payload.firstName,
-          lastName: payload.lastName,
-          email: payload.email,
-          phone: payload.phone,
-        }),
-      });
-      if (!response.ok) {
-        const message = await extractErrorMessage(response, messages.updateError);
-        throw new Error(message);
-      }
-      const updated: Person = await response.json();
-      setPeople((current) => current.map((item) => (item.id === updated.id ? updated : item)));
-      setDialogOpen(false);
-      setEditingPerson(null);
-    } catch (submissionError) {
-      setDialogError(submissionError instanceof Error ? submissionError.message : messages.updateFallback);
-    } finally {
-      setSubmitting(false);
-    }
+    createMutation.reset();
+    updateMutation.reset();
   };
 
   const handleDialogSubmit = (payload: PersonFormPayload) => {
     if (editingPerson) {
-      void handleUpdatePerson(editingPerson.id, payload);
+      updateMutation.mutate({ id: editingPerson.id, payload });
       return;
     }
-    void handleCreatePerson(payload);
+    createMutation.mutate(payload);
   };
 
   const handleEditClick = (person: Person) => {
     setEditingPerson(person);
     setDialogError(null);
+    createMutation.reset();
+    updateMutation.reset();
     setDialogOpen(true);
   };
 
   const handleDeleteClick = (person: Person) => {
+    deleteMutation.reset();
     setDeleteTarget(person);
   };
 
-  const handleDeleteConfirmed = async () => {
+  const handleDeleteConfirmed = () => {
     if (!deleteTarget) return;
-    setDeletingId(deleteTarget.id);
-    try {
-      const response = await fetch(`${apiEndpoint}/${deleteTarget.id}`, {
-        method: "DELETE",
-      });
-      if (!response.ok) {
-        const message = await extractErrorMessage(response, messages.deleteError);
-        throw new Error(message);
-      }
-      setPeople((current) => current.filter((item) => item.id !== deleteTarget.id));
-      setDeleteTarget(null);
-    } catch (deleteError) {
-      setError(deleteError instanceof Error ? deleteError.message : messages.deleteFallback);
-    } finally {
-      setDeletingId(null);
-    }
+    deleteMutation.mutate(deleteTarget.id);
   };
+
+  const loadError = isError && queryError instanceof Error ? queryError.message : null;
 
   if (!seasonId) {
     return (
@@ -675,12 +646,17 @@ function PersonnelTab({ seasonId, config }: PersonnelTabProps) {
     );
   }
 
-  if (error) {
-    return <DataLoadAlert message={error} onRetry={() => setLoadKey((k) => k + 1)} />;
+  if (loadError) {
+    return <DataLoadAlert message={loadError} onRetry={() => void refetch()} />;
   }
 
   return (
     <>
+      {deleteMutation.isError ? (
+        <Box sx={{ mb: 2 }}>
+          <MutationErrorAlert error={deleteMutation.error} fallbackMessage={messages.deleteFallback} />
+        </Box>
+      ) : null}
       {people.length === 0 && (
         <Alert
           severity="info"
@@ -700,7 +676,7 @@ function PersonnelTab({ seasonId, config }: PersonnelTabProps) {
         onAddClick={handleAddClick}
         onEdit={handleEditClick}
         onDelete={handleDeleteClick}
-        deletingId={deletingId}
+        deletingId={deleteMutation.isPending ? (deleteTarget?.id ?? null) : null}
       />
       <AddPersonDialog
         open={dialogOpen}
@@ -723,9 +699,12 @@ function PersonnelTab({ seasonId, config }: PersonnelTabProps) {
       />
       <ConfirmationDialog
         open={Boolean(deleteTarget)}
-        onClose={() => setDeleteTarget(null)}
+        onClose={() => {
+          setDeleteTarget(null);
+          deleteMutation.reset();
+        }}
         onConfirm={handleDeleteConfirmed}
-        loading={deletingId === deleteTarget?.id}
+        loading={deleteMutation.isPending}
         title={deleteDialogTitle}
         description={
           <DialogContentText>

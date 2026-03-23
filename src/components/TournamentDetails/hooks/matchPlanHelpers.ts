@@ -38,6 +38,40 @@ export function getMatchDayTimestamp(scheduledAtIso: string) {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
 }
 
+/** Returns calendar-day bounds (local) for the tournament, same logic as `buildMatchDayOptions`. */
+function tournamentDayBounds(tournamentStartIso: string, tournamentEndIso?: string | null): { first: number; last: number } | null {
+  const start = new Date(tournamentStartIso);
+  const end = tournamentEndIso ? new Date(tournamentEndIso) : start;
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return null;
+
+  const first = new Date(start.getFullYear(), start.getMonth(), start.getDate()).getTime();
+  const last = new Date(end.getFullYear(), end.getMonth(), end.getDate()).getTime();
+  return { first, last };
+}
+
+/** True when the match calendar day is not within [startDate, endDate] inclusive. */
+export function isScheduledDayOutsideTournamentRange(
+  scheduledAtIso: string,
+  tournamentStartIso: string,
+  tournamentEndIso?: string | null
+): boolean {
+  const bounds = tournamentDayBounds(tournamentStartIso, tournamentEndIso);
+  if (!bounds) return false;
+  const matchDay = getMatchDayTimestamp(scheduledAtIso);
+  return matchDay < bounds.first || matchDay > bounds.last;
+}
+
+/** True when a schedule section day (midnight timestamp) lies outside the tournament window. */
+export function isDayTimestampOutsideTournamentRange(
+  dayTimestamp: number,
+  tournamentStartIso: string,
+  tournamentEndIso?: string | null
+): boolean {
+  const bounds = tournamentDayBounds(tournamentStartIso, tournamentEndIso);
+  if (!bounds) return false;
+  return dayTimestamp < bounds.first || dayTimestamp > bounds.last;
+}
+
 export function pad2(n: number) {
   return String(n).padStart(2, "0");
 }

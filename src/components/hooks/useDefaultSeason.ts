@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 
 const STORAGE_KEY = "defaultSeasonId";
 
@@ -21,7 +21,12 @@ function writeStorage(id: string): void {
 
 /** Reads and writes the default season ID to localStorage */
 export function useDefaultSeason() {
-  const [defaultSeasonId, setDefaultSeasonId] = useState<string | null>(readStorage);
+  // Start as null so SSR and the first client render match; read storage after mount (hydration-safe).
+  const [defaultSeasonId, setDefaultSeasonId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setDefaultSeasonId(readStorage());
+  }, []);
 
   const saveDefault = useCallback((id: string) => {
     writeStorage(id);

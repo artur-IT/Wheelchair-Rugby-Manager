@@ -3,6 +3,13 @@ import DataLoadAlert from "@/components/ui/DataLoadAlert";
 import type { Match, Tournament } from "@/types";
 import { MATCH_DURATION_MS } from "@/components/TournamentDetails/hooks/matchPlanHelpers";
 
+/** Highlight for match times when the scheduled day is outside tournament dates. */
+const outOfRangeTimeCellSx = {
+  bgcolor: "error.main",
+  color: "common.white",
+  fontWeight: 700,
+} as const;
+
 interface TournamentMatchesPlanPanelProps {
   tournament: Tournament;
   matches: Match[];
@@ -20,6 +27,9 @@ interface TournamentMatchesPlanPanelProps {
   setMatchDayToDelete: (timestamp: number) => void;
   deleteMatchDayLoading: boolean;
   matchDayToDelete: number | null;
+  /** When set, Start/Koniec cells and day headings use error styling if outside tournament window. */
+  isMatchOutOfRange?: (scheduledAtIso: string) => boolean;
+  isDayOutOfRange?: (dayTimestamp: number) => boolean;
 }
 
 export default function TournamentMatchesPlanPanel({
@@ -39,6 +49,8 @@ export default function TournamentMatchesPlanPanel({
   setMatchDayToDelete,
   deleteMatchDayLoading,
   matchDayToDelete,
+  isMatchOutOfRange,
+  isDayOutOfRange,
 }: TournamentMatchesPlanPanelProps) {
   return (
     <Paper
@@ -101,10 +113,27 @@ export default function TournamentMatchesPlanPanel({
             {scheduleTableDayTimestamps.map((dayTimestamp) => {
               const dayMatches = matches.filter((m) => getMatchDayTimestamp(m.scheduledAt) === dayTimestamp);
               const dayLabel = getScheduleDayLabel(dayTimestamp);
+              const dayHighlight = isDayOutOfRange?.(dayTimestamp) ?? false;
 
               return (
                 <Box key={dayTimestamp}>
-                  <Typography variant="h6" sx={{ fontWeight: 900, mb: 2 }}>
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      fontWeight: 900,
+                      mb: 2,
+                      ...(dayHighlight
+                        ? {
+                            color: "common.white",
+                            bgcolor: "error.main",
+                            px: 1,
+                            py: 0.5,
+                            borderRadius: 1,
+                            display: "inline-block",
+                          }
+                        : {}),
+                    }}
+                  >
                     {dayLabel}
                   </Typography>
 
@@ -171,6 +200,7 @@ export default function TournamentMatchesPlanPanel({
                                 })
                               : "—";
                             const { teamA: jerseyA, teamB: jerseyB } = parseJerseyInfo(m.jerseyInfo);
+                            const rowOut = isMatchOutOfRange?.(m.scheduledAt) ?? false;
 
                             return (
                               <TableRow key={m.id}>
@@ -178,8 +208,12 @@ export default function TournamentMatchesPlanPanel({
                                   {teamAName}
                                 </TableCell>
                                 <TableCell align="center">{m.scoreA ?? "—"}</TableCell>
-                                <TableCell align="center">{startTime}</TableCell>
-                                <TableCell align="center">{endTime}</TableCell>
+                                <TableCell align="center" sx={rowOut ? outOfRangeTimeCellSx : undefined}>
+                                  {startTime}
+                                </TableCell>
+                                <TableCell align="center" sx={rowOut ? outOfRangeTimeCellSx : undefined}>
+                                  {endTime}
+                                </TableCell>
                                 <TableCell align="center">{m.scoreB ?? "—"}</TableCell>
                                 <TableCell align="center" sx={{ fontWeight: 600 }}>
                                   {teamBName}

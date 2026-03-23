@@ -34,3 +34,16 @@ export async function getErrorMessageFromResponse(res: Response, fallback: strin
   const raw = await res.json().catch(() => null);
   return parseApiErrorBody(raw) ?? httpStatusFallbackMessage(res) ?? fallback;
 }
+
+/** Zod-style formErrors / fieldErrors from API validation responses. */
+export async function parseFormErrorFromResponse(response: Response, fallback: string): Promise<string> {
+  const errorBody = (await response.json().catch(() => null)) as {
+    error?: { formErrors?: string[]; fieldErrors?: Record<string, string[] | undefined> };
+  } | null;
+  const fieldErrors = (errorBody?.error?.fieldErrors ?? {}) as Record<string, string[] | undefined>;
+  const fieldMessages = Object.values(fieldErrors).reduce<string[]>((acc, errors) => {
+    if (errors) acc.push(...errors);
+    return acc;
+  }, []);
+  return errorBody?.error?.formErrors?.[0] ?? fieldMessages[0] ?? fallback;
+}

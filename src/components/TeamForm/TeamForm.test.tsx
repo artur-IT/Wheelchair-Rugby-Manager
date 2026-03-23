@@ -1,8 +1,15 @@
+import type { ReactNode } from "react";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import QueryProvider from "@/components/QueryProvider/QueryProvider";
+
 import { TeamFormContent } from "./TeamForm";
+
+function renderWithQuery(ui: ReactNode) {
+  return render(<QueryProvider>{ui}</QueryProvider>);
+}
 
 describe("TeamForm", () => {
   beforeEach(() => {
@@ -14,7 +21,7 @@ describe("TeamForm", () => {
   });
 
   it("shows helper text when no seasons are returned", async () => {
-    render(<TeamFormContent />);
+    renderWithQuery(<TeamFormContent />);
 
     expect(await screen.findByText(/Brak sezonów/i)).toBeInTheDocument();
   });
@@ -23,7 +30,7 @@ describe("TeamForm", () => {
     const user = userEvent.setup();
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => [{ id: "s1", name: "Sezon 1" }] }));
 
-    render(<TeamFormContent />);
+    renderWithQuery(<TeamFormContent />);
     await screen.findByRole("button", { name: "Zapisz Drużynę" });
     await user.click(screen.getByRole("button", { name: "Zapisz Drużynę" }));
 
@@ -40,7 +47,7 @@ describe("TeamForm", () => {
       .mockResolvedValueOnce({ ok: true, json: async () => ({ id: "t1", name: "Test Team" }) }); // POST /api/teams
     vi.stubGlobal("fetch", fetchMock);
 
-    render(<TeamFormContent onSuccess={onSuccess} />);
+    renderWithQuery(<TeamFormContent onSuccess={onSuccess} />);
     await screen.findByRole("button", { name: "Zapisz Drużynę" });
 
     await user.type(screen.getByLabelText("Nazwa Drużyny"), "Test Team");
@@ -58,24 +65,22 @@ describe("TeamForm", () => {
 
     await waitFor(() => expect(onSuccess).toHaveBeenCalled());
 
-    expect(fetchMock).toHaveBeenCalledTimes(3);
-    expect(fetchMock).toHaveBeenNthCalledWith(
-      3,
-      "/api/teams",
-      expect.objectContaining({
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      })
-    );
-
-    const [, coachOptions] = fetchMock.mock.calls[1] as [string, RequestInit];
+    const coachCall = fetchMock.mock.calls.find((c) => c[0] === "/api/coaches") as [string, RequestInit] | undefined;
+    expect(coachCall).toBeDefined();
+    const [, coachOptions] = coachCall!;
     expect(JSON.parse(String(coachOptions.body))).toEqual({
       firstName: "Anna",
       lastName: "Nowak",
+      email: null,
+      phone: null,
       seasonId: "s1",
     });
 
-    const [, submitOptions] = fetchMock.mock.calls[2] as [string, RequestInit];
+    const teamPostCall = fetchMock.mock.calls.find(
+      (c) => c[0] === "/api/teams" && (c[1] as RequestInit)?.method === "POST"
+    ) as [string, RequestInit] | undefined;
+    expect(teamPostCall).toBeDefined();
+    const [, submitOptions] = teamPostCall!;
     expect(JSON.parse(String(submitOptions.body))).toEqual({
       name: "Test Team",
       address: "Test Address",

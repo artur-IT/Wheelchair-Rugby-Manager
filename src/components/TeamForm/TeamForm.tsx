@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod/v4";
@@ -10,7 +10,6 @@ import {
   Typography,
   Paper,
   Divider,
-  Alert,
   CircularProgress,
   FormControl,
   InputLabel,
@@ -22,11 +21,17 @@ import {
 import AddIcon from "@mui/icons-material/Add";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import type { SelectChangeEvent } from "@mui/material";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
 import AppShell from "@/components/AppShell/AppShell";
+import QueryProvider from "@/components/QueryProvider/QueryProvider";
 import DataLoadAlert from "@/components/ui/DataLoadAlert";
-import { getErrorMessageFromResponse } from "@/lib/apiHttp";
-import type { Season, Team } from "@/types";
+import MutationErrorAlert from "@/components/ui/MutationErrorAlert";
+import { createPersonnel } from "@/lib/api/personnel";
+import { fetchSeasonsList } from "@/lib/api/seasons";
+import { createTeam, updateTeamById } from "@/lib/api/teams";
+import { queryKeys } from "@/lib/queryKeys";
+import type { Team } from "@/types";
 import {
   sanitizePhone,
   optionalPhoneSchema,
@@ -56,8 +61,6 @@ const teamSchema = z.object({
   contactEmail: requiredEmailSchema,
   contactPhone: requiredPhoneSchema,
   websiteUrl: optionalWebsiteUrlSchema,
-  coachId: z.string().optional(),
-  refereeId: z.string().optional(),
   // Coach first/last name have custom required messages so max is chained inline
   coachFirstName: z
     .string()
@@ -116,27 +119,43 @@ export interface TeamFormContentProps {
   onCancel?: () => void;
 }
 
+function redirectToSettings() {
+  window.location.assign("/settings");
+}
+
 export default function TeamForm() {
   return (
-    <ThemeRegistry>
-      <AppShell currentPath="/settings">
-        <TeamFormContent />
-      </AppShell>
-    </ThemeRegistry>
+    <QueryProvider>
+      <ThemeRegistry>
+        <AppShell currentPath="/settings">
+          <TeamFormContent />
+        </AppShell>
+      </ThemeRegistry>
+    </QueryProvider>
   );
 }
 
 export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess, onCancel }: TeamFormContentProps) {
+  const queryClient = useQueryClient();
   const isEdit = mode === "edit" && initialTeam;
 
-  const [submitError, setSubmitError] = useState<string | null>(null);
-  const [seasonsLoadError, setSeasonsLoadError] = useState<string | null>(null);
-  const [seasonsLoadNonce, setSeasonsLoadNonce] = useState(0);
-  const [seasons, setSeasons] = useState<Season[]>([]);
   const [seasonId, setSeasonId] = useState<string>("");
-  const [loadingSeasons, setLoadingSeasons] = useState(true);
   const [players, setPlayers] = useState<PlayerRow[]>([]);
   const [staff, setStaff] = useState<StaffRow[]>([]);
+
+  const {
+    data: seasonsData,
+    isPending: loadingSeasons,
+    isError: seasonsQueryFailed,
+    error: seasonsQueryError,
+    refetch: refetchSeasons,
+  } = useQuery({
+    queryKey: queryKeys.seasons.list(),
+    queryFn: ({ signal }) => fetchSeasonsList(signal),
+  });
+
+  const seasons = useMemo(() => seasonsData ?? [], [seasonsData]);
+  const seasonsLoadError = seasonsQueryFailed && seasonsQueryError instanceof Error ? seasonsQueryError.message : null;
 
   const effectiveSeasonId = seasonId || (isEdit && initialTeam ? initialTeam.seasonId : "");
 
@@ -199,129 +218,116 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
     defaultValues: defaultFormValues,
   });
 
-  // Fetch seasons and when edit mode pre-fill from initialTeam
   useEffect(() => {
-    async function fetchSeasons() {
-      setLoadingSeasons(true);
-      setSeasonsLoadError(null);
-      try {
-        const res = await fetch("/api/seasons");
-        if (!res.ok) {
-          const msg = await getErrorMessageFromResponse(res, "Nie udało się pobrać sezonów");
-          setSeasonsLoadError(msg);
-          return;
-        }
-        const data: Season[] = await res.json();
-        setSeasons(data);
-        if (isEdit && initialTeam) {
-          setSeasonId(initialTeam.seasonId);
-          setPlayers(
-            (initialTeam.players ?? []).map((p) => ({
-              id: p.id,
-              firstName: p.firstName,
-              lastName: p.lastName,
-              classification: p.classification != null ? String(p.classification) : "",
-              number: p.number != null ? String(p.number) : "",
-            }))
-          );
-          setStaff(
-            (initialTeam.staff ?? []).map((s) => ({
-              id: s.id,
-              firstName: s.firstName,
-              lastName: s.lastName,
-            }))
-          );
-          reset({
-            name: initialTeam.name ?? "",
-            address: initialTeam.address ?? "",
-            city: initialTeam.city ?? "",
-            postalCode: initialTeam.postalCode ?? "",
-            websiteUrl: initialTeam.websiteUrl ?? "",
-            contactFirstName: initialTeam.contactFirstName ?? "",
-            contactLastName: initialTeam.contactLastName ?? "",
-            contactEmail: initialTeam.contactEmail ?? "",
-            contactPhone: initialTeam.contactPhone ?? "",
-            coachFirstName: initialTeam.coach?.firstName ?? "",
-            coachLastName: initialTeam.coach?.lastName ?? "",
-            coachEmail: initialTeam.coach?.email ?? "",
-            coachPhone: initialTeam.coach?.phone != null ? String(initialTeam.coach.phone) : "",
-            refereeFirstName: initialTeam.referee?.firstName ?? "",
-            refereeLastName: initialTeam.referee?.lastName ?? "",
-            refereeEmail: initialTeam.referee?.email ?? "",
-            refereePhone: initialTeam.referee?.phone != null ? String(initialTeam.referee.phone) : "",
-            staffFirstName: "",
-            staffLastName: "",
-          });
-        } else if (data.length > 0 && !isEdit) {
-          setSeasonId(data[0].id);
-        }
-      } catch {
-        setSeasonsLoadError("Nie udało się pobrać sezonów. Sprawdź połączenie.");
-      } finally {
-        setLoadingSeasons(false);
+    if (!seasons.length) return;
+    if (isEdit && initialTeam) {
+      setSeasonId(initialTeam.seasonId);
+      setPlayers(
+        (initialTeam.players ?? []).map((p) => ({
+          id: p.id,
+          firstName: p.firstName,
+          lastName: p.lastName,
+          classification: p.classification != null ? String(p.classification) : "",
+          number: p.number != null ? String(p.number) : "",
+        }))
+      );
+      setStaff(
+        (initialTeam.staff ?? []).map((s) => ({
+          id: s.id,
+          firstName: s.firstName,
+          lastName: s.lastName,
+        }))
+      );
+      reset({
+        name: initialTeam.name ?? "",
+        address: initialTeam.address ?? "",
+        city: initialTeam.city ?? "",
+        postalCode: initialTeam.postalCode ?? "",
+        websiteUrl: initialTeam.websiteUrl ?? "",
+        contactFirstName: initialTeam.contactFirstName ?? "",
+        contactLastName: initialTeam.contactLastName ?? "",
+        contactEmail: initialTeam.contactEmail ?? "",
+        contactPhone: initialTeam.contactPhone ?? "",
+        coachFirstName: initialTeam.coach?.firstName ?? "",
+        coachLastName: initialTeam.coach?.lastName ?? "",
+        coachEmail: initialTeam.coach?.email ?? "",
+        coachPhone: initialTeam.coach?.phone != null ? String(initialTeam.coach.phone) : "",
+        refereeFirstName: initialTeam.referee?.firstName ?? "",
+        refereeLastName: initialTeam.referee?.lastName ?? "",
+        refereeEmail: initialTeam.referee?.email ?? "",
+        refereePhone: initialTeam.referee?.phone != null ? String(initialTeam.referee.phone) : "",
+        staffFirstName: "",
+        staffLastName: "",
+      });
+    } else if (seasons.length > 0 && !isEdit) {
+      setSeasonId(seasons[0].id);
+    }
+  }, [seasons, isEdit, initialTeam, reset]);
+
+  const submitMutation = useMutation({
+    mutationFn: async (data: TeamFormValues) => {
+      const eff = seasonId || (isEdit && initialTeam ? initialTeam.seasonId : "");
+      if (!eff) {
+        throw new Error("Wybierz sezon przed zapisaniem drużyny.");
       }
-    }
-    fetchSeasons();
-  }, [isEdit, reset, seasonsLoadNonce]); // eslint-disable-line react-hooks/exhaustive-deps -- initialTeam only for edit, run once
 
-  const onSubmit = async (data: TeamFormValues) => {
-    setSubmitError(null);
+      let coachId: string | undefined = isEdit && initialTeam ? (initialTeam.coachId ?? undefined) : undefined;
+      let refereeId: string | undefined = isEdit && initialTeam ? (initialTeam.refereeId ?? undefined) : undefined;
 
-    if (!effectiveSeasonId) {
-      setSubmitError("Wybierz sezon przed zapisaniem drużyny.");
-      return;
-    }
-
-    let coachId: string | undefined =
-      isEdit && initialTeam ? (initialTeam.coachId ?? undefined) : data.coachId?.trim() || undefined;
-    let refereeId: string | undefined =
-      isEdit && initialTeam ? (initialTeam.refereeId ?? undefined) : data.refereeId?.trim() || undefined;
-
-    try {
-      // Create coach if "new" mode and required fields present (or edit with new coach data)
       if (data.coachFirstName?.trim() && data.coachLastName?.trim()) {
         const fn = (data.coachFirstName ?? "").trim();
         const ln = (data.coachLastName ?? "").trim();
-        const coachRes = await fetch("/api/coaches", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
+        const email = (data.coachEmail ?? "").trim() || null;
+        const phone = (data.coachPhone ?? "").trim() || null;
+        const matchesInitialCoach =
+          isEdit &&
+          initialTeam &&
+          Boolean(initialTeam.coachId) &&
+          fn === (initialTeam.coach?.firstName ?? "").trim() &&
+          ln === (initialTeam.coach?.lastName ?? "").trim() &&
+          email === ((initialTeam.coach?.email ?? "").trim() || null) &&
+          phone === ((initialTeam.coach?.phone != null ? String(initialTeam.coach.phone) : "").trim() || null);
+
+        if (matchesInitialCoach) {
+          coachId = initialTeam?.coachId ?? undefined;
+        } else {
+          const createdCoach = await createPersonnel("/api/coaches", {
             firstName: fn,
             lastName: ln,
-            email: (data.coachEmail ?? "").trim() || undefined,
-            phone: (data.coachPhone ?? "").trim() || undefined,
-            seasonId: effectiveSeasonId,
-          }),
-        });
-        if (!coachRes.ok) {
-          const err = await coachRes.json().catch(() => null);
-          throw new Error(err?.error?.formErrors?.[0] ?? "Nie udało się dodać trenera");
+            email,
+            phone,
+            seasonId: eff,
+          });
+          coachId = createdCoach.id;
         }
-        const createdCoach = await coachRes.json();
-        coachId = createdCoach.id;
       }
 
-      // Create referee if "new" mode and required fields present
       if (data.refereeFirstName?.trim() && data.refereeLastName?.trim()) {
         const fn = (data.refereeFirstName ?? "").trim();
         const ln = (data.refereeLastName ?? "").trim();
-        const refereeRes = await fetch("/api/referees", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
+        const email = (data.refereeEmail ?? "").trim() || null;
+        const phone = (data.refereePhone ?? "").trim() || null;
+        const matchesInitialReferee =
+          isEdit &&
+          initialTeam &&
+          Boolean(initialTeam.refereeId) &&
+          fn === (initialTeam.referee?.firstName ?? "").trim() &&
+          ln === (initialTeam.referee?.lastName ?? "").trim() &&
+          email === ((initialTeam.referee?.email ?? "").trim() || null) &&
+          phone === ((initialTeam.referee?.phone != null ? String(initialTeam.referee.phone) : "").trim() || null);
+
+        if (matchesInitialReferee) {
+          refereeId = initialTeam?.refereeId ?? undefined;
+        } else {
+          const createdReferee = await createPersonnel("/api/referees", {
             firstName: fn,
             lastName: ln,
-            email: (data.refereeEmail ?? "").trim() || undefined,
-            phone: (data.refereePhone ?? "").trim() || undefined,
-            seasonId: effectiveSeasonId,
-          }),
-        });
-        if (!refereeRes.ok) {
-          const err = await refereeRes.json().catch(() => null);
-          throw new Error(err?.error?.formErrors?.[0] ?? "Nie udało się dodać sędziego");
+            email,
+            phone,
+            seasonId: eff,
+          });
+          refereeId = createdReferee.id;
         }
-        const createdReferee = await refereeRes.json();
-        refereeId = createdReferee.id;
       }
 
       const staffPayload = staff
@@ -339,7 +345,6 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
           number: p.number.trim() !== "" && !Number.isNaN(Number(p.number)) ? Number(p.number) : undefined,
         }));
 
-      // Always send full players list when editing so backend replaces correctly
       const websiteUrl = data.websiteUrl?.trim() || undefined;
       const body = {
         name: data.name,
@@ -351,7 +356,7 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
         contactLastName: data.contactLastName,
         contactEmail: data.contactEmail,
         contactPhone: data.contactPhone,
-        seasonId: effectiveSeasonId,
+        seasonId: eff,
         coachId,
         refereeId,
         staff: staffPayload.length > 0 ? staffPayload : undefined,
@@ -359,33 +364,32 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
       };
 
       if (isEdit && initialTeam) {
-        const res = await fetch(`/api/teams/${initialTeam.id}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        });
-        if (!res.ok) {
-          const err = await res.json().catch(() => null);
-          throw new Error(err?.error?.formErrors?.[0] ?? "Nie udało się zaktualizować drużyny");
-        }
-        const updated: Team = await res.json();
-        onSuccess?.(updated);
-      } else {
-        const res = await fetch("/api/teams", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        });
-        if (!res.ok) {
-          const err = await res.json().catch(() => null);
-          throw new Error(err?.error?.formErrors?.[0] ?? "Nie udało się zapisać drużyny");
-        }
-        if (onSuccess) onSuccess();
-        else window.location.href = "/settings";
+        return updateTeamById(initialTeam.id, body);
       }
-    } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : "Wystąpił nieoczekiwany błąd");
-    }
+
+      return createTeam(body);
+    },
+    onSuccess: (updated) => {
+      const eff = seasonId || (isEdit && initialTeam ? initialTeam.seasonId : "");
+      if (eff) {
+        void queryClient.invalidateQueries({ queryKey: queryKeys.seasons.list() });
+        void queryClient.invalidateQueries({ queryKey: queryKeys.teams.bySeason(eff) });
+        void queryClient.invalidateQueries({ queryKey: queryKeys.referees.bySeason(eff) });
+        void queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.season(eff) });
+      }
+      if (initialTeam?.id) {
+        void queryClient.invalidateQueries({ queryKey: queryKeys.teams.detail(initialTeam.id) });
+      }
+      if (onSuccess) {
+        onSuccess(updated);
+      } else {
+        redirectToSettings();
+      }
+    },
+  });
+
+  const onSubmit = (data: TeamFormValues) => {
+    submitMutation.mutate(data);
   };
 
   // Register phone fields once and wrap onChange to sanitize input on type
@@ -418,14 +422,14 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
       </Typography>
 
       {seasonsLoadError ? (
-        <DataLoadAlert message={seasonsLoadError} onRetry={() => setSeasonsLoadNonce((n) => n + 1)} sx={{ mb: 2 }} />
+        <DataLoadAlert message={seasonsLoadError} onRetry={() => void refetchSeasons()} sx={{ mb: 2 }} />
       ) : null}
 
-      {submitError && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {submitError}
-        </Alert>
-      )}
+      {submitMutation.isError ? (
+        <Box sx={{ mb: 2 }}>
+          <MutationErrorAlert error={submitMutation.error} fallbackMessage="Nie udało się zapisać drużyny." />
+        </Box>
+      ) : null}
 
       <form onSubmit={handleSubmit(onSubmit)} noValidate>
         {/* Season selector */}
@@ -759,9 +763,15 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
             color="success"
             type="submit"
             fullWidth
-            disabled={isSubmitting || !effectiveSeasonId || seasons.length === 0}
+            disabled={isSubmitting || submitMutation.isPending || !effectiveSeasonId || seasons.length === 0}
           >
-            {isSubmitting ? <CircularProgress size={24} /> : isEdit ? "Zapisz zmiany" : "Zapisz Drużynę"}
+            {isSubmitting || submitMutation.isPending ? (
+              <CircularProgress size={24} />
+            ) : isEdit ? (
+              "Zapisz zmiany"
+            ) : (
+              "Zapisz Drużynę"
+            )}
           </Button>
         </Box>
       </form>

@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import type { Tournament } from "@/types";
-import { tournamentToTournamentFormDefaults } from "./tournamentFormMapping";
+import type { TournamentFormData } from "@/lib/validateInputs";
+import { tournamentDatesChangedForEdit, tournamentToTournamentFormDefaults } from "./tournamentFormMapping";
 
 describe("tournamentFormMapping", () => {
   it("parses address into street/zip/city and maps tournament defaults", () => {
@@ -82,5 +83,58 @@ describe("tournamentFormMapping", () => {
     expect(defaults.city).toBe("Poznan");
     expect(defaults.zipCode).toBe("61-001");
     expect(defaults.street).toBe("ul. Sportowa 10");
+  });
+
+  it("tournamentDatesChangedForEdit detects start/end calendar day changes", () => {
+    const base: Tournament = {
+      id: "t1",
+      name: "T",
+      startDate: "2024-05-10T00:00:00.000Z",
+      endDate: "2024-05-12T00:00:00.000Z",
+      seasonId: "s1",
+      teams: [],
+      referees: [],
+      classifiers: [],
+      volunteers: [],
+    };
+    const same: TournamentFormData = {
+      name: "T",
+      startDate: new Date(2024, 4, 10),
+      endDate: new Date(2024, 4, 12),
+      hotel: "h",
+      hotelCity: "c",
+      hotelZipCode: "00-000",
+      hotelStreet: "s",
+      mapLink: "",
+      city: "c",
+      zipCode: "00-000",
+      street: "s",
+      catering: "c",
+      parking: "",
+      hallName: "hall",
+      hallMapLink: "",
+    };
+    expect(tournamentDatesChangedForEdit(base, same)).toBe(false);
+
+    const changedStart = { ...same, startDate: new Date(2024, 4, 11) };
+    expect(tournamentDatesChangedForEdit(base, changedStart)).toBe(true);
+
+    const changedEnd = { ...same, endDate: new Date(2024, 4, 13) };
+    expect(tournamentDatesChangedForEdit(base, changedEnd)).toBe(true);
+  });
+
+  it("tournamentDatesChangedForEdit is false when form matches defaults for missing API endDate", () => {
+    const tournament: Tournament = {
+      id: "t1",
+      name: "T",
+      startDate: "2024-05-10T00:00:00.000Z",
+      seasonId: "s1",
+      teams: [],
+      referees: [],
+      classifiers: [],
+      volunteers: [],
+    };
+    const defaults = tournamentToTournamentFormDefaults(tournament);
+    expect(tournamentDatesChangedForEdit(tournament, defaults)).toBe(false);
   });
 });
