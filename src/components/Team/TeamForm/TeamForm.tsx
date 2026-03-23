@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, type ChangeEvent } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod/v4";
@@ -25,6 +25,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
 import AppShell from "@/components/AppShell/AppShell";
 import QueryProvider from "@/components/QueryProvider/QueryProvider";
+import {
+  buildPlayerPayloadFromRow,
+  normalizeText,
+} from "@/components/Team/shared/teamFormUtils";
+import { useEditableRows } from "@/components/Team/shared/useEditableRows";
 import DataLoadAlert from "@/components/ui/DataLoadAlert";
 import MutationErrorAlert from "@/components/ui/MutationErrorAlert";
 import { createPersonnel } from "@/lib/api/personnel";
@@ -50,7 +55,6 @@ import {
   MAX_SHORT_TEXT,
 } from "@/lib/validateInputs";
 
-// Validation schema matching the API contract
 const teamSchema = z.object({
   name: requiredTeamNameSchema,
   address: requiredAddressSchema,
@@ -61,7 +65,6 @@ const teamSchema = z.object({
   contactEmail: requiredEmailSchema,
   contactPhone: requiredPhoneSchema,
   websiteUrl: optionalWebsiteUrlSchema,
-  // Coach first/last name have custom required messages so max is chained inline
   coachFirstName: z
     .string()
     .min(1, "Imię trenera jest wymagane")
@@ -82,7 +85,6 @@ const teamSchema = z.object({
 
 type TeamFormValues = z.infer<typeof teamSchema>;
 
-// Subtle orange outline for required fields so user sees what is needed to save
 const requiredFieldSx = {
   "& .MuiOutlinedInput-notchedOutline": {
     borderColor: "rgba(237, 108, 2, 0.45)",
@@ -96,7 +98,6 @@ const requiredFieldSx = {
   },
 };
 
-// One row in the players list (inputs as strings)
 interface PlayerRow {
   id: string;
   firstName: string;
@@ -123,6 +124,42 @@ function redirectToSettings() {
   window.location.assign("/settings");
 }
 
+const toPlayerRow = (player: Team["players"][number]): PlayerRow => ({
+  id: player.id,
+  firstName: player.firstName,
+  lastName: player.lastName,
+  classification: player.classification != null ? String(player.classification) : "",
+  number: player.number != null ? String(player.number) : "",
+});
+
+const toStaffRow = (staffMember: Team["staff"][number]): StaffRow => ({
+  id: staffMember.id,
+  firstName: staffMember.firstName,
+  lastName: staffMember.lastName,
+});
+
+const toDefaultValues = (team: Team): TeamFormValues => ({
+  name: team.name ?? "",
+  address: team.address ?? "",
+  city: team.city ?? "",
+  postalCode: team.postalCode ?? "",
+  websiteUrl: team.websiteUrl ?? "",
+  contactFirstName: team.contactFirstName ?? "",
+  contactLastName: team.contactLastName ?? "",
+  contactEmail: team.contactEmail ?? "",
+  contactPhone: team.contactPhone ?? "",
+  coachFirstName: team.coach?.firstName ?? "",
+  coachLastName: team.coach?.lastName ?? "",
+  coachEmail: team.coach?.email ?? "",
+  coachPhone: team.coach?.phone != null ? String(team.coach.phone) : "",
+  refereeFirstName: team.referee?.firstName ?? "",
+  refereeLastName: team.referee?.lastName ?? "",
+  refereeEmail: team.referee?.email ?? "",
+  refereePhone: team.referee?.phone != null ? String(team.referee.phone) : "",
+  staffFirstName: "",
+  staffLastName: "",
+});
+
 export default function TeamForm() {
   return (
     <QueryProvider>
@@ -140,8 +177,20 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
   const isEdit = mode === "edit" && initialTeam;
 
   const [seasonId, setSeasonId] = useState<string>("");
-  const [players, setPlayers] = useState<PlayerRow[]>([]);
-  const [staff, setStaff] = useState<StaffRow[]>([]);
+  const {
+    rows: players,
+    setRows: setPlayers,
+    addRow: addPlayerRow,
+    removeRow: removePlayerRow,
+    updateRow: updatePlayerRow,
+  } = useEditableRows<PlayerRow>();
+  const {
+    rows: staff,
+    setRows: setStaff,
+    addRow: addStaffRow,
+    removeRow: removeStaffRow,
+    updateRow: updateStaffRow,
+  } = useEditableRows<StaffRow>();
 
   const {
     data: seasonsData,
@@ -154,47 +203,24 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
     queryFn: ({ signal }) => fetchSeasonsList(signal),
   });
 
-  const seasons = useMemo(() => seasonsData ?? [], [seasonsData]);
+  const seasons = seasonsData ?? [];
   const seasonsLoadError = seasonsQueryFailed && seasonsQueryError instanceof Error ? seasonsQueryError.message : null;
 
   const effectiveSeasonId = seasonId || (isEdit && initialTeam ? initialTeam.seasonId : "");
 
   const addPlayer = () =>
-    setPlayers((prev) => [
-      ...prev,
-      { id: crypto.randomUUID(), firstName: "", lastName: "", classification: "", number: "" },
-    ]);
-  const removePlayer = (id: string) => setPlayers((prev) => prev.filter((p) => p.id !== id));
+    addPlayerRow({ id: crypto.randomUUID(), firstName: "", lastName: "", classification: "", number: "" });
+  const removePlayer = (id: string) => removePlayerRow(id);
   const updatePlayer = (id: string, field: keyof PlayerRow, value: string) =>
-    setPlayers((prev) => prev.map((p) => (p.id === id ? { ...p, [field]: value } : p)));
+    updatePlayerRow(id, (player) => ({ ...player, [field]: value }));
 
-  const addStaff = () => setStaff((prev) => [...prev, { id: crypto.randomUUID(), firstName: "", lastName: "" }]);
-  const removeStaff = (id: string) => setStaff((prev) => prev.filter((s) => s.id !== id));
+  const addStaff = () => addStaffRow({ id: crypto.randomUUID(), firstName: "", lastName: "" });
+  const removeStaff = (id: string) => removeStaffRow(id);
   const updateStaff = (id: string, field: keyof StaffRow, value: string) =>
-    setStaff((prev) => prev.map((s) => (s.id === id ? { ...s, [field]: value } : s)));
+    updateStaffRow(id, (staffMember) => ({ ...staffMember, [field]: value }));
 
   const defaultFormValues: TeamFormValues = isEdit
-    ? {
-        name: initialTeam.name ?? "",
-        address: initialTeam.address ?? "",
-        city: initialTeam.city ?? "",
-        postalCode: initialTeam.postalCode ?? "",
-        websiteUrl: initialTeam.websiteUrl ?? "",
-        contactFirstName: initialTeam.contactFirstName ?? "",
-        contactLastName: initialTeam.contactLastName ?? "",
-        contactEmail: initialTeam.contactEmail ?? "",
-        contactPhone: initialTeam.contactPhone ?? "",
-        coachFirstName: initialTeam.coach?.firstName ?? "",
-        coachLastName: initialTeam.coach?.lastName ?? "",
-        coachEmail: initialTeam.coach?.email ?? "",
-        coachPhone: initialTeam.coach?.phone != null ? String(initialTeam.coach.phone) : "",
-        refereeFirstName: initialTeam.referee?.firstName ?? "",
-        refereeLastName: initialTeam.referee?.lastName ?? "",
-        refereeEmail: initialTeam.referee?.email ?? "",
-        refereePhone: initialTeam.referee?.phone != null ? String(initialTeam.referee.phone) : "",
-        staffFirstName: "",
-        staffLastName: "",
-      }
+    ? toDefaultValues(initialTeam)
     : {
         name: "",
         address: "",
@@ -222,43 +248,9 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
     if (!seasons.length) return;
     if (isEdit && initialTeam) {
       setSeasonId(initialTeam.seasonId);
-      setPlayers(
-        (initialTeam.players ?? []).map((p) => ({
-          id: p.id,
-          firstName: p.firstName,
-          lastName: p.lastName,
-          classification: p.classification != null ? String(p.classification) : "",
-          number: p.number != null ? String(p.number) : "",
-        }))
-      );
-      setStaff(
-        (initialTeam.staff ?? []).map((s) => ({
-          id: s.id,
-          firstName: s.firstName,
-          lastName: s.lastName,
-        }))
-      );
-      reset({
-        name: initialTeam.name ?? "",
-        address: initialTeam.address ?? "",
-        city: initialTeam.city ?? "",
-        postalCode: initialTeam.postalCode ?? "",
-        websiteUrl: initialTeam.websiteUrl ?? "",
-        contactFirstName: initialTeam.contactFirstName ?? "",
-        contactLastName: initialTeam.contactLastName ?? "",
-        contactEmail: initialTeam.contactEmail ?? "",
-        contactPhone: initialTeam.contactPhone ?? "",
-        coachFirstName: initialTeam.coach?.firstName ?? "",
-        coachLastName: initialTeam.coach?.lastName ?? "",
-        coachEmail: initialTeam.coach?.email ?? "",
-        coachPhone: initialTeam.coach?.phone != null ? String(initialTeam.coach.phone) : "",
-        refereeFirstName: initialTeam.referee?.firstName ?? "",
-        refereeLastName: initialTeam.referee?.lastName ?? "",
-        refereeEmail: initialTeam.referee?.email ?? "",
-        refereePhone: initialTeam.referee?.phone != null ? String(initialTeam.referee.phone) : "",
-        staffFirstName: "",
-        staffLastName: "",
-      });
+      setPlayers((initialTeam.players ?? []).map(toPlayerRow));
+      setStaff((initialTeam.staff ?? []).map(toStaffRow));
+      reset(toDefaultValues(initialTeam));
     } else if (seasons.length > 0 && !isEdit) {
       setSeasonId(seasons[0].id);
     }
@@ -274,11 +266,11 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
       let coachId: string | undefined = isEdit && initialTeam ? (initialTeam.coachId ?? undefined) : undefined;
       let refereeId: string | undefined = isEdit && initialTeam ? (initialTeam.refereeId ?? undefined) : undefined;
 
-      if (data.coachFirstName?.trim() && data.coachLastName?.trim()) {
-        const fn = (data.coachFirstName ?? "").trim();
-        const ln = (data.coachLastName ?? "").trim();
-        const email = (data.coachEmail ?? "").trim() || null;
-        const phone = (data.coachPhone ?? "").trim() || null;
+      if (normalizeText(data.coachFirstName) && normalizeText(data.coachLastName)) {
+        const fn = normalizeText(data.coachFirstName);
+        const ln = normalizeText(data.coachLastName);
+        const email = normalizeText(data.coachEmail) || null;
+        const phone = normalizeText(data.coachPhone) || null;
         const matchesInitialCoach =
           isEdit &&
           initialTeam &&
@@ -302,11 +294,11 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
         }
       }
 
-      if (data.refereeFirstName?.trim() && data.refereeLastName?.trim()) {
-        const fn = (data.refereeFirstName ?? "").trim();
-        const ln = (data.refereeLastName ?? "").trim();
-        const email = (data.refereeEmail ?? "").trim() || null;
-        const phone = (data.refereePhone ?? "").trim() || null;
+      if (normalizeText(data.refereeFirstName) && normalizeText(data.refereeLastName)) {
+        const fn = normalizeText(data.refereeFirstName);
+        const ln = normalizeText(data.refereeLastName);
+        const email = normalizeText(data.refereeEmail) || null;
+        const phone = normalizeText(data.refereePhone) || null;
         const matchesInitialReferee =
           isEdit &&
           initialTeam &&
@@ -331,21 +323,13 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
       }
 
       const staffPayload = staff
-        .filter((s) => s.firstName.trim() && s.lastName.trim())
-        .map((s) => ({ firstName: s.firstName.trim(), lastName: s.lastName.trim() }));
+        .filter((s) => normalizeText(s.firstName) && normalizeText(s.lastName))
+        .map((s) => ({ firstName: normalizeText(s.firstName), lastName: normalizeText(s.lastName) }));
       const playersPayload = players
-        .filter((p) => p.firstName.trim() && p.lastName.trim())
-        .map((p) => ({
-          firstName: p.firstName.trim(),
-          lastName: p.lastName.trim(),
-          classification:
-            p.classification.trim() !== "" && !Number.isNaN(Number(p.classification))
-              ? Number(p.classification)
-              : undefined,
-          number: p.number.trim() !== "" && !Number.isNaN(Number(p.number)) ? Number(p.number) : undefined,
-        }));
+        .filter((p) => normalizeText(p.firstName) && normalizeText(p.lastName))
+        .map(buildPlayerPayloadFromRow);
 
-      const websiteUrl = data.websiteUrl?.trim() || undefined;
+      const websiteUrl = normalizeText(data.websiteUrl) || undefined;
       const body = {
         name: data.name,
         address: data.address,
@@ -388,16 +372,13 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
     },
   });
 
-  const onSubmit = (data: TeamFormValues) => {
-    submitMutation.mutate(data);
-  };
+  const onSubmit = (data: TeamFormValues) => submitMutation.mutate(data);
 
-  // Register phone fields once and wrap onChange to sanitize input on type
   const makePhoneField = (name: "contactPhone" | "coachPhone" | "refereePhone") => {
     const field = register(name);
     return {
       ...field,
-      onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
+      onChange: (e: ChangeEvent<HTMLInputElement>) => {
         e.target.value = sanitizePhone(e.target.value);
         field.onChange(e);
       },

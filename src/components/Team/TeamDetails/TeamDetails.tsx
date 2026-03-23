@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Box,
   Typography,
@@ -24,6 +24,11 @@ import {
 } from "@mui/material";
 import AppShell from "@/components/AppShell/AppShell";
 import QueryProvider from "@/components/QueryProvider/QueryProvider";
+import {
+  buildPlayerPayloadFromEntity,
+  parseOptionalNumber,
+  toWebsiteHref,
+} from "@/components/Team/shared/teamFormUtils";
 import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
 import { TeamFormContent } from "@/components/Team/TeamForm/TeamForm";
 import TeamNewPlayer, { type PlayerRow } from "@/components/Team/TeamNewPlayer/TeamNewPlayer";
@@ -48,6 +53,13 @@ function getPlayerClassificationError(classification?: number) {
   const result = playerClassificationSchema.safeParse(classification);
   return result.success ? null : (result.error.issues[0]?.message ?? "Nieprawidłowa klasyfikacja");
 }
+
+const toEditForm = (player: Player) => ({
+  firstName: player.firstName,
+  lastName: player.lastName,
+  classification: player.classification != null ? String(player.classification) : "",
+  number: player.number != null ? String(player.number) : "",
+});
 
 /** Build PUT /api/teams/:id body from team and new players list (ids omitted; backend replaces all players). */
 function buildTeamUpdateBody(
@@ -113,7 +125,7 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
       lastName: string;
       classification?: number;
       number?: number;
-    }) => {
+    }[]) => {
       if (!team) throw new Error("Nie znaleziono drużyny");
       return updateTeamById(team.id, buildTeamUpdateBody(team, playersPayload));
     },
@@ -136,19 +148,6 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
   const [addingNewPlayer, setAddingNewPlayer] = useState(false);
   const [newPlayerForm, setNewPlayerForm] = useState<PlayerRow | null>(null);
   const [deleteTeamDialogOpen, setDeleteTeamDialogOpen] = useState(false);
-
-  useEffect(() => {
-    if (editingPlayer) {
-      setEditForm({
-        firstName: editingPlayer.firstName,
-        lastName: editingPlayer.lastName,
-        classification: editingPlayer.classification != null ? String(editingPlayer.classification) : "",
-        number: editingPlayer.number != null ? String(editingPlayer.number) : "",
-      });
-    } else {
-      setEditForm(null);
-    }
-  }, [editingPlayer]);
 
   if (loading) {
     return (
@@ -197,20 +196,15 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
 
   const deleteTeamErrorMessage = deleteTeamMutation.error instanceof Error ? deleteTeamMutation.error.message : null;
 
-  // const handleEditPlayer = (player: Player) => setEditingPlayer(player); good old code (before Code Rabbit)
   const handleEditPlayer = (player: Player) => {
     setEditingPlayer(player);
-    setEditForm({
-      firstName: player.firstName,
-      lastName: player.lastName,
-      classification: player.classification != null ? String(player.classification) : "",
-      number: player.number != null ? String(player.number) : "",
-    });
+    setEditForm(toEditForm(player));
   };
 
   const handleEditPlayerClose = () => {
     updatePlayersMutation.reset();
     setEditingPlayer(null);
+    setEditForm(null);
     setPlayerActionError(null);
   };
 
@@ -246,31 +240,20 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
       return;
     }
     const classification =
-      editForm.classification.trim() !== "" && !Number.isNaN(Number(editForm.classification.replace(",", ".")))
-        ? Number(editForm.classification.replace(",", "."))
-        : undefined;
+      parseOptionalNumber(editForm.classification);
     const classificationError = getPlayerClassificationError(classification);
     if (classificationError) {
       setPlayerActionError(classificationError);
       return;
     }
-    const number =
-      editForm.number.trim() !== "" && !Number.isNaN(Number(editForm.number)) ? Number(editForm.number) : undefined;
+    const number = parseOptionalNumber(editForm.number);
     const numberError = getPlayerNumberError(number);
     if (numberError) {
       setPlayerActionError(numberError);
       return;
     }
     const playersPayload = (team.players ?? []).map((p) =>
-      p.id === editingPlayer.id
-        ? { firstName, lastName, classification, number }
-        : {
-            firstName: p.firstName,
-            lastName: p.lastName,
-            // Prisma returns null for optional DB fields; Zod .optional() accepts only undefined
-            classification: p.classification ?? undefined,
-            number: p.number ?? undefined,
-          }
+      p.id === editingPlayer.id ? { firstName, lastName, classification, number } : buildPlayerPayloadFromEntity(p)
     );
     const success = await updateTeamPlayers(playersPayload);
     if (success) {
@@ -282,12 +265,7 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
     if (!team || !deleteConfirmPlayer) return;
     const playersPayload = (team.players ?? [])
       .filter((p) => p.id !== deleteConfirmPlayer.id)
-      .map((p) => ({
-        firstName: p.firstName,
-        lastName: p.lastName,
-        classification: p.classification ?? undefined,
-        number: p.number ?? undefined,
-      }));
+      .map(buildPlayerPayloadFromEntity);
     const success = await updateTeamPlayers(playersPayload);
     if (success) {
       handleDeleteConfirmClose();
@@ -333,12 +311,7 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
       return;
     }
     const playersPayload = [
-      ...(team.players ?? []).map((p) => ({
-        firstName: p.firstName,
-        lastName: p.lastName,
-        classification: p.classification ?? undefined,
-        number: p.number ?? undefined,
-      })),
+      ...(team.players ?? []).map(buildPlayerPayloadFromEntity),
       { firstName, lastName, classification, number },
     ];
     const success = await updateTeamPlayers(playersPayload);
@@ -377,11 +350,7 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
           </Typography>
           {team.websiteUrl ? (
             <Link
-              href={
-                team.websiteUrl.startsWith("http://") || team.websiteUrl.startsWith("https://")
-                  ? team.websiteUrl
-                  : `https://${team.websiteUrl}`
-              }
+              href={toWebsiteHref(team.websiteUrl)}
               target="_blank"
               rel="noreferrer"
               underline="hover"

@@ -17,6 +17,7 @@ import {
   playerClassificationSchema,
   playerNumberSchema,
 } from "@/lib/validateInputs";
+import { parseOptionalNumber } from "@/components/Team/shared/teamFormUtils";
 
 const playerSchema = z.object({
   firstName: requiredFirstNameSchema,
@@ -77,6 +78,11 @@ export default function TeamNewPlayer({
     onClose();
   };
 
+  const clearFieldError = (field: keyof PlayerErrors) => {
+    if (!formErrors[field]) return;
+    setFormErrors((prev) => ({ ...prev, [field]: undefined }));
+  };
+
   return (
     <Dialog open={open} onClose={playerActionLoading ? undefined : handleClose} maxWidth="xs" fullWidth>
       <DialogTitle>Dodaj zawodnika</DialogTitle>
@@ -87,68 +93,69 @@ export default function TeamNewPlayer({
           </Alert>
         )}
         {newPlayerForm && (
-          <>
-            {/* Inputs for the new player's details */}
-            <Grid container spacing={2} sx={{ pt: 1 }}>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <TextField
-                  label="Imię"
-                  value={newPlayerForm.firstName}
-                  onChange={(e) => setNewPlayerForm((form) => (form ? { ...form, firstName: e.target.value } : form))}
-                  fullWidth
-                  size="small"
-                  error={!!formErrors.firstName}
-                  helperText={formErrors.firstName}
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <TextField
-                  label="Nazwisko"
-                  value={newPlayerForm.lastName}
-                  onChange={(e) => setNewPlayerForm((form) => (form ? { ...form, lastName: e.target.value } : form))}
-                  fullWidth
-                  size="small"
-                  error={!!formErrors.lastName}
-                  helperText={formErrors.lastName}
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <TextField
-                  label="Klasyfikacja"
-                  type="number"
-                  inputProps={{ inputMode: "decimal" }}
-                  value={newPlayerForm.classification ?? ""}
-                  onChange={(e) => {
-                    const raw = e.target.value;
-                    const val = raw === "" ? null : Number(raw.replace(",", "."));
-                    setNewPlayerForm((form) =>
-                      form ? { ...form, classification: Number.isNaN(val) ? null : val } : form
-                    );
-                    if (formErrors.classification) setFormErrors((prev) => ({ ...prev, classification: undefined }));
-                  }}
-                  fullWidth
-                  size="small"
-                  error={!!formErrors.classification}
-                  helperText={formErrors.classification}
-                />
-              </Grid>
-              <Grid size={{ xs: 12, sm: 6 }}>
-                <TextField
-                  label="Numer"
-                  type="number"
-                  inputProps={{ inputMode: "numeric" }}
-                  value={newPlayerForm.number}
-                  onChange={(e) =>
-                    setNewPlayerForm((form) => (form ? { ...form, number: Number(e.target.value) } : form))
-                  }
-                  fullWidth
-                  size="small"
-                  error={!!formErrors.number}
-                  helperText={formErrors.number}
-                />
-              </Grid>
+          <Grid container spacing={2} sx={{ pt: 1 }}>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                label="Imię"
+                value={newPlayerForm.firstName}
+                onChange={(e) => {
+                  setNewPlayerForm((form) => (form ? { ...form, firstName: e.target.value } : form));
+                  clearFieldError("firstName");
+                }}
+                fullWidth
+                size="small"
+                error={!!formErrors.firstName}
+                helperText={formErrors.firstName}
+              />
             </Grid>
-          </>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                label="Nazwisko"
+                value={newPlayerForm.lastName}
+                onChange={(e) => {
+                  setNewPlayerForm((form) => (form ? { ...form, lastName: e.target.value } : form));
+                  clearFieldError("lastName");
+                }}
+                fullWidth
+                size="small"
+                error={!!formErrors.lastName}
+                helperText={formErrors.lastName}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                label="Klasyfikacja"
+                type="number"
+                inputProps={{ inputMode: "decimal" }}
+                value={newPlayerForm.classification ?? ""}
+                onChange={(e) => {
+                  const numericValue = parseOptionalNumber(e.target.value) ?? null;
+                  setNewPlayerForm((form) => (form ? { ...form, classification: numericValue } : form));
+                  clearFieldError("classification");
+                }}
+                fullWidth
+                size="small"
+                error={!!formErrors.classification}
+                helperText={formErrors.classification}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                label="Numer"
+                type="number"
+                inputProps={{ inputMode: "numeric" }}
+                value={newPlayerForm.number}
+                onChange={(e) => {
+                  setNewPlayerForm((form) => (form ? { ...form, number: Number(e.target.value) } : form));
+                  clearFieldError("number");
+                }}
+                fullWidth
+                size="small"
+                error={!!formErrors.number}
+                helperText={formErrors.number}
+              />
+            </Grid>
+          </Grid>
         )}
       </DialogContent>
       <DialogActions>
