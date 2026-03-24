@@ -228,6 +228,49 @@ Stack to: na razie tylko i wyłącznie HTML5 z jego walidacją formularzy, CSS3 
 
 Jest w pliku `.cursor/rules/shared.mdc`.
 
+## Ściąga: gdzie dodać nowy plik
+
+Ta ściąga pomaga szybko zdecydować, gdzie trzymać kod po refaktorze na `feature-first`.
+
+### Zasada główna
+
+- Jeśli kod dotyczy jednej funkcji biznesowej (np. drużyny, turnieje, ustawienia), wrzucaj go do `src/features/<moduł>/...`.
+- Jeśli kod jest naprawdę uniwersalny i używany w wielu miejscach, wrzucaj go do `src/components/ui` albo `src/lib`.
+
+### Gdzie co trafia
+
+- `src/features/teams/...`  
+  Kod tylko dla drużyn: formularze, widoki szczegółów, pomocnicze hooki i testy.
+- `src/features/tournaments/...`  
+  Kod tylko dla turniejów: lista, szczegóły, plan meczów, dialogi i testy.
+- `src/features/settings/...`  
+  Kod tylko dla ustawień sezonu: zarządzanie personelem, sezonami, formularze.
+- `src/components/ui/...`  
+  Wspólne komponenty UI bez logiki domenowej (np. alert, dialog potwierdzenia).
+- `src/lib/...`  
+  Wspólne helpery i logika techniczna (np. formatowanie dat, walidacje, query keys, api klient).
+
+### Szybki test decyzji (30 sekund)
+
+- Czy ten plik ma sens tylko w jednym module? -> `src/features/<moduł>`.
+- Czy ten plik będzie używany w wielu modułach bez zmian? -> `src/components/ui` lub `src/lib`.
+- Czy nazwa pliku brzmi domenowo (np. `TournamentDetailsPanel`)? -> `src/features/tournaments`.
+- Czy nazwa pliku brzmi generycznie (np. `ConfirmationDialog`)? -> `src/components/ui`.
+
+### Przykłady
+
+- `TeamForm.tsx` -> `src/features/teams/components/Team/TeamForm/TeamForm.tsx`
+- `TournamentDetails.tsx` -> `src/features/tournaments/components/Tournaments/TournamentDetails/TournamentDetails.tsx`
+- `SettingsPage.tsx` -> `src/features/settings/components/SettingsPage/SettingsPage.tsx`
+- `ConfirmationDialog.tsx` -> `src/components/ui/ConfirmationDialog.tsx`
+- `dateFormat.ts` -> `src/lib/dateFormat.ts`
+
+### Czego unikać
+
+- Nie mieszaj kodu domenowego w `src/components/ui`.
+- Nie twórz nowych plików `Team*`, `Tournament*`, `Season*` poza `src/features`.
+- Nie duplikuj helperów między modułami — jeśli helper jest wspólny, przenieś go do `src/lib`.
+
 ## Epic - duża część systemu (Epiki mają być funkcjonalne)
 
 ### Definition of Done (DoD)

@@ -30,8 +30,11 @@ Follow this layout when adding or changing code. When you change the structure, 
 - `./src/pages/api` - API endpoints
 - `./src/middleware/index.ts` - Astro middleware
 - `./src/types.ts` - Shared types (entities, DTOs) for backend and frontend
-- `./src/components` - Client components (Astro static, React dynamic)
-- `./src/components/ComponentName/` - Each component has its own folder with: `ComponentName.tsx`, `ComponentName.test.tsx`
+- `./src/features` - Feature-first app modules (business/domain UI and logic)
+- `./src/features/teams` - Teams module
+- `./src/features/tournaments` - Tournaments module
+- `./src/features/settings` - Settings module
+- `./src/components` - Shared app-level components (layout/providers) and generic UI
 - `./src/components/hooks` - Custom hooks
 - `./src/components/ui` - ui components
 - `./src/lib` - Services and helpers
@@ -66,6 +69,7 @@ When modifying the directory structure, always update this section.
 ### Coding conventions
 
 - **Imports:** Use absolute paths (e.g. `@/components`, `@/lib`) instead of relative (`../components`).
+- **Feature placement:** Domain-specific code goes to `src/features/<module>`. Only generic/reusable UI stays in `src/components/ui`.
 - **Commits:** Conventional Commits — `feat:`, `fix:`, `docs:`, `test:`, `refactor:`, `style:`.
 - **Async:** Prefer `async/await`.
 - **Code size:** Generate minimal length code.

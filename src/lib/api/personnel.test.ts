@@ -34,8 +34,9 @@ describe("personnel mutations", () => {
       createPersonnel("/api/referees", { firstName: "A", lastName: "B", seasonId: "s1", email: null, phone: null })
     ).resolves.toEqual(created);
 
-    const [, options] = fetchMock.mock.calls[0] as [string, RequestInit];
-    expect(options.method).toBe("POST");
+    const options = fetchMock.mock.calls[0]?.[1];
+    expect(options).toBeDefined();
+    expect((options as RequestInit).method).toBe("POST");
   });
 
   it("updates person via API helper", async () => {

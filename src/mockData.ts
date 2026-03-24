@@ -1,15 +1,15 @@
 import { Person, Tournament } from "./types";
 
 export const MOCK_REFEREES: Person[] = [
-  { id: "r1", firstName: "Sędzia", lastName: "Główny", email: "sedzia@rugby.pl", phone: 555666777 },
+  { id: "r1", firstName: "Sędzia", lastName: "Główny", email: "sedzia@rugby.pl", phone: "555666777" },
 ];
 
 export const MOCK_CLASSIFIERS: Person[] = [
-  { id: "c1", firstName: "Anna", lastName: "Klasyfikator", email: "anna@med.pl", phone: 444333222 },
+  { id: "c1", firstName: "Anna", lastName: "Klasyfikator", email: "anna@med.pl", phone: "444333222" },
 ];
 
 export const MOCK_VOLUNTEERS: Person[] = [
-  { id: "v1", firstName: "Tomek", lastName: "Pomocny", email: "tomek@vol.pl", phone: 111222333 },
+  { id: "v1", firstName: "Tomek", lastName: "Pomocny", email: "tomek@vol.pl", phone: "111222333" },
 ];
 
 export const MOCK_TOURNAMENTS: Tournament[] = [
@@ -33,9 +33,9 @@ export const MOCK_TOURNAMENTS: Tournament[] = [
       mapUrl: "https://maps.google.com",
     },
     teams: [],
-    referees: [{ id: "r1", firstName: "Sędzia", lastName: "Główny", email: "sedzia@rugby.pl", phone: 555666777 }],
-    classifiers: [{ id: "c1", firstName: "Anna", lastName: "Klasyfikator", email: "anna@med.pl", phone: 444333222 }],
-    volunteers: [{ id: "v1", firstName: "Tomek", lastName: "Pomocny", email: "tomek@vol.pl", phone: 111222333 }],
+    referees: [{ id: "r1", firstName: "Sędzia", lastName: "Główny", email: "sedzia@rugby.pl", phone: "555666777" }],
+    classifiers: [{ id: "c1", firstName: "Anna", lastName: "Klasyfikator", email: "anna@med.pl", phone: "444333222" }],
+    volunteers: [{ id: "v1", firstName: "Tomek", lastName: "Pomocny", email: "tomek@vol.pl", phone: "111222333" }],
     seasonId: "s1",
   },
 ];

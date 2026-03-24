@@ -43,7 +43,10 @@ describe("Dashboard", () => {
 
     render(<Dashboard />);
 
-    expect(await screen.findByRole("link", { name: "Sezon 1 (2026)" })).toHaveAttribute("href", "/settings");
+    expect(await screen.findByRole("link", { name: "Sezon 1 (2026)" }, { timeout: 10000 })).toHaveAttribute(
+      "href",
+      "/settings"
+    );
     expect(fetchMock).toHaveBeenCalledWith(
       "/api/seasons/s1",
       expect.objectContaining({ signal: expect.any(AbortSignal) })

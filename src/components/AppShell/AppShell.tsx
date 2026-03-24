@@ -78,7 +78,7 @@ function DrawerContent({
   onLogout: () => Promise<void>;
 }) {
   return (
-    <Box sx={{ width: DRAWER_WIDTH, p: 2 }}>
+    <Box sx={{ width: "100%", p: 2 }}>
       <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
         <Avatar sx={{ bgcolor: "primary.main", width: 40, height: 40 }}>
           <Trophy size={24} />
@@ -138,6 +138,7 @@ export default function AppShell({ children, currentPath }: AppShellProps) {
     <Box
       sx={{
         display: "flex",
+        width: "100%",
         minHeight: "100vh",
         bgcolor: "background.default",
       }}
@@ -146,6 +147,8 @@ export default function AppShell({ children, currentPath }: AppShellProps) {
         variant="permanent"
         sx={{
           display: { xs: "none", md: "block" },
+          width: DRAWER_WIDTH,
+          flexShrink: 0,
           "& .MuiDrawer-paper": {
             boxSizing: "border-box",
             width: DRAWER_WIDTH,
@@ -161,8 +164,7 @@ export default function AppShell({ children, currentPath }: AppShellProps) {
           display: "flex",
           flexDirection: "column",
           flex: 1,
-          width: "100%",
-          ml: { md: `${DRAWER_WIDTH}px` },
+          minWidth: 0,
         }}
       >
         <AppBar
@@ -199,6 +201,7 @@ export default function AppShell({ children, currentPath }: AppShellProps) {
             p: { xs: 2, md: 3 },
             pt: { xs: 3, md: 2 },
             maxWidth: "100%",
+            overflowX: "auto",
           }}
         >
           <Container maxWidth="lg">{children}</Container>
