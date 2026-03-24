@@ -1,6 +1,6 @@
 ---
 import Layout from "@/layouts/Layout.astro";
-import TournamentDetails from "@/components/Tournaments/TournamentDetails/TournamentDetails";
+import TournamentDetails from "@/features/tournaments/components/TournamentDetails/TournamentDetails";
 
 const { id } = Astro.params;
 if (!id) return Astro.redirect("/tournaments");
