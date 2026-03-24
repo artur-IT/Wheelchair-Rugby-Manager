@@ -1,10 +1,11 @@
 import { Grid, TextField, Typography } from "@mui/material";
-import type { FieldErrors, UseFormRegister, UseFormRegisterReturn } from "react-hook-form";
+import type { FieldErrors, FieldNamesMarkedBoolean, UseFormRegister, UseFormRegisterReturn } from "react-hook-form";
 import type { TeamFormValues } from "@/features/teams/components/Team/TeamForm/TeamForm";
 
 interface TeamContactSectionProps {
   register: UseFormRegister<TeamFormValues>;
   errors: FieldErrors<TeamFormValues>;
+  touchedFields: FieldNamesMarkedBoolean<TeamFormValues>;
   contactPhoneField: UseFormRegisterReturn;
   requiredFieldSx: object;
 }
@@ -12,6 +13,7 @@ interface TeamContactSectionProps {
 export default function TeamContactSection({
   register,
   errors,
+  touchedFields,
   contactPhoneField,
   requiredFieldSx,
 }: TeamContactSectionProps) {
@@ -26,8 +28,8 @@ export default function TeamContactSection({
             fullWidth
             label="Imię"
             {...register("contactFirstName")}
-            error={!!errors.contactFirstName}
-            helperText={errors.contactFirstName?.message}
+            error={Boolean(touchedFields.contactFirstName && errors.contactFirstName)}
+            helperText={touchedFields.contactFirstName ? errors.contactFirstName?.message : undefined}
             sx={requiredFieldSx}
           />
         </Grid>
@@ -36,8 +38,8 @@ export default function TeamContactSection({
             fullWidth
             label="Nazwisko"
             {...register("contactLastName")}
-            error={!!errors.contactLastName}
-            helperText={errors.contactLastName?.message}
+            error={Boolean(touchedFields.contactLastName && errors.contactLastName)}
+            helperText={touchedFields.contactLastName ? errors.contactLastName?.message : undefined}
             sx={requiredFieldSx}
           />
         </Grid>
@@ -46,8 +48,8 @@ export default function TeamContactSection({
             fullWidth
             label="Email"
             {...register("contactEmail")}
-            error={!!errors.contactEmail}
-            helperText={errors.contactEmail?.message}
+            error={Boolean(touchedFields.contactEmail && errors.contactEmail)}
+            helperText={touchedFields.contactEmail ? errors.contactEmail?.message : undefined}
             sx={requiredFieldSx}
           />
         </Grid>
@@ -58,8 +60,8 @@ export default function TeamContactSection({
             {...contactPhoneField}
             placeholder="9 cyfr"
             inputProps={{ inputMode: "numeric" }}
-            error={!!errors.contactPhone}
-            helperText={errors.contactPhone?.message}
+            error={Boolean(touchedFields.contactPhone && errors.contactPhone)}
+            helperText={touchedFields.contactPhone ? errors.contactPhone?.message : undefined}
             sx={requiredFieldSx}
           />
         </Grid>

@@ -15,11 +15,13 @@ describe("SeasonForm", () => {
     expect(screen.getByRole("heading", { name: "Nowy Sezon" })).toBeInTheDocument();
   });
 
-  it("shows validation errors after submit without required fields", async () => {
+  it("shows validation errors after blur on required fields", async () => {
     const user = userEvent.setup();
     render(<SeasonForm />);
 
-    await user.click(screen.getByRole("button", { name: "Zapisz Sezon" }));
+    await user.click(screen.getByLabelText("Nazwa Sezonu"));
+    await user.tab();
+    await user.tab();
 
     expect(await screen.findByText("Nazwa sezonu jest wymagana")).toBeInTheDocument();
     expect(screen.getByText("Rok sezonu jest wymagany")).toBeInTheDocument();

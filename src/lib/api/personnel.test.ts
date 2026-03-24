@@ -27,7 +27,7 @@ describe("personnel mutations", () => {
 
   it("creates person via API helper", async () => {
     const created = { id: "r1", firstName: "A", lastName: "B" };
-    const fetchMock = vi.fn(async (..._args: unknown[]) => new Response(JSON.stringify(created), { status: 200 }));
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify(created), { status: 200 }));
     vi.stubGlobal("fetch", fetchMock);
 
     await expect(

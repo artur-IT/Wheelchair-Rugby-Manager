@@ -9,10 +9,11 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { plPL } from "@mui/x-date-pickers/locales";
 import { pl } from "date-fns/locale";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, type FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import DataLoadAlert from "@/components/ui/DataLoadAlert";
 import { createTournament, fetchTournamentById, updateTournament } from "@/lib/api/tournaments";
+import { focusFirstFieldError } from "@/lib/forms/focusFirstFieldError";
 import { queryKeys } from "@/lib/queryKeys";
 import { tournamentFormSchema, type TournamentFormData } from "@/lib/validateInputs";
 import { tournamentDatesChangedForEdit, tournamentToTournamentFormDefaults } from "@/lib/tournamentFormMapping";
@@ -44,10 +45,13 @@ function TournamentFormContent({ tournamentId }: Props) {
   const {
     control,
     handleSubmit,
-    formState: { errors },
+    setFocus,
+    formState: { errors, touchedFields },
     reset,
   } = useForm<TournamentFormData>({
     resolver: zodResolver(tournamentFormSchema as never),
+    mode: "onBlur",
+    reValidateMode: "onBlur",
     defaultValues: {
       name: "",
       startDate: undefined,
@@ -119,6 +123,9 @@ function TournamentFormContent({ tournamentId }: Props) {
     setFormError(null);
     submitMutation.mutate(data);
   };
+  const onInvalid = (invalidErrors: FieldErrors<TournamentFormData>) => {
+    focusFirstFieldError(invalidErrors, setFocus);
+  };
 
   const isSubmitting = submitMutation.isPending;
 
@@ -148,7 +155,7 @@ function TournamentFormContent({ tournamentId }: Props) {
           <CircularProgress />
         </Box>
       ) : (
-        <form onSubmit={handleSubmit(onSubmit)}>
+        <form onSubmit={handleSubmit(onSubmit, onInvalid)}>
           <Grid container spacing={2} sx={{ mb: 3 }}>
             <Grid size={{ xs: 12 }}>
               <Controller
@@ -160,8 +167,8 @@ function TournamentFormContent({ tournamentId }: Props) {
                     fullWidth
                     label="Nazwa Turnieju"
                     placeholder="np. Turniej Jesienny"
-                    error={!!errors.name}
-                    helperText={errors.name?.message}
+                    error={Boolean(touchedFields.name && errors.name)}
+                    helperText={touchedFields.name ? errors.name?.message : undefined}
                   />
                 )}
               />
@@ -182,8 +189,8 @@ function TournamentFormContent({ tournamentId }: Props) {
                       label="Data Rozpoczęcia"
                       slotProps={{
                         textField: {
-                          error: !!errors.startDate,
-                          helperText: errors.startDate?.message,
+                          error: Boolean(touchedFields.startDate && errors.startDate),
+                          helperText: touchedFields.startDate ? errors.startDate?.message : undefined,
                           fullWidth: true,
                         },
                       }}
@@ -202,8 +209,8 @@ function TournamentFormContent({ tournamentId }: Props) {
                       label="Data Zakończenia"
                       slotProps={{
                         textField: {
-                          error: !!errors.endDate,
-                          helperText: errors.endDate?.message,
+                          error: Boolean(touchedFields.endDate && errors.endDate),
+                          helperText: touchedFields.endDate ? errors.endDate?.message : undefined,
                           fullWidth: true,
                         },
                       }}
@@ -229,8 +236,8 @@ function TournamentFormContent({ tournamentId }: Props) {
                     fullWidth
                     label="Hotel"
                     placeholder="Hotel"
-                    error={!!errors.hotel}
-                    helperText={errors.hotel?.message}
+                    error={Boolean(touchedFields.hotel && errors.hotel)}
+                    helperText={touchedFields.hotel ? errors.hotel?.message : undefined}
                   />
                 )}
               />
@@ -245,8 +252,8 @@ function TournamentFormContent({ tournamentId }: Props) {
                     fullWidth
                     label="Miasto"
                     placeholder="Miasto"
-                    error={!!errors.hotelCity}
-                    helperText={errors.hotelCity?.message}
+                    error={Boolean(touchedFields.hotelCity && errors.hotelCity)}
+                    helperText={touchedFields.hotelCity ? errors.hotelCity?.message : undefined}
                   />
                 )}
               />
@@ -261,8 +268,8 @@ function TournamentFormContent({ tournamentId }: Props) {
                     fullWidth
                     label="Kod pocztowy"
                     placeholder="XX-XXX"
-                    error={!!errors.hotelZipCode}
-                    helperText={errors.hotelZipCode?.message}
+                    error={Boolean(touchedFields.hotelZipCode && errors.hotelZipCode)}
+                    helperText={touchedFields.hotelZipCode ? errors.hotelZipCode?.message : undefined}
                   />
                 )}
               />
@@ -277,8 +284,8 @@ function TournamentFormContent({ tournamentId }: Props) {
                     fullWidth
                     label="Ulica"
                     placeholder="Ulica"
-                    error={!!errors.hotelStreet}
-                    helperText={errors.hotelStreet?.message}
+                    error={Boolean(touchedFields.hotelStreet && errors.hotelStreet)}
+                    helperText={touchedFields.hotelStreet ? errors.hotelStreet?.message : undefined}
                   />
                 )}
               />
@@ -293,8 +300,8 @@ function TournamentFormContent({ tournamentId }: Props) {
                     fullWidth
                     label="Link do Mapy"
                     placeholder="Jeśli nie podasz to zostanie wygenerowany automatycznie"
-                    error={!!errors.mapLink}
-                    helperText={errors.mapLink?.message}
+                    error={Boolean(touchedFields.mapLink && errors.mapLink)}
+                    helperText={touchedFields.mapLink ? errors.mapLink?.message : undefined}
                   />
                 )}
               />
@@ -309,8 +316,8 @@ function TournamentFormContent({ tournamentId }: Props) {
                     fullWidth
                     label="Wyżywienie"
                     placeholder="np. Hotel + Catering na hali"
-                    error={!!errors.catering}
-                    helperText={errors.catering?.message}
+                    error={Boolean(touchedFields.catering && errors.catering)}
+                    helperText={touchedFields.catering ? errors.catering?.message : undefined}
                   />
                 )}
               />
@@ -325,8 +332,8 @@ function TournamentFormContent({ tournamentId }: Props) {
                     fullWidth
                     label="Parking"
                     placeholder="Parking"
-                    error={!!errors.parking}
-                    helperText={errors.parking?.message}
+                    error={Boolean(touchedFields.parking && errors.parking)}
+                    helperText={touchedFields.parking ? errors.parking?.message : undefined}
                   />
                 )}
               />
@@ -347,8 +354,8 @@ function TournamentFormContent({ tournamentId }: Props) {
                     {...field}
                     fullWidth
                     label="Nazwa Hali"
-                    error={!!errors.hallName}
-                    helperText={errors.hallName?.message}
+                    error={Boolean(touchedFields.hallName && errors.hallName)}
+                    helperText={touchedFields.hallName ? errors.hallName?.message : undefined}
                   />
                 )}
               />
@@ -363,8 +370,8 @@ function TournamentFormContent({ tournamentId }: Props) {
                     fullWidth
                     label="Miasto"
                     placeholder="Miasto"
-                    error={!!errors.city}
-                    helperText={errors.city?.message}
+                    error={Boolean(touchedFields.city && errors.city)}
+                    helperText={touchedFields.city ? errors.city?.message : undefined}
                   />
                 )}
               />
@@ -379,8 +386,8 @@ function TournamentFormContent({ tournamentId }: Props) {
                     fullWidth
                     label="Kod pocztowy"
                     placeholder="XX-XXX"
-                    error={!!errors.zipCode}
-                    helperText={errors.zipCode?.message}
+                    error={Boolean(touchedFields.zipCode && errors.zipCode)}
+                    helperText={touchedFields.zipCode ? errors.zipCode?.message : undefined}
                   />
                 )}
               />
@@ -395,8 +402,8 @@ function TournamentFormContent({ tournamentId }: Props) {
                     fullWidth
                     label="Ulica"
                     placeholder="Ulica"
-                    error={!!errors.street}
-                    helperText={errors.street?.message}
+                    error={Boolean(touchedFields.street && errors.street)}
+                    helperText={touchedFields.street ? errors.street?.message : undefined}
                   />
                 )}
               />
@@ -411,8 +418,12 @@ function TournamentFormContent({ tournamentId }: Props) {
                     fullWidth
                     label="Link do Mapy (Hala)"
                     placeholder="Jeśli nie podasz to zostanie wygenerowany automatycznie"
-                    error={!!errors.hallMapLink}
-                    helperText={errors.hallMapLink?.message || "Zostanie wygenerowany automatycznie jeśli nie podasz"}
+                    error={Boolean(touchedFields.hallMapLink && errors.hallMapLink)}
+                    helperText={
+                      touchedFields.hallMapLink
+                        ? errors.hallMapLink?.message
+                        : "Zostanie wygenerowany automatycznie jeśli nie podasz"
+                    }
                   />
                 )}
               />

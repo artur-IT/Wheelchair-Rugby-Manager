@@ -2,7 +2,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import type { Person } from "@/types";
 import { createPersonnel, deletePersonnel, fetchPersonnelBySeason, updatePersonnel } from "@/lib/api/personnel";
-import type { PersonFormFields, PersonFormPayload, PersonnelConfig } from "@/features/settings/components/SettingsPage/types";
+import type {
+  PersonFormFields,
+  PersonFormPayload,
+  PersonnelConfig,
+} from "@/features/settings/components/SettingsPage/types";
 
 const toInitialValues = (person: Person | null): PersonFormFields | undefined =>
   person

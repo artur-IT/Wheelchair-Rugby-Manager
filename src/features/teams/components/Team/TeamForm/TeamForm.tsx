@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, type ChangeEvent } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, type FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod/v4";
 import {
@@ -32,6 +32,7 @@ import { useEditableRows } from "@/features/teams/components/Team/shared/useEdit
 import DataLoadAlert from "@/components/ui/DataLoadAlert";
 import MutationErrorAlert from "@/components/ui/MutationErrorAlert";
 import { createPersonnel } from "@/lib/api/personnel";
+import { focusFirstFieldError } from "@/lib/forms/focusFirstFieldError";
 import { fetchSeasonsList } from "@/lib/api/seasons";
 import { createTeam, updateTeamById } from "@/lib/api/teams";
 import { queryKeys } from "@/lib/queryKeys";
@@ -305,10 +306,13 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    setFocus,
+    formState: { errors, touchedFields, isSubmitting },
     reset,
   } = useForm<TeamFormValues>({
     resolver: zodResolver(teamSchema as never),
+    mode: "onBlur",
+    reValidateMode: "onBlur",
     defaultValues: defaultFormValues,
   });
 
@@ -404,6 +408,9 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
   });
 
   const onSubmit = (data: TeamFormValues) => submitMutation.mutate(data);
+  const onInvalid = (invalidErrors: FieldErrors<TeamFormValues>) => {
+    focusFirstFieldError(invalidErrors, setFocus);
+  };
 
   const makePhoneField = (name: "contactPhone" | "coachPhone" | "refereePhone") => {
     const field = register(name);
@@ -443,7 +450,7 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
         </Box>
       ) : null}
 
-      <form onSubmit={handleSubmit(onSubmit)} noValidate>
+      <form onSubmit={handleSubmit(onSubmit, onInvalid)} noValidate>
         {/* Season selector */}
         <FormControl fullWidth sx={{ mb: 3, ...requiredFieldSx }} error={seasons.length === 0}>
           <InputLabel>Sezon</InputLabel>
@@ -473,8 +480,8 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
               fullWidth
               label="Nazwa Drużyny"
               {...register("name")}
-              error={!!errors.name}
-              helperText={errors.name?.message}
+              error={Boolean(touchedFields.name && errors.name)}
+              helperText={touchedFields.name ? errors.name?.message : undefined}
               sx={requiredFieldSx}
             />
           </Grid>
@@ -483,8 +490,8 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
               fullWidth
               label="Adres"
               {...register("address")}
-              error={!!errors.address}
-              helperText={errors.address?.message}
+              error={Boolean(touchedFields.address && errors.address)}
+              helperText={touchedFields.address ? errors.address?.message : undefined}
               sx={requiredFieldSx}
             />
           </Grid>
@@ -493,8 +500,8 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
               fullWidth
               label="Miasto"
               {...register("city")}
-              error={!!errors.city}
-              helperText={errors.city?.message}
+              error={Boolean(touchedFields.city && errors.city)}
+              helperText={touchedFields.city ? errors.city?.message : undefined}
               sx={requiredFieldSx}
             />
           </Grid>
@@ -504,8 +511,8 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
               label="Kod pocztowy"
               placeholder="00-000"
               {...register("postalCode")}
-              error={!!errors.postalCode}
-              helperText={errors.postalCode?.message}
+              error={Boolean(touchedFields.postalCode && errors.postalCode)}
+              helperText={touchedFields.postalCode ? errors.postalCode?.message : undefined}
               sx={requiredFieldSx}
             />
           </Grid>
@@ -514,8 +521,8 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
               fullWidth
               label="Strona internetowa (opcjonalnie)"
               {...register("websiteUrl")}
-              error={!!errors.websiteUrl}
-              helperText={errors.websiteUrl?.message}
+              error={Boolean(touchedFields.websiteUrl && errors.websiteUrl)}
+              helperText={touchedFields.websiteUrl ? errors.websiteUrl?.message : undefined}
             />
           </Grid>
         </Grid>
@@ -523,6 +530,7 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
         <TeamContactSection
           register={register}
           errors={errors}
+          touchedFields={touchedFields}
           contactPhoneField={contactPhoneField}
           requiredFieldSx={requiredFieldSx}
         />
@@ -532,11 +540,17 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
         <TeamCoachSection
           register={register}
           errors={errors}
+          touchedFields={touchedFields}
           coachPhoneField={coachPhoneField}
           requiredFieldSx={requiredFieldSx}
         />
 
-        <TeamRefereeSection register={register} errors={errors} refereePhoneField={refereePhoneField} />
+        <TeamRefereeSection
+          register={register}
+          errors={errors}
+          touchedFields={touchedFields}
+          refereePhoneField={refereePhoneField}
+        />
 
         <Divider sx={{ my: 2 }} />
 

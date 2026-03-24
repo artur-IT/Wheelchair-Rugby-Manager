@@ -12,7 +12,10 @@ import TournamentMatchesPlanPanel from "@/features/tournaments/components/Tourna
 import TournamentRefereePlanPanel from "@/features/tournaments/components/Tournaments/TournamentDetails/TournamentRefereePlanPanel";
 import TournamentTeamsPanel from "@/features/tournaments/components/Tournaments/TournamentDetails/TournamentTeamsPanel";
 import TournamentPersonnelPanels from "@/features/tournaments/components/Tournaments/TournamentDetails/TournamentPersonnelPanels";
-import { AddMatchDialog, EditMatchDialog } from "@/features/tournaments/components/Tournaments/TournamentDetails/dialogs/MatchPlanDialogs";
+import {
+  AddMatchDialog,
+  EditMatchDialog,
+} from "@/features/tournaments/components/Tournaments/TournamentDetails/dialogs/MatchPlanDialogs";
 import {
   AddRefereePlanDialog,
   EditRefereePlanDialog,

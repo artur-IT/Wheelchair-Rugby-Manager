@@ -1,14 +1,20 @@
 import { Grid, TextField, Typography } from "@mui/material";
-import type { FieldErrors, UseFormRegister, UseFormRegisterReturn } from "react-hook-form";
+import type { FieldErrors, FieldNamesMarkedBoolean, UseFormRegister, UseFormRegisterReturn } from "react-hook-form";
 import type { TeamFormValues } from "@/features/teams/components/Team/TeamForm/TeamForm";
 
 interface TeamRefereeSectionProps {
   register: UseFormRegister<TeamFormValues>;
   errors: FieldErrors<TeamFormValues>;
+  touchedFields: FieldNamesMarkedBoolean<TeamFormValues>;
   refereePhoneField: UseFormRegisterReturn;
 }
 
-export default function TeamRefereeSection({ register, errors, refereePhoneField }: TeamRefereeSectionProps) {
+export default function TeamRefereeSection({
+  register,
+  errors,
+  touchedFields,
+  refereePhoneField,
+}: TeamRefereeSectionProps) {
   return (
     <>
       <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 2 }}>
@@ -20,8 +26,8 @@ export default function TeamRefereeSection({ register, errors, refereePhoneField
             fullWidth
             label="Imię"
             {...register("refereeFirstName")}
-            error={!!errors.refereeFirstName}
-            helperText={errors.refereeFirstName?.message}
+            error={Boolean(touchedFields.refereeFirstName && errors.refereeFirstName)}
+            helperText={touchedFields.refereeFirstName ? errors.refereeFirstName?.message : undefined}
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }}>
@@ -29,8 +35,8 @@ export default function TeamRefereeSection({ register, errors, refereePhoneField
             fullWidth
             label="Nazwisko"
             {...register("refereeLastName")}
-            error={!!errors.refereeLastName}
-            helperText={errors.refereeLastName?.message}
+            error={Boolean(touchedFields.refereeLastName && errors.refereeLastName)}
+            helperText={touchedFields.refereeLastName ? errors.refereeLastName?.message : undefined}
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }}>
@@ -38,8 +44,8 @@ export default function TeamRefereeSection({ register, errors, refereePhoneField
             fullWidth
             label="Email (opcjonalnie)"
             {...register("refereeEmail")}
-            error={!!errors.refereeEmail}
-            helperText={errors.refereeEmail?.message}
+            error={Boolean(touchedFields.refereeEmail && errors.refereeEmail)}
+            helperText={touchedFields.refereeEmail ? errors.refereeEmail?.message : undefined}
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }}>
@@ -49,8 +55,8 @@ export default function TeamRefereeSection({ register, errors, refereePhoneField
             {...refereePhoneField}
             placeholder="9 cyfr"
             inputProps={{ inputMode: "numeric" }}
-            error={!!errors.refereePhone}
-            helperText={errors.refereePhone?.message}
+            error={Boolean(touchedFields.refereePhone && errors.refereePhone)}
+            helperText={touchedFields.refereePhone ? errors.refereePhone?.message : undefined}
           />
         </Grid>
       </Grid>

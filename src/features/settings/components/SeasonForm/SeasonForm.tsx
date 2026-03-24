@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, type FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod/v4";
 import { Box, Button, TextField, Typography, Paper, CircularProgress } from "@mui/material";
@@ -10,6 +10,7 @@ import QueryProvider from "@/components/QueryProvider/QueryProvider";
 import DataLoadAlert from "@/components/ui/DataLoadAlert";
 import MutationErrorAlert from "@/components/ui/MutationErrorAlert";
 import { createSeason, fetchSeasonById, updateSeason, type SeasonUpsertBody } from "@/lib/api/seasons";
+import { focusFirstFieldError } from "@/lib/forms/focusFirstFieldError";
 import { queryKeys } from "@/lib/queryKeys";
 import { requiredSeasonNameSchema } from "@/lib/validateInputs";
 
@@ -56,9 +57,14 @@ function SeasonFormContent({ id }: Props) {
   const {
     register,
     handleSubmit,
+    setFocus,
     reset,
-    formState: { errors, isSubmitting },
-  } = useForm<SeasonFormValues>({ resolver: zodResolver(seasonSchema as never) });
+    formState: { errors, touchedFields, isSubmitting },
+  } = useForm<SeasonFormValues>({
+    resolver: zodResolver(seasonSchema as never),
+    mode: "onBlur",
+    reValidateMode: "onBlur",
+  });
 
   const {
     data: seasonData,
@@ -97,6 +103,9 @@ function SeasonFormContent({ id }: Props) {
   });
 
   const onSubmit = (data: SeasonFormValues) => submitMutation.mutate(data);
+  const onInvalid = (invalidErrors: FieldErrors<SeasonFormValues>) => {
+    focusFirstFieldError(invalidErrors, setFocus);
+  };
   const isSaveDisabled = isSubmitting || submitMutation.isPending;
 
   if (loading && isEdit) {
@@ -127,21 +136,21 @@ function SeasonFormContent({ id }: Props) {
         </Box>
       ) : null}
 
-      <form onSubmit={handleSubmit(onSubmit)} noValidate>
+      <form onSubmit={handleSubmit(onSubmit, onInvalid)} noValidate>
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mb: 3 }}>
           <TextField
             fullWidth
             label="Nazwa Sezonu"
             {...register("name")}
-            error={!!errors.name}
-            helperText={errors.name?.message}
+            error={Boolean(touchedFields.name && errors.name)}
+            helperText={touchedFields.name ? errors.name?.message : undefined}
           />
           <TextField
             fullWidth
             label="Rok"
             {...register("year")}
-            error={!!errors.year}
-            helperText={errors.year?.message}
+            error={Boolean(touchedFields.year && errors.year)}
+            helperText={touchedFields.year ? errors.year?.message : undefined}
           />
           <TextField
             fullWidth
@@ -149,8 +158,8 @@ function SeasonFormContent({ id }: Props) {
             multiline
             rows={3}
             {...register("description")}
-            error={!!errors.description}
-            helperText={errors.description?.message ?? "Opcjonalnie"}
+            error={Boolean(touchedFields.description && errors.description)}
+            helperText={touchedFields.description ? errors.description?.message : "Opcjonalnie"}
           />
         </Box>
 
