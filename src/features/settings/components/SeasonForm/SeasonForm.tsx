@@ -59,7 +59,7 @@ function SeasonFormContent({ id }: Props) {
     handleSubmit,
     setFocus,
     reset,
-    formState: { errors, touchedFields, isSubmitting },
+    formState: { errors, touchedFields, isSubmitted, isSubmitting },
   } = useForm<SeasonFormValues>({
     resolver: zodResolver(seasonSchema as never),
     mode: "onBlur",
@@ -142,15 +142,15 @@ function SeasonFormContent({ id }: Props) {
             fullWidth
             label="Nazwa Sezonu"
             {...register("name")}
-            error={Boolean(touchedFields.name && errors.name)}
-            helperText={touchedFields.name ? errors.name?.message : undefined}
+            error={Boolean((touchedFields.name || isSubmitted) && errors.name)}
+            helperText={touchedFields.name || isSubmitted ? errors.name?.message : undefined}
           />
           <TextField
             fullWidth
             label="Rok"
             {...register("year")}
-            error={Boolean(touchedFields.year && errors.year)}
-            helperText={touchedFields.year ? errors.year?.message : undefined}
+            error={Boolean((touchedFields.year || isSubmitted) && errors.year)}
+            helperText={touchedFields.year || isSubmitted ? errors.year?.message : undefined}
           />
           <TextField
             fullWidth
@@ -158,8 +158,8 @@ function SeasonFormContent({ id }: Props) {
             multiline
             rows={3}
             {...register("description")}
-            error={Boolean(touchedFields.description && errors.description)}
-            helperText={touchedFields.description ? errors.description?.message : "Opcjonalnie"}
+            error={Boolean((touchedFields.description || isSubmitted) && errors.description)}
+            helperText={touchedFields.description || isSubmitted ? errors.description?.message : "Opcjonalnie"}
           />
         </Box>
 

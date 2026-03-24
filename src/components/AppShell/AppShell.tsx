@@ -141,7 +141,6 @@ export default function AppShell({ children, currentPath }: AppShellProps) {
         width: "100%",
         minHeight: "100vh",
         bgcolor: "background.default",
-        overflowX: "hidden",
       }}
     >
       <Drawer
@@ -202,6 +201,7 @@ export default function AppShell({ children, currentPath }: AppShellProps) {
             p: { xs: 2, md: 3 },
             pt: { xs: 3, md: 2 },
             maxWidth: "100%",
+            overflowX: "auto",
           }}
         >
           <Container maxWidth="lg">{children}</Container>
