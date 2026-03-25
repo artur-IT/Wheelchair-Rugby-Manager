@@ -4,6 +4,8 @@ import type { ClassifierPlanEntry, UpsertClassifierPlanEntryDto } from "@/types"
 function normalizeClassification(value: number | undefined) {
   if (value == null) return null;
   if (!Number.isFinite(value)) throw new Error("INVALID_CLASSIFICATION");
+  if (value < 0 || value > 4) throw new Error("INVALID_CLASSIFICATION");
+  if (!Number.isInteger(value * 2)) throw new Error("INVALID_CLASSIFICATION");
   return value;
 }
 
@@ -90,6 +92,7 @@ export async function listClassifierPlanForTournament(tournamentId: string): Pro
       scheduledAt: true,
       endsAt: true,
       result: true,
+      observation: true,
     },
   });
 
@@ -104,6 +107,7 @@ export async function listClassifierPlanForTournament(tournamentId: string): Pro
       scheduledAt: start.toISOString(),
       endsAt: end.toISOString(),
       classification: exam.result ?? undefined,
+      observation: exam.observation,
     };
   });
 }
@@ -132,6 +136,7 @@ export async function createClassifierPlanEntryForTournament(
       scheduledAt,
       endsAt,
       result: normalizeClassification(input.classification),
+      observation: input.observation ?? false,
     },
     select: { id: true },
   });
@@ -167,6 +172,7 @@ export async function updateClassifierPlanEntryForTournament(
       scheduledAt,
       endsAt,
       result: normalizeClassification(input.classification),
+      observation: input.observation ?? false,
     },
   });
 

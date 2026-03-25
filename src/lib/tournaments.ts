@@ -13,7 +13,6 @@ export async function createTournamentWithDetails(form: TournamentFormData) {
   }
 
   const hotelAddress = `${form.hotelStreet}, ${form.hotelZipCode} ${form.hotelCity}`;
-  const hallAddress = `${form.street}, ${form.zipCode} ${form.city}`;
 
   return prisma.$transaction(async (tx) => {
     const tournament = await tx.tournament.create({
@@ -38,7 +37,6 @@ export async function createTournamentWithDetails(form: TournamentFormData) {
     await tx.sportsHall.create({
       data: {
         name: form.hallName,
-        address: hallAddress,
         city: form.city || null,
         street: form.street || null,
         postalCode: form.zipCode || null,
@@ -100,7 +98,11 @@ export async function listTournamentsWithDetails(): Promise<Tournament[]> {
         ? {
             id: primaryVenue.id,
             name: primaryVenue.name,
-            address: primaryVenue.address ?? undefined,
+            address:
+              [primaryVenue.street, `${primaryVenue.postalCode ?? ""} ${primaryVenue.city ?? ""}`.trim()]
+                .map((v) => (v ?? "").trim())
+                .filter(Boolean)
+                .join(", ") || undefined,
             city: primaryVenue.city ?? undefined,
             street: primaryVenue.street ?? undefined,
             postalCode: primaryVenue.postalCode ?? undefined,
@@ -172,7 +174,6 @@ export async function listTournamentsWithDetails(): Promise<Tournament[]> {
 /** Updates tournament basic details plus accommodation, hall and meal plan. */
 export async function updateTournamentWithDetails(tournamentId: string, form: TournamentFormData) {
   const hotelAddress = `${form.hotelStreet}, ${form.hotelZipCode} ${form.hotelCity}`;
-  const hallAddress = `${form.street}, ${form.zipCode} ${form.city}`;
 
   return prisma.$transaction(async (tx) => {
     const existing = await tx.tournament.findUnique({
@@ -211,7 +212,6 @@ export async function updateTournamentWithDetails(tournamentId: string, form: To
     await tx.sportsHall.create({
       data: {
         name: form.hallName,
-        address: hallAddress,
         city: form.city || null,
         street: form.street || null,
         postalCode: form.zipCode || null,

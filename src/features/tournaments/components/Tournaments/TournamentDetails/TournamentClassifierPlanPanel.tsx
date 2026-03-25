@@ -18,7 +18,14 @@ import type { Tournament } from "@/types";
 
 interface TournamentClassifierPlanPanelProps {
   tournament: Tournament;
-  rows: { examId: string; playerId: string; scheduledAt: string; endsAt: string; classification?: number }[];
+  rows: {
+    examId: string;
+    playerId: string;
+    scheduledAt: string;
+    endsAt: string;
+    classification?: number;
+    observation: boolean;
+  }[];
   loading: boolean;
   error: string | null;
   onRetry?: () => void;
@@ -37,6 +44,11 @@ interface TournamentClassifierPlanPanelProps {
 function toDayTimestamp(iso: string) {
   const d = new Date(iso);
   return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+}
+
+function formatClassification(value: number | undefined) {
+  if (value == null) return "—";
+  return value.toFixed(1);
 }
 
 export default function TournamentClassifierPlanPanel({
@@ -183,6 +195,7 @@ export default function TournamentClassifierPlanPanel({
                             <TableCell align="center">Start badania</TableCell>
                             <TableCell align="center">Koniec badania</TableCell>
                             <TableCell align="center">Klasyfikacja</TableCell>
+                            <TableCell align="center">Obserwacja</TableCell>
                             <TableCell align="center">Drużyna</TableCell>
                           </TableRow>
                         </TableHead>
@@ -211,7 +224,8 @@ export default function TournamentClassifierPlanPanel({
                                     hour12: false,
                                   })}
                                 </TableCell>
-                                <TableCell align="center">{row.classification ?? "—"}</TableCell>
+                                <TableCell align="center">{formatClassification(row.classification)}</TableCell>
+                                <TableCell align="center">{row.observation ? "Tak" : "Nie"}</TableCell>
                                 <TableCell align="center">{teamName ?? "—"}</TableCell>
                               </TableRow>
                             );

@@ -302,6 +302,7 @@ model ClassificationExam {
   endsAt       DateTime?
   location     String?
   result       Float?
+  observation  Boolean    @default(false)
   notes        String?
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt

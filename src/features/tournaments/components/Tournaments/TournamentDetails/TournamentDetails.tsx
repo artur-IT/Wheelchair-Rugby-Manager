@@ -17,9 +17,7 @@ import {
   AddMatchDialog,
   EditMatchDialog,
 } from "@/features/tournaments/components/Tournaments/TournamentDetails/dialogs/MatchPlanDialogs";
-import {
-  AddRefereePlanDialog,
-} from "@/features/tournaments/components/Tournaments/TournamentDetails/dialogs/RefereePlanDialogs";
+import { AddRefereePlanDialog } from "@/features/tournaments/components/Tournaments/TournamentDetails/dialogs/RefereePlanDialogs";
 import {
   AddClassifierPlanDialog,
   EditClassifierPlanDialog,

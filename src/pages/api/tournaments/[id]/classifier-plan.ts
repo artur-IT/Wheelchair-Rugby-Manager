@@ -10,8 +10,10 @@ const UpsertClassifierPlanSchema = z.object({
   classification: z
     .number()
     .min(0, "Klasyfikacja nie może być ujemna")
-    .max(10, "Maksymalna klasyfikacja to 10")
+    .max(4, "Maksymalna klasyfikacja to 4")
+    .refine((v) => Number.isInteger(v * 2), "Klasyfikacja musi mieć krok 0.5")
     .optional(),
+  observation: z.boolean().optional(),
 });
 
 export const GET: APIRoute = async ({ params }) => {

@@ -160,6 +160,7 @@ export interface ClassifierPlanEntry {
   scheduledAt: string;
   endsAt: string;
   classification?: number;
+  observation: boolean;
 }
 
 export interface UpsertClassifierPlanEntryDto {
@@ -167,6 +168,7 @@ export interface UpsertClassifierPlanEntryDto {
   scheduledAt: string; // ISO
   endsAt: string; // ISO
   classification?: number;
+  observation?: boolean;
 }
 
 export interface Volunteer {

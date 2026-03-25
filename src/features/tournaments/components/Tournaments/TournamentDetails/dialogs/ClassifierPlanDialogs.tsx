@@ -78,7 +78,7 @@ export function AddClassifierPlanDialog({ addClassifierPlan, tournament }: AddCl
         <Box
           sx={{
             display: "grid",
-            gridTemplateColumns: { xs: "1fr", sm: "1fr 150px 150px 160px" },
+            gridTemplateColumns: { xs: "1fr", sm: "1fr 150px 150px 160px 160px" },
             gap: 1.5,
             alignItems: "end",
             mb: 2,
@@ -116,8 +116,18 @@ export function AddClassifierPlanDialog({ addClassifierPlan, tournament }: AddCl
             value={addClassifierPlan.classification}
             onChange={(e) => addClassifierPlan.setClassification(e.target.value)}
             size="small"
-            inputProps={{ step: "0.5", min: "0", max: "10" }}
+            inputProps={{ step: "0.5", min: "0", max: "4" }}
           />
+          <TextField
+            select
+            label="Obserwacja"
+            value={addClassifierPlan.observation ? "yes" : "no"}
+            onChange={(e) => addClassifierPlan.setObservation(String(e.target.value) === "yes")}
+            size="small"
+          >
+            <MenuItem value="yes">Tak</MenuItem>
+            <MenuItem value="no">Nie</MenuItem>
+          </TextField>
         </Box>
 
         <TextField
@@ -215,6 +225,7 @@ export function EditClassifierPlanDialog({ editClassifierPlan, tournament }: Edi
                 <TableCell align="center">Start</TableCell>
                 <TableCell align="center">Koniec</TableCell>
                 <TableCell align="center">Klasyfikacja</TableCell>
+                <TableCell align="center">Obserwacja</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -308,8 +319,26 @@ export function EditClassifierPlanDialog({ editClassifierPlan, tournament }: Edi
                         )
                       }
                       size="small"
-                      inputProps={{ step: "0.5", min: "0", max: "10" }}
+                      inputProps={{ step: "0.5", min: "0", max: "4" }}
                     />
+                  </TableCell>
+                  <TableCell sx={{ minWidth: 160 }}>
+                    <TextField
+                      select
+                      label="Obserwacja"
+                      value={draft.observation ? "yes" : "no"}
+                      onChange={(e) => {
+                        const observation = String(e.target.value) === "yes";
+                        editClassifierPlan.setDrafts((prev) =>
+                          prev.map((d, i) => (i === idx ? { ...d, observation } : d))
+                        );
+                      }}
+                      size="small"
+                      fullWidth
+                    >
+                      <MenuItem value="yes">Tak</MenuItem>
+                      <MenuItem value="no">Nie</MenuItem>
+                    </TextField>
                   </TableCell>
                 </TableRow>
               ))}

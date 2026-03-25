@@ -28,6 +28,7 @@ interface TournamentClassifierPlanPayload {
   scheduledAt: string;
   endsAt: string;
   classification?: number;
+  observation?: boolean;
 }
 
 /** GET /api/tournaments/:id — 404 returns null (details screen). */

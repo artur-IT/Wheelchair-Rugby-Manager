@@ -21,6 +21,7 @@ interface ClassifierPlanDraft {
   startTime: string;
   endTime: string;
   classification: string;
+  observation: boolean;
 }
 
 interface DialogControls {
@@ -40,6 +41,8 @@ interface AddClassifierPlanControls extends DialogControls {
   setEndTime: (value: string) => void;
   classification: string;
   setClassification: (value: string) => void;
+  observation: boolean;
+  setObservation: (value: boolean) => void;
   search: string;
   setSearch: (value: string) => void;
   dayOptions: MatchDayOption[];
@@ -73,6 +76,7 @@ interface ClassifierPlanManager {
     scheduledAt: string;
     endsAt: string;
     classification?: number;
+    observation: boolean;
   }[];
   classifierPlanLoading: boolean;
   classifierPlanError: string | null;
@@ -87,6 +91,10 @@ interface ClassifierPlanManager {
 
 const DEFAULT_START = "10:00";
 const EXAM_DURATION_MINUTES = 30;
+
+function isValidClassification(value: number) {
+  return value >= 0 && value <= 4 && Number.isInteger(value * 2);
+}
 
 function getEnd(startTime: string) {
   const startMinutes = timeToMinutes(startTime);
@@ -135,6 +143,7 @@ export default function useClassifierPlanManager({
   const [addStartTime, setAddStartTime] = useState(DEFAULT_START);
   const [addEndTime, setAddEndTime] = useState(getEnd(DEFAULT_START));
   const [addClassification, setAddClassification] = useState("");
+  const [addObservation, setAddObservation] = useState(false);
   const [addSearch, setAddSearch] = useState("");
   const [allowedAddDays, setAllowedAddDays] = useState<number[] | null>(null);
 
@@ -144,7 +153,13 @@ export default function useClassifierPlanManager({
   const [editDrafts, setEditDrafts] = useState<ClassifierPlanDraft[]>([]);
 
   const createMutation = useMutation({
-    mutationFn: (payload: { playerId: string; scheduledAt: string; endsAt: string; classification?: number }) => {
+    mutationFn: (payload: {
+      playerId: string;
+      scheduledAt: string;
+      endsAt: string;
+      classification?: number;
+      observation?: boolean;
+    }) => {
       if (!tid) throw new Error("Brak turnieju");
       return createTournamentClassifierPlanEntry(tid, payload);
     },
@@ -156,6 +171,7 @@ export default function useClassifierPlanManager({
       scheduledAt: string;
       endsAt: string;
       classification?: number;
+      observation?: boolean;
     }) => {
       if (!tid) throw new Error("Brak turnieju");
       if (payload.examId) {
@@ -250,6 +266,7 @@ export default function useClassifierPlanManager({
     setAddStartTime(DEFAULT_START);
     setAddEndTime(getEnd(DEFAULT_START));
     setAddClassification("");
+    setAddObservation(false);
     setAddSearch("");
   }
 
@@ -291,10 +308,18 @@ export default function useClassifierPlanManager({
     const endsAt = endsAtDate.toISOString();
     const classification = addClassification.trim() === "" ? undefined : Number(addClassification);
     if (classification != null && !Number.isFinite(classification)) return setAddError("Podaj poprawną klasyfikację");
+    if (classification != null && !isValidClassification(classification))
+      return setAddError("Klasyfikacja musi być od 0 do 4 z krokiem 0.5");
 
     setAddError(null);
     try {
-      await createMutation.mutateAsync({ playerId: addPlayerId, scheduledAt, endsAt, classification });
+      await createMutation.mutateAsync({
+        playerId: addPlayerId,
+        scheduledAt,
+        endsAt,
+        classification,
+        observation: addObservation,
+      });
       await refreshClassifierPlan(tournament.id);
       addEmptyDay(addDayTimestamp);
       setAddOpen(false);
@@ -318,6 +343,7 @@ export default function useClassifierPlanManager({
           startTime,
           endTime,
           classification: row.classification != null ? String(row.classification) : "",
+          observation: row.observation,
         };
       })
     );
@@ -338,7 +364,13 @@ export default function useClassifierPlanManager({
     const firstPlayer = tournament?.teams.flatMap((t) => t.players ?? [])[0];
     setEditDrafts((prev) => [
       ...prev,
-      { playerId: firstPlayer?.id ?? "", startTime: DEFAULT_START, endTime: getEnd(DEFAULT_START), classification: "" },
+      {
+        playerId: firstPlayer?.id ?? "",
+        startTime: DEFAULT_START,
+        endTime: getEnd(DEFAULT_START),
+        classification: "",
+        observation: false,
+      },
     ]);
   }
 
@@ -354,6 +386,7 @@ export default function useClassifierPlanManager({
       scheduledAt: string;
       endsAt: string;
       classification?: number;
+      observation?: boolean;
     }[] = [];
     for (const draft of editDrafts) {
       const startMinutes = timeToMinutes(draft.startTime);
@@ -385,7 +418,16 @@ export default function useClassifierPlanManager({
       const classification = draft.classification.trim() === "" ? undefined : Number(draft.classification);
       if (classification != null && !Number.isFinite(classification))
         return setEditError("Podaj poprawną klasyfikację");
-      payloads.push({ examId: draft.id, playerId: draft.playerId, scheduledAt, endsAt, classification });
+      if (classification != null && !isValidClassification(classification))
+        return setEditError("Klasyfikacja musi być od 0 do 4 z krokiem 0.5");
+      payloads.push({
+        examId: draft.id,
+        playerId: draft.playerId,
+        scheduledAt,
+        endsAt,
+        classification,
+        observation: draft.observation,
+      });
     }
 
     try {
@@ -434,6 +476,8 @@ export default function useClassifierPlanManager({
       setEndTime: setAddEndTime,
       classification: addClassification,
       setClassification: setAddClassification,
+      observation: addObservation,
+      setObservation: setAddObservation,
       search: addSearch,
       setSearch: setAddSearch,
       dayOptions: addDayOptions,
