@@ -1,6 +1,6 @@
 import { getErrorMessageFromResponse } from "@/lib/apiHttp";
 import type { TournamentFormData } from "@/lib/validateInputs";
-import type { Match, RefereePlanMatch, Tournament } from "@/types";
+import type { ClassifierPlanEntry, Match, RefereePlanMatch, Tournament } from "@/types";
 
 interface TournamentMatchPayload {
   teamAId: string;
@@ -21,6 +21,14 @@ interface TournamentRefereePlanPayload {
   referee2Id?: string;
   tablePenaltyId?: string;
   tableClockId?: string;
+}
+
+interface TournamentClassifierPlanPayload {
+  playerId: string;
+  scheduledAt: string;
+  endsAt: string;
+  classification?: number;
+  observation?: boolean;
 }
 
 /** GET /api/tournaments/:id — 404 returns null (details screen). */
@@ -245,6 +253,61 @@ export async function updateTournamentRefereePlanEntry(
     throw new Error(msg);
   }
   return res.json() as Promise<RefereePlanMatch>;
+}
+
+/** GET /api/tournaments/:tournamentId/classifier-plan */
+export async function fetchTournamentClassifierPlan(
+  tournamentId: string,
+  signal?: AbortSignal
+): Promise<ClassifierPlanEntry[]> {
+  const res = await fetch(`/api/tournaments/${tournamentId}/classifier-plan`, { signal });
+  if (!res.ok) {
+    const msg = await getErrorMessageFromResponse(res, "Nie udało się pobrać planu klasyfikatorów");
+    throw new Error(msg);
+  }
+  return res.json() as Promise<ClassifierPlanEntry[]>;
+}
+
+/** POST /api/tournaments/:tournamentId/classifier-plan */
+export async function createTournamentClassifierPlanEntry(
+  tournamentId: string,
+  body: TournamentClassifierPlanPayload
+): Promise<void> {
+  const res = await fetch(`/api/tournaments/${tournamentId}/classifier-plan`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const msg = await getErrorMessageFromResponse(res, "Nie udało się utworzyć wpisu w planie klasyfikatorów");
+    throw new Error(msg);
+  }
+}
+
+/** PUT /api/tournaments/:tournamentId/classifier-plan/:examId */
+export async function updateTournamentClassifierPlanEntry(
+  tournamentId: string,
+  examId: string,
+  body: TournamentClassifierPlanPayload
+): Promise<void> {
+  const res = await fetch(`/api/tournaments/${tournamentId}/classifier-plan/${examId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const msg = await getErrorMessageFromResponse(res, "Nie udało się zapisać wpisu w planie klasyfikatorów");
+    throw new Error(msg);
+  }
+}
+
+/** DELETE /api/tournaments/:tournamentId/classifier-plan/:examId */
+export async function deleteTournamentClassifierPlanEntry(tournamentId: string, examId: string): Promise<void> {
+  const res = await fetch(`/api/tournaments/${tournamentId}/classifier-plan/${examId}`, { method: "DELETE" });
+  if (!res.ok) {
+    const msg = await getErrorMessageFromResponse(res, "Nie udało się usunąć wpisu z planu klasyfikatorów");
+    throw new Error(msg);
+  }
 }
 
 /** DELETE /api/tournaments/:id */

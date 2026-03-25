@@ -154,6 +154,23 @@ export interface ClassificationExam {
   playerId: string;
 }
 
+export interface ClassifierPlanEntry {
+  examId: string;
+  playerId: string;
+  scheduledAt: string;
+  endsAt: string;
+  classification?: number;
+  observation: boolean;
+}
+
+export interface UpsertClassifierPlanEntryDto {
+  playerId: string;
+  scheduledAt: string; // ISO
+  endsAt: string; // ISO
+  classification?: number;
+  observation?: boolean;
+}
+
 export interface Volunteer {
   id: string;
   firstName: string;

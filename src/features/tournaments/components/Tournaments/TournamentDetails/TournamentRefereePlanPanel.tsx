@@ -1,7 +1,9 @@
 import {
+  Alert,
   Box,
   Button,
   CircularProgress,
+  MenuItem,
   Paper,
   Table,
   TableBody,
@@ -9,18 +11,54 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TextField,
   Typography,
 } from "@mui/material";
-import { useRef } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMemo, useRef, useState } from "react";
 import DataLoadAlert from "@/components/ui/DataLoadAlert";
 import type { Match, Person, RefereeRole, Tournament } from "@/types";
 import { MATCH_DURATION_MS } from "@/features/tournaments/components/Tournaments/TournamentDetails/hooks/matchPlanHelpers";
+import { updateTournamentRefereePlanEntry } from "@/lib/api/tournaments";
 import { printElementAsLandscapePdf } from "@/lib/print";
+import { queryKeys } from "@/lib/queryKeys";
 
 const outOfRangeTimeCellSx = {
   bgcolor: "error.main",
   color: "common.white",
   fontWeight: 700,
+} as const;
+
+const refereeSelectSx = {
+  "& .MuiSelect-select": {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    textAlign: "center",
+    lineHeight: 1.25,
+    pt: 1.25,
+    pb: 0.5,
+    px: 1,
+    minHeight: "unset",
+    boxSizing: "border-box",
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+  },
+  "& .MuiOutlinedInput-notchedOutline": {
+    top: 0,
+  },
+  "@media print": {
+    "& .MuiOutlinedInput-notchedOutline": {
+      border: 0,
+    },
+    "& .MuiSelect-icon": {
+      display: "none",
+    },
+    "& .MuiSelect-select": {
+      pr: 1,
+    },
+  },
 } as const;
 
 interface TournamentRefereePlanPanelProps {
@@ -35,13 +73,29 @@ interface TournamentRefereePlanPanelProps {
   getScheduleDayLabel: (timestamp: number) => string;
   openAddRefereePlanDialog: (presetDayTimestamp?: number | null, allowedDays?: number[] | null) => void;
   openNewDayRefereePlanTable: () => void;
-  openEditRefereePlanDialog: (matchesToEdit: Match[]) => void;
   personDisplayName: (p: Person) => string;
   setMatchDayToDelete: (timestamp: number) => void;
   deleteMatchDayLoading: boolean;
   matchDayToDelete: number | null;
   isMatchOutOfRange?: (scheduledAtIso: string) => boolean;
   isDayOutOfRange?: (dayTimestamp: number) => boolean;
+}
+
+function roleToPayloadKey(role: RefereeRole) {
+  switch (role) {
+    case "REFEREE_1":
+      return "referee1Id";
+    case "REFEREE_2":
+      return "referee2Id";
+    case "TABLE_PENALTY":
+      return "tablePenaltyId";
+    case "TABLE_CLOCK":
+      return "tableClockId";
+    default: {
+      const _exhaustive: never = role;
+      return _exhaustive;
+    }
+  }
 }
 
 export default function TournamentRefereePlanPanel({
@@ -55,16 +109,51 @@ export default function TournamentRefereePlanPanel({
   getMatchDayTimestamp,
   getScheduleDayLabel,
   openAddRefereePlanDialog,
-  openNewDayRefereePlanTable,
-  openEditRefereePlanDialog,
   personDisplayName,
-  setMatchDayToDelete,
-  deleteMatchDayLoading,
-  matchDayToDelete,
   isMatchOutOfRange,
   isDayOutOfRange,
 }: TournamentRefereePlanPanelProps) {
   const panelRef = useRef<HTMLDivElement | null>(null);
+  const queryClient = useQueryClient();
+  const [inlineSaveError, setInlineSaveError] = useState<string | null>(null);
+
+  const savingMatchIds = useMemo(() => new Set<string>(), []);
+  const [, forceRerender] = useState(0);
+
+  const inlineSaveMutation = useMutation({
+    mutationFn: async (args: { match: Match; nextAssignments: Partial<Record<RefereeRole, string>> }) => {
+      const payload: {
+        teamAId: string;
+        teamBId: string;
+        scheduledAt: string;
+        court?: string;
+        referee1Id?: string;
+        referee2Id?: string;
+        tablePenaltyId?: string;
+        tableClockId?: string;
+      } = {
+        teamAId: args.match.teamAId,
+        teamBId: args.match.teamBId,
+        scheduledAt: args.match.scheduledAt,
+        court: args.match.court,
+      };
+
+      (Object.keys(args.nextAssignments) as RefereeRole[]).forEach((role) => {
+        const key = roleToPayloadKey(role);
+        const value = args.nextAssignments[role];
+        payload[key] = typeof value === "string" && value.trim().length > 0 ? value : undefined;
+      });
+
+      return updateTournamentRefereePlanEntry(tournament.id, args.match.id, payload);
+    },
+    onSuccess: async () => {
+      setInlineSaveError(null);
+      await queryClient.invalidateQueries({ queryKey: queryKeys.tournaments.refereePlan(tournament.id) });
+    },
+    onError: (e) => {
+      setInlineSaveError(e instanceof Error ? e.message : "Nie udało się zapisać planu sędziów");
+    },
+  });
 
   const tournamentDateRangeLabel = (() => {
     const start = new Date(tournament.startDate);
@@ -140,25 +229,25 @@ export default function TournamentRefereePlanPanel({
             <Button
               variant="contained"
               onClick={() => openAddRefereePlanDialog()}
-              disabled={tournament.teams.length < 2}
+              disabled={tournament.teams.length < 2 || matches.length === 0}
             >
               Dodaj
-            </Button>
-            <Button variant="outlined" onClick={openNewDayRefereePlanTable} disabled={tournament.teams.length < 2}>
-              Nowy dzień
             </Button>
           </Box>
         </Box>
       ) : (
         <>
           <Box className="wr-print-hide" sx={{ display: "flex", justifyContent: "flex-start", mb: 2, gap: 2 }}>
-            <Button variant="outlined" onClick={openNewDayRefereePlanTable} disabled={tournament.teams.length < 2}>
-              Nowy dzień
-            </Button>
             <Button variant="contained" onClick={handlePrintPlan}>
               Wydrukuj
             </Button>
           </Box>
+
+          {inlineSaveError ? (
+            <Alert className="wr-print-hide" severity="error" sx={{ mb: 2 }}>
+              {inlineSaveError}
+            </Alert>
+          ) : null}
 
           <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
             {scheduleTableDayTimestamps.map((dayTimestamp) => {
@@ -266,16 +355,38 @@ export default function TournamentRefereePlanPanel({
                             const tablePenalty = assignments.TABLE_PENALTY;
                             const tableClock = assignments.TABLE_CLOCK;
 
-                            const ref1Name = ref1 ? tournament.referees.find((r) => r.id === ref1) : undefined;
-                            const ref2Name = ref2 ? tournament.referees.find((r) => r.id === ref2) : undefined;
-                            const tablePenaltyName = tablePenalty
-                              ? tournament.referees.find((r) => r.id === tablePenalty)
-                              : undefined;
-                            const tableClockName = tableClock
-                              ? tournament.referees.find((r) => r.id === tableClock)
-                              : undefined;
+                            const isSaving = savingMatchIds.has(m.id);
 
                             const rowOut = isMatchOutOfRange?.(m.scheduledAt) ?? false;
+
+                            const setRole = async (role: RefereeRole, refereeId: string) => {
+                              if (isSaving) return;
+                              setInlineSaveError(null);
+
+                              savingMatchIds.add(m.id);
+                              forceRerender((x) => x + 1);
+
+                              const nextAssignments: Partial<Record<RefereeRole, string>> = {
+                                REFEREE_1: ref1 ?? "",
+                                REFEREE_2: ref2 ?? "",
+                                TABLE_PENALTY: tablePenalty ?? "",
+                                TABLE_CLOCK: tableClock ?? "",
+                                [role]: refereeId,
+                              };
+
+                              try {
+                                await inlineSaveMutation.mutateAsync({ match: m, nextAssignments });
+                              } finally {
+                                savingMatchIds.delete(m.id);
+                                forceRerender((x) => x + 1);
+                              }
+                            };
+
+                            const optionDisabled = (
+                              candidateId: string,
+                              currentValue: string | undefined,
+                              conflicts: string[]
+                            ) => candidateId !== currentValue && conflicts.includes(candidateId);
 
                             return (
                               <TableRow key={m.id}>
@@ -292,13 +403,113 @@ export default function TournamentRefereePlanPanel({
                                   {teamBName}
                                 </TableCell>
                                 <TableCell align="center">{m.court ?? "—"}</TableCell>
-                                <TableCell align="center">{ref1Name ? personDisplayName(ref1Name) : "—"}</TableCell>
-                                <TableCell align="center">{ref2Name ? personDisplayName(ref2Name) : "—"}</TableCell>
-                                <TableCell align="center">
-                                  {tablePenaltyName ? personDisplayName(tablePenaltyName) : "—"}
+
+                                <TableCell align="center" sx={{ minWidth: 180 }}>
+                                  <TextField
+                                    select
+                                    size="small"
+                                    sx={refereeSelectSx}
+                                    value={ref1 ?? ""}
+                                    onChange={(e) => void setRole("REFEREE_1", String(e.target.value))}
+                                    disabled={isSaving}
+                                    fullWidth
+                                  >
+                                    <MenuItem value="">—</MenuItem>
+                                    {tournament.referees.map((r) => (
+                                      <MenuItem
+                                        key={r.id}
+                                        value={r.id}
+                                        disabled={optionDisabled(r.id, ref1, [
+                                          ref2 ?? "",
+                                          tablePenalty ?? "",
+                                          tableClock ?? "",
+                                        ])}
+                                      >
+                                        {personDisplayName(r)}
+                                      </MenuItem>
+                                    ))}
+                                  </TextField>
                                 </TableCell>
-                                <TableCell align="center">
-                                  {tableClockName ? personDisplayName(tableClockName) : "—"}
+
+                                <TableCell align="center" sx={{ minWidth: 180 }}>
+                                  <TextField
+                                    select
+                                    size="small"
+                                    sx={refereeSelectSx}
+                                    value={ref2 ?? ""}
+                                    onChange={(e) => void setRole("REFEREE_2", String(e.target.value))}
+                                    disabled={isSaving}
+                                    fullWidth
+                                  >
+                                    <MenuItem value="">—</MenuItem>
+                                    {tournament.referees.map((r) => (
+                                      <MenuItem
+                                        key={r.id}
+                                        value={r.id}
+                                        disabled={optionDisabled(r.id, ref2, [
+                                          ref1 ?? "",
+                                          tablePenalty ?? "",
+                                          tableClock ?? "",
+                                        ])}
+                                      >
+                                        {personDisplayName(r)}
+                                      </MenuItem>
+                                    ))}
+                                  </TextField>
+                                </TableCell>
+
+                                <TableCell align="center" sx={{ minWidth: 180 }}>
+                                  <TextField
+                                    select
+                                    size="small"
+                                    sx={refereeSelectSx}
+                                    value={tablePenalty ?? ""}
+                                    onChange={(e) => void setRole("TABLE_PENALTY", String(e.target.value))}
+                                    disabled={isSaving}
+                                    fullWidth
+                                  >
+                                    <MenuItem value="">—</MenuItem>
+                                    {tournament.referees.map((r) => (
+                                      <MenuItem
+                                        key={r.id}
+                                        value={r.id}
+                                        disabled={optionDisabled(r.id, tablePenalty, [
+                                          ref1 ?? "",
+                                          ref2 ?? "",
+                                          tableClock ?? "",
+                                        ])}
+                                      >
+                                        {personDisplayName(r)}
+                                      </MenuItem>
+                                    ))}
+                                  </TextField>
+                                </TableCell>
+
+                                <TableCell align="center" sx={{ minWidth: 180 }}>
+                                  <TextField
+                                    select
+                                    size="small"
+                                    sx={refereeSelectSx}
+                                    value={tableClock ?? ""}
+                                    onChange={(e) => void setRole("TABLE_CLOCK", String(e.target.value))}
+                                    disabled={isSaving}
+                                    fullWidth
+                                  >
+                                    <MenuItem value="">—</MenuItem>
+                                    {tournament.referees.map((r) => (
+                                      <MenuItem
+                                        key={r.id}
+                                        value={r.id}
+                                        disabled={optionDisabled(r.id, tableClock, [
+                                          ref1 ?? "",
+                                          ref2 ?? "",
+                                          tablePenalty ?? "",
+                                        ])}
+                                      >
+                                        {personDisplayName(r)}
+                                      </MenuItem>
+                                    ))}
+                                  </TextField>
                                 </TableCell>
                               </TableRow>
                             );
@@ -307,25 +518,6 @@ export default function TournamentRefereePlanPanel({
                       </Table>
                     </TableContainer>
                   )}
-
-                  <Box className="wr-print-hide" sx={{ display: "flex", justifyContent: "flex-start", mt: 2, gap: 2 }}>
-                    <Button
-                      variant="outlined"
-                      color="primary"
-                      onClick={() => openEditRefereePlanDialog(dayMatches)}
-                      disabled={dayMatches.length === 0}
-                    >
-                      Edytuj
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      color="error"
-                      onClick={() => setMatchDayToDelete(dayTimestamp)}
-                      disabled={deleteMatchDayLoading && matchDayToDelete === dayTimestamp}
-                    >
-                      Usuń dzień
-                    </Button>
-                  </Box>
                 </Box>
               );
             })}

@@ -57,6 +57,9 @@ export const POST: APIRoute = async ({ params, request }) => {
     if (error instanceof Error && error.message === "TEAM_NOT_IN_TOURNAMENT") {
       return json({ error: "Wybrane drużyny nie należą do turnieju" }, 400);
     }
+    if (error instanceof Error && error.message === "COURT_TIME_CONFLICT") {
+      return json({ error: "Na tym boisku jest już mecz w tym czasie. Wybierz inną godzinę startu." }, 400);
+    }
     return json({ error: "Nie udało się utworzyć meczu" }, 500);
   }
 };

@@ -13,7 +13,6 @@ export async function createTournamentWithDetails(form: TournamentFormData) {
   }
 
   const hotelAddress = `${form.hotelStreet}, ${form.hotelZipCode} ${form.hotelCity}`;
-  const hallAddress = `${form.street}, ${form.zipCode} ${form.city}`;
 
   return prisma.$transaction(async (tx) => {
     const tournament = await tx.tournament.create({
@@ -38,7 +37,6 @@ export async function createTournamentWithDetails(form: TournamentFormData) {
     await tx.sportsHall.create({
       data: {
         name: form.hallName,
-        address: hallAddress,
         city: form.city || null,
         street: form.street || null,
         postalCode: form.zipCode || null,
@@ -69,7 +67,17 @@ export async function listTournamentsWithDetails(): Promise<Tournament[]> {
       accommodations: { orderBy: { id: "asc" } },
       mealPlans: { orderBy: { id: "asc" } },
       volunteers: true,
-      teams: { include: { team: true } },
+      teams: {
+        include: {
+          team: {
+            include: {
+              players: {
+                orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+              },
+            },
+          },
+        },
+      },
       referees: { include: { referee: true } },
       classifiers: { include: { classifier: true } },
     },
@@ -90,7 +98,11 @@ export async function listTournamentsWithDetails(): Promise<Tournament[]> {
         ? {
             id: primaryVenue.id,
             name: primaryVenue.name,
-            address: primaryVenue.address ?? undefined,
+            address:
+              [primaryVenue.street, `${primaryVenue.postalCode ?? ""} ${primaryVenue.city ?? ""}`.trim()]
+                .map((v) => (v ?? "").trim())
+                .filter(Boolean)
+                .join(", ") || undefined,
             city: primaryVenue.city ?? undefined,
             street: primaryVenue.street ?? undefined,
             postalCode: primaryVenue.postalCode ?? undefined,
@@ -125,6 +137,14 @@ export async function listTournamentsWithDetails(): Promise<Tournament[]> {
         seasonId: tt.team.seasonId,
         coachId: tt.team.coachId ?? undefined,
         refereeId: tt.team.refereeId ?? undefined,
+        players: tt.team.players.map((player) => ({
+          id: player.id,
+          firstName: player.firstName,
+          lastName: player.lastName,
+          number: player.number ?? undefined,
+          classification: player.classification ?? undefined,
+          teamId: player.teamId,
+        })),
       })),
       referees: t.referees.map((tr) => ({
         id: tr.referee.id,
@@ -154,7 +174,6 @@ export async function listTournamentsWithDetails(): Promise<Tournament[]> {
 /** Updates tournament basic details plus accommodation, hall and meal plan. */
 export async function updateTournamentWithDetails(tournamentId: string, form: TournamentFormData) {
   const hotelAddress = `${form.hotelStreet}, ${form.hotelZipCode} ${form.hotelCity}`;
-  const hallAddress = `${form.street}, ${form.zipCode} ${form.city}`;
 
   return prisma.$transaction(async (tx) => {
     const existing = await tx.tournament.findUnique({
@@ -193,7 +212,6 @@ export async function updateTournamentWithDetails(tournamentId: string, form: To
     await tx.sportsHall.create({
       data: {
         name: form.hallName,
-        address: hallAddress,
         city: form.city || null,
         street: form.street || null,
         postalCode: form.zipCode || null,
@@ -336,6 +354,45 @@ interface CreateMatchInput {
   scoreB?: number;
 }
 
+const MATCH_DURATION_MS = 90 * 60 * 1000;
+
+function normalizeCourt(court?: string) {
+  const next = (court ?? "").trim();
+  return next === "" ? null : next;
+}
+
+async function ensureNoCourtTimeConflict(args: {
+  tournamentId: string;
+  scheduledAt: Date;
+  court: string;
+  excludeMatchId?: string;
+}) {
+  const scheduledAtMs = args.scheduledAt.getTime();
+  if (Number.isNaN(scheduledAtMs)) throw new Error("INVALID_SCHEDULED_AT");
+
+  const endsAtMs = scheduledAtMs + MATCH_DURATION_MS;
+
+  const existingMatches = await prisma.match.findMany({
+    where: {
+      tournamentId: args.tournamentId,
+      court: args.court,
+      id: args.excludeMatchId ? { not: args.excludeMatchId } : undefined,
+    },
+    select: { scheduledAt: true },
+  });
+
+  for (const m of existingMatches) {
+    const startMs = m.scheduledAt.getTime();
+    if (Number.isNaN(startMs)) continue;
+    const endMs = startMs + MATCH_DURATION_MS;
+
+    // overlap if: start < otherEnd && otherStart < end
+    if (scheduledAtMs < endMs && startMs < endsAtMs) {
+      throw new Error("COURT_TIME_CONFLICT");
+    }
+  }
+}
+
 export async function listMatchesForTournament(tournamentId: string): Promise<Match[]> {
   const tournament = await prisma.tournament.findUnique({
     where: { id: tournamentId },
@@ -383,6 +440,9 @@ export async function createMatchForTournament(tournamentId: string, input: Crea
 
   if (!tournament) throw new Error("TOURNAMENT_NOT_FOUND");
 
+  const scheduledAt = new Date(input.scheduledAt);
+  if (Number.isNaN(scheduledAt.getTime())) throw new Error("INVALID_SCHEDULED_AT");
+
   // Ensure both teams are assigned to this tournament.
   const teams = await prisma.tournamentTeam.findMany({
     where: { tournamentId, teamId: { in: [input.teamAId, input.teamBId] } },
@@ -393,11 +453,16 @@ export async function createMatchForTournament(tournamentId: string, input: Crea
     throw new Error("TEAM_NOT_IN_TOURNAMENT");
   }
 
+  const normalizedCourt = normalizeCourt(input.court);
+  if (normalizedCourt) {
+    await ensureNoCourtTimeConflict({ tournamentId, scheduledAt, court: normalizedCourt });
+  }
+
   await prisma.match.create({
     data: {
       tournamentId,
-      scheduledAt: new Date(input.scheduledAt),
-      court: input.court ?? null,
+      scheduledAt,
+      court: normalizedCourt,
       jerseyInfo: input.jerseyInfo ?? null,
       scoreA: input.scoreA ?? null,
       scoreB: input.scoreB ?? null,
@@ -428,6 +493,9 @@ export async function updateMatchForTournament(
 
   if (!existingMatch || existingMatch.tournamentId !== tournamentId) throw new Error("MATCH_NOT_FOUND");
 
+  const scheduledAt = new Date(input.scheduledAt);
+  if (Number.isNaN(scheduledAt.getTime())) throw new Error("INVALID_SCHEDULED_AT");
+
   // Ensure both teams are assigned to this tournament.
   const teams = await prisma.tournamentTeam.findMany({
     where: { tournamentId, teamId: { in: [input.teamAId, input.teamBId] } },
@@ -438,11 +506,21 @@ export async function updateMatchForTournament(
     throw new Error("TEAM_NOT_IN_TOURNAMENT");
   }
 
+  const normalizedCourt = normalizeCourt(input.court);
+  if (normalizedCourt) {
+    await ensureNoCourtTimeConflict({
+      tournamentId,
+      scheduledAt,
+      court: normalizedCourt,
+      excludeMatchId: matchId,
+    });
+  }
+
   await prisma.match.update({
     where: { id: matchId },
     data: {
-      scheduledAt: new Date(input.scheduledAt),
-      court: input.court ?? null,
+      scheduledAt,
+      court: normalizedCourt,
       jerseyInfo: input.jerseyInfo ?? null,
       scoreA: input.scoreA ?? null,
       scoreB: input.scoreB ?? null,

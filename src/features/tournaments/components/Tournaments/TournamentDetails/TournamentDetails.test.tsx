@@ -44,13 +44,30 @@ beforeEach(() => {
   const tournamentWithTeams = {
     ...tournamentFixture,
     teams: [
-      { id: "team-1", name: "Warsaw Raptors", seasonId: "s1" },
-      { id: "team-2", name: "Krakow Eagles", seasonId: "s1" },
+      {
+        id: "team-1",
+        name: "Warsaw Raptors",
+        seasonId: "s1",
+        players: [{ id: "player-1", firstName: "Ala", lastName: "Nowak", teamId: "team-1", classification: 1.5 }],
+      },
+      {
+        id: "team-2",
+        name: "Krakow Eagles",
+        seasonId: "s1",
+        players: [{ id: "player-2", firstName: "Olek", lastName: "Kowal", teamId: "team-2", classification: 2 }],
+      },
     ],
   };
   const tournamentAfterRemove = {
     ...tournamentFixture,
-    teams: [{ id: "team-2", name: "Krakow Eagles", seasonId: "s1" }],
+    teams: [
+      {
+        id: "team-2",
+        name: "Krakow Eagles",
+        seasonId: "s1",
+        players: [{ id: "player-2", firstName: "Olek", lastName: "Kowal", teamId: "team-2", classification: 2 }],
+      },
+    ],
   };
   const tournamentWithReferees = { ...tournamentFixture, referees: refereeList };
   const tournamentAfterRefereeRemove = { ...tournamentFixture, referees: [refereeList[1]] };
@@ -78,6 +95,14 @@ beforeEach(() => {
   }
 
   let matches: MatchStub[] = [];
+  let classifierPlanRows: {
+    examId: string;
+    playerId: string;
+    scheduledAt: string;
+    endsAt: string;
+    classification?: number;
+    observation: boolean;
+  }[] = [];
 
   vi.stubGlobal(
     "fetch",
@@ -160,6 +185,28 @@ beforeEach(() => {
         return new Response(JSON.stringify([]), { status: 200 });
       }
 
+      if (url === "/api/tournaments/t1/classifier-plan" && (!init?.method || init.method === "GET")) {
+        return new Response(JSON.stringify(classifierPlanRows), { status: 200 });
+      }
+
+      if (url === "/api/tournaments/t1/classifier-plan" && init?.method === "POST") {
+        const body = init?.body ? JSON.parse(String(init.body)) : {};
+        const scheduledAt = body.scheduledAt ?? new Date("2024-05-10T10:00:00.000Z").toISOString();
+        const endsAt = body.endsAt ?? new Date(new Date(scheduledAt).getTime() + 30 * 60 * 1000).toISOString();
+        classifierPlanRows = [
+          ...classifierPlanRows,
+          {
+            examId: `exam-${classifierPlanRows.length + 1}`,
+            playerId: body.playerId ?? "player-1",
+            scheduledAt,
+            endsAt,
+            classification: body.classification,
+            observation: body.observation ?? false,
+          },
+        ];
+        return new Response(JSON.stringify({ ok: true }), { status: 200 });
+      }
+
       if (url === "/api/tournaments/t1/matches" && init?.method === "POST") {
         const body = init?.body ? JSON.parse(String(init.body)) : {};
         matches = [
@@ -224,7 +271,9 @@ describe("TournamentDetails", () => {
   it("renders selected tournament details for valid tournament id", async () => {
     render(<TournamentDetails id="t1" />);
 
-    expect(await screen.findByRole("heading", { name: "Turniej Otwarcia Sezonu" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { name: "Turniej Otwarcia Sezonu" }, { timeout: 5000 })
+    ).toBeInTheDocument();
     expect(await screen.findByText("Hala Arena")).toBeInTheDocument();
     expect(await screen.findByText("Hotel Sport")).toBeInTheDocument();
     expect(await screen.findByText("Hotel + Catering na hali")).toBeInTheDocument();
@@ -348,6 +397,34 @@ describe("TournamentDetails", () => {
     expect(within(planSection).getByText("Krakow Eagles")).toBeInTheDocument();
     expect(within(planSection).getByText(/A:\s*Jasne\s*B:\s*Ciemne/)).toBeInTheDocument();
   }, 10000);
+
+  it("rejects classifier plan classification outside 0-4 step 0.5", async () => {
+    const user = userEvent.setup();
+    render(<TournamentDetails id="t1" />);
+
+    await screen.findByRole("heading", { name: "Turniej Otwarcia Sezonu" });
+
+    // Add teams (fixture includes players only after teamsAdded).
+    const teamsSection = screen.getByRole("heading", { name: "Drużyny" }).closest("div") as HTMLElement;
+    await user.click(within(teamsSection).getByRole("button", { name: "Dodaj" }));
+    const addTeamsDialog = await screen.findByRole("dialog");
+    await user.click(within(addTeamsDialog).getByText("Warsaw Raptors"));
+    await user.click(within(addTeamsDialog).getByText("Krakow Eagles"));
+    await user.click(within(addTeamsDialog).getByRole("button", { name: "Dodaj" }));
+    expect(await screen.findByText("Warsaw Raptors")).toBeInTheDocument();
+
+    const classifierPlanPanel = screen
+      .getByRole("heading", { name: "Plan Klasyfikatorów" })
+      .closest(".MuiPaper-root") as HTMLElement;
+    await user.click(within(classifierPlanPanel).getByRole("button", { name: "Dodaj" }));
+
+    const dialog = await screen.findByRole("dialog");
+    await user.clear(within(dialog).getByLabelText("Klasyfikacja"));
+    await user.type(within(dialog).getByLabelText("Klasyfikacja"), "0.3");
+    await user.click(within(dialog).getByRole("button", { name: "Dodaj" }));
+
+    expect(await within(dialog).findByText("Klasyfikacja musi być od 0 do 4 z krokiem 0.5")).toBeInTheDocument();
+  });
 
   it("edits match from plan", async () => {
     const user = userEvent.setup();
@@ -553,5 +630,10 @@ describe("TournamentDetails", () => {
 
     expect(await screen.findByText("Maria Lewandowska")).toBeInTheDocument();
     expect(screen.queryByText("Piotr Wiśniewski")).not.toBeInTheDocument();
+  });
+
+  it("renders classifiers plan panel", async () => {
+    render(<TournamentDetails id="t1" />);
+    expect(await screen.findByRole("heading", { name: "Plan Klasyfikatorów" })).toBeInTheDocument();
   });
 });

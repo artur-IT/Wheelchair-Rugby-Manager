@@ -135,9 +135,6 @@ export default function TournamentMatchesPlanPanel({
             <Button variant="contained" onClick={() => openAddMatchDialog()} disabled={tournament.teams.length < 2}>
               Dodaj
             </Button>
-            <Button variant="outlined" onClick={openNewDayTable} disabled={tournament.teams.length < 2}>
-              Nowy dzień
-            </Button>
           </Box>
         </Box>
       ) : (

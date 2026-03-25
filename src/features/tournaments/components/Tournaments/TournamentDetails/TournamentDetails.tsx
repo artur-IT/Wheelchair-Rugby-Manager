@@ -10,25 +10,28 @@ import TournamentHeader from "@/features/tournaments/components/Tournaments/Tour
 import TournamentInfoPanels from "@/features/tournaments/components/Tournaments/TournamentDetails/TournamentInfoPanels";
 import TournamentMatchesPlanPanel from "@/features/tournaments/components/Tournaments/TournamentDetails/TournamentMatchesPlanPanel";
 import TournamentRefereePlanPanel from "@/features/tournaments/components/Tournaments/TournamentDetails/TournamentRefereePlanPanel";
+import TournamentClassifierPlanPanel from "@/features/tournaments/components/Tournaments/TournamentDetails/TournamentClassifierPlanPanel";
 import TournamentTeamsPanel from "@/features/tournaments/components/Tournaments/TournamentDetails/TournamentTeamsPanel";
 import TournamentPersonnelPanels from "@/features/tournaments/components/Tournaments/TournamentDetails/TournamentPersonnelPanels";
 import {
   AddMatchDialog,
   EditMatchDialog,
 } from "@/features/tournaments/components/Tournaments/TournamentDetails/dialogs/MatchPlanDialogs";
+import { AddRefereePlanDialog } from "@/features/tournaments/components/Tournaments/TournamentDetails/dialogs/RefereePlanDialogs";
 import {
-  AddRefereePlanDialog,
-  EditRefereePlanDialog,
-} from "@/features/tournaments/components/Tournaments/TournamentDetails/dialogs/RefereePlanDialogs";
+  AddClassifierPlanDialog,
+  EditClassifierPlanDialog,
+} from "@/features/tournaments/components/Tournaments/TournamentDetails/dialogs/ClassifierPlanDialogs";
 import useMatchPlanManager from "@/features/tournaments/components/Tournaments/TournamentDetails/hooks/useMatchPlanManager";
 import useRefereePlanManager from "@/features/tournaments/components/Tournaments/TournamentDetails/hooks/useRefereePlanManager";
+import useClassifierPlanManager from "@/features/tournaments/components/Tournaments/TournamentDetails/hooks/useClassifierPlanManager";
 import useTournamentDetails from "@/features/tournaments/components/Tournaments/TournamentDetails/hooks/useTournamentDetails";
 import {
   getMatchDayTimestamp,
   parseJerseyInfo,
 } from "@/features/tournaments/components/Tournaments/TournamentDetails/hooks/matchPlanHelpers";
 import useTournamentPersonnelManager from "@/features/tournaments/components/Tournaments/TournamentDetails/hooks/useTournamentPersonnelManager";
-import { deleteTournamentMatch } from "@/lib/api/tournaments";
+import { deleteTournamentClassifierPlanEntry, deleteTournamentMatch } from "@/lib/api/tournaments";
 import { queryKeys } from "@/lib/queryKeys";
 import type { Match, Person } from "@/types";
 
@@ -112,7 +115,7 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
     matchDayOptions,
     refreshMatches,
   });
-  const { add: addRefereePlan, edit: editRefereePlan } = refereePlanManager;
+  const { add: addRefereePlan } = refereePlanManager;
 
   const matchManager = useMatchPlanManager({
     tournament,
@@ -127,9 +130,14 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
 
   const [matchDayToDelete, setMatchDayToDelete] = useState<number | null>(null);
   const [deleteMatchDayError, setDeleteMatchDayError] = useState<string | null>(null);
+  const [classifierDayToDelete, setClassifierDayToDelete] = useState<number | null>(null);
+  const [deleteClassifierDayError, setDeleteClassifierDayError] = useState<string | null>(null);
+  const [deleteClassifierDayLoading, setDeleteClassifierDayLoading] = useState(false);
 
   const personnel = useTournamentPersonnelManager({ tournament });
   const { teams, referees, classifiers } = personnel;
+  const classifierPlanManager = useClassifierPlanManager({ tournament, matchDayOptions });
+  const { add: addClassifierPlan, edit: editClassifierPlan } = classifierPlanManager;
 
   if (loading) {
     return (
@@ -166,7 +174,6 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
     try {
       await deleteMatchMutation.mutateAsync({ tournamentId: tournament.id, matchId: matchToDelete.id });
       editMatch.setDrafts((prev) => prev.filter((d) => d.id !== deletedId));
-      editRefereePlan.setDrafts((prev) => prev.filter((d) => d.id !== deletedId));
       if (editMatch.match?.id === deletedId) editMatch.setMatch(null);
       setMatchToDelete(null);
     } catch (e) {
@@ -196,6 +203,32 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
     }
   }
 
+  async function confirmDeleteClassifierDay() {
+    if (!tournament || classifierDayToDelete == null) return;
+    setDeleteClassifierDayError(null);
+    setDeleteClassifierDayLoading(true);
+
+    try {
+      const toDelete = classifierPlanManager.classifierPlanRows.filter(
+        (row) => getMatchDayTimestamp(row.scheduledAt) === classifierDayToDelete
+      );
+      const results = await Promise.allSettled(
+        toDelete.map((row) => deleteTournamentClassifierPlanEntry(tournament.id, row.examId))
+      );
+      const failures = results.filter((r) => r.status === "rejected");
+      if (failures.length > 0) {
+        throw new Error(`Nie udało się usunąć ${failures.length} z ${toDelete.length} wpisów`);
+      }
+      await classifierPlanManager.refreshClassifierPlan(tournament.id);
+      classifierPlanManager.removeDay(classifierDayToDelete);
+      setClassifierDayToDelete(null);
+    } catch (e) {
+      setDeleteClassifierDayError(e instanceof Error ? e.message : "Nie udało się usunąć dnia planu klasyfikatorów");
+    } finally {
+      setDeleteClassifierDayLoading(false);
+    }
+  }
+
   // Helper keeps new-day logic shared between match and referee panels.
   const createOpenNewDayHandler = (openDialog: (timestamp: number, options: number[]) => void) => {
     return () => {
@@ -207,12 +240,6 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
       const nextDay = freeDayOptions[0]?.timestamp ?? null;
       if (!nextDay) return;
 
-      setScheduleDayTimestamps((prev) => {
-        const merged = Array.from(new Set([...prev, nextDay]));
-        merged.sort((a, b) => a - b);
-        return merged;
-      });
-
       openDialog(
         nextDay,
         freeDayOptions.map((o) => o.timestamp)
@@ -222,6 +249,17 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
 
   const openNewDayTable = createOpenNewDayHandler(addMatch.openDialog);
   const openNewDayRefereePlanTable = createOpenNewDayHandler(addRefereePlan.openDialog);
+  const openNewDayClassifierPlanTable = () => {
+    if (!tournament) return;
+    const used = new Set(classifierPlanManager.classifierDayTimestamps);
+    const freeDayOptions = (matchDayOptions ?? []).filter((o) => !used.has(o.timestamp));
+    const nextDay = freeDayOptions[0]?.timestamp ?? null;
+    if (!nextDay) return;
+    addClassifierPlan.openDialog(
+      nextDay,
+      freeDayOptions.map((o) => o.timestamp)
+    );
+  };
 
   const showScheduleDateAlert = showPostEditDateHint || hasMatchesOutsideTournamentRange;
 
@@ -294,13 +332,30 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
             getScheduleDayLabel={getScheduleDayLabel}
             openAddRefereePlanDialog={addRefereePlan.openDialog}
             openNewDayRefereePlanTable={openNewDayRefereePlanTable}
-            openEditRefereePlanDialog={editRefereePlan.openDialog}
             personDisplayName={getPersonDisplayName}
             setMatchDayToDelete={setMatchDayToDelete}
             deleteMatchDayLoading={deleteMatchDayMutation.isPending}
             matchDayToDelete={matchDayToDelete}
             isMatchOutOfRange={isScheduledDayOutsideTournamentRange}
             isDayOutOfRange={isDayTimestampOutsideTournamentRange}
+          />
+
+          <TournamentClassifierPlanPanel
+            tournament={tournament}
+            rows={classifierPlanManager.classifierPlanRows}
+            loading={classifierPlanManager.classifierPlanLoading}
+            error={classifierPlanManager.classifierPlanError}
+            onRetry={() => void classifierPlanManager.refreshClassifierPlan(tournament.id)}
+            scheduleTableDayTimestamps={classifierPlanManager.classifierDayTimestamps}
+            getScheduleDayLabel={getScheduleDayLabel}
+            openAddDialog={addClassifierPlan.openDialog}
+            openNewDayTable={openNewDayClassifierPlanTable}
+            canCreateNewDay={classifierPlanManager.canCreateNewDay}
+            hasMatches={matches.length > 0}
+            openEditDialog={editClassifierPlan.openDialog}
+            setDayToDelete={setClassifierDayToDelete}
+            deleteDayLoading={deleteClassifierDayLoading}
+            dayToDelete={classifierDayToDelete}
           />
         </Box>
 
@@ -343,28 +398,26 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
         tournament={tournament}
         personDisplayName={getPersonDisplayName}
       />
-      <EditRefereePlanDialog
-        editRefereePlan={editRefereePlan}
-        tournament={tournament}
-        matches={matches}
-        deleteMatchLoading={deleteMatchMutation.isPending}
-        setMatchToDelete={setMatchToDelete}
-        setDeleteMatchError={setDeleteMatchError}
-        personDisplayName={getPersonDisplayName}
-      />
+      <AddClassifierPlanDialog addClassifierPlan={addClassifierPlan} tournament={tournament} />
+      <EditClassifierPlanDialog editClassifierPlan={editClassifierPlan} tournament={tournament} />
       <TournamentDetailsDialogs
         tournament={tournament}
         matchToDelete={matchToDelete}
         matchDayToDelete={matchDayToDelete}
+        classifierDayToDelete={classifierDayToDelete}
         deleteMatchLoading={deleteMatchMutation.isPending}
         deleteMatchError={deleteMatchError}
         deleteMatchDayLoading={deleteMatchDayMutation.isPending}
         deleteMatchDayError={deleteMatchDayError}
+        deleteClassifierDayLoading={deleteClassifierDayLoading}
+        deleteClassifierDayError={deleteClassifierDayError}
         getScheduleDayLabel={getScheduleDayLabel}
         closeDeleteMatchDialog={closeDeleteMatchDialog}
         confirmDeleteMatch={confirmDeleteMatch}
         closeDeleteMatchDayDialog={closeDeleteMatchDayDialog}
         confirmDeleteMatchDay={confirmDeleteMatchDay}
+        closeDeleteClassifierDayDialog={() => setClassifierDayToDelete(null)}
+        confirmDeleteClassifierDay={confirmDeleteClassifierDay}
         teams={teams}
         referees={referees}
         classifiers={classifiers}

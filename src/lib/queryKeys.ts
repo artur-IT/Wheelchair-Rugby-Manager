@@ -8,6 +8,7 @@ export const queryKeys = {
     detail: (id: string) => [...queryKeys.tournaments.all, "detail", id] as const,
     matches: (id: string) => [...queryKeys.tournaments.all, "detail", id, "matches"] as const,
     refereePlan: (id: string) => [...queryKeys.tournaments.all, "detail", id, "refereePlan"] as const,
+    classifierPlan: (id: string) => [...queryKeys.tournaments.all, "detail", id, "classifierPlan"] as const,
   },
   seasons: {
     all: ["seasons"] as const,

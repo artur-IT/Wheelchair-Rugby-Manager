@@ -8,15 +8,20 @@ interface TournamentDetailsDialogsProps {
   tournament: Tournament;
   matchToDelete: Match | null;
   matchDayToDelete: number | null;
+  classifierDayToDelete: number | null;
   deleteMatchLoading: boolean;
   deleteMatchError: string | null;
   deleteMatchDayLoading: boolean;
   deleteMatchDayError: string | null;
+  deleteClassifierDayLoading: boolean;
+  deleteClassifierDayError: string | null;
   getScheduleDayLabel: (timestamp: number) => string;
   closeDeleteMatchDialog: () => void;
   confirmDeleteMatch: () => void;
   closeDeleteMatchDayDialog: () => void;
   confirmDeleteMatchDay: () => void;
+  closeDeleteClassifierDayDialog: () => void;
+  confirmDeleteClassifierDay: () => void;
   teams: ReturnType<typeof useTournamentPersonnelManager>["teams"];
   referees: ReturnType<typeof useTournamentPersonnelManager>["referees"];
   classifiers: ReturnType<typeof useTournamentPersonnelManager>["classifiers"];
@@ -27,15 +32,20 @@ export default function TournamentDetailsDialogs({
   tournament,
   matchToDelete,
   matchDayToDelete,
+  classifierDayToDelete,
   deleteMatchLoading,
   deleteMatchError,
   deleteMatchDayLoading,
   deleteMatchDayError,
+  deleteClassifierDayLoading,
+  deleteClassifierDayError,
   getScheduleDayLabel,
   closeDeleteMatchDialog,
   confirmDeleteMatch,
   closeDeleteMatchDayDialog,
   confirmDeleteMatchDay,
+  closeDeleteClassifierDayDialog,
+  confirmDeleteClassifierDay,
   teams,
   referees,
   classifiers,
@@ -95,6 +105,22 @@ export default function TournamentDetailsDialogs({
         onConfirm={confirmDeleteMatchDay}
         loading={deleteMatchDayLoading}
         errorMessage={deleteMatchDayError}
+        confirmLabel="Usuń"
+        cancelLabel="Anuluj"
+      />
+
+      <ConfirmationDialog
+        open={Boolean(classifierDayToDelete)}
+        title="Usunąć dzień planu klasyfikatorów?"
+        description={
+          classifierDayToDelete != null ? (
+            <Typography color="textSecondary">{getScheduleDayLabel(classifierDayToDelete)}</Typography>
+          ) : null
+        }
+        onClose={closeDeleteClassifierDayDialog}
+        onConfirm={confirmDeleteClassifierDay}
+        loading={deleteClassifierDayLoading}
+        errorMessage={deleteClassifierDayError}
         confirmLabel="Usuń"
         cancelLabel="Anuluj"
       />
