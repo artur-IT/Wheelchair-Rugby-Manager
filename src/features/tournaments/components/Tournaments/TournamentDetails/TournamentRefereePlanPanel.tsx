@@ -20,14 +20,9 @@ import DataLoadAlert from "@/components/ui/DataLoadAlert";
 import type { Match, Person, RefereeRole, Tournament } from "@/types";
 import { MATCH_DURATION_MS } from "@/features/tournaments/components/Tournaments/TournamentDetails/hooks/matchPlanHelpers";
 import { updateTournamentRefereePlanEntry } from "@/lib/api/tournaments";
+import { formatDateRangePl } from "@/lib/dateFormat";
 import { printElementAsLandscapePdf } from "@/lib/print";
 import { queryKeys } from "@/lib/queryKeys";
-
-const outOfRangeTimeCellSx = {
-  bgcolor: "error.main",
-  color: "common.white",
-  fontWeight: 700,
-} as const;
 
 const refereeSelectSx = {
   "& .MuiSelect-select": {
@@ -36,6 +31,7 @@ const refereeSelectSx = {
     justifyContent: "center",
     textAlign: "center",
     lineHeight: 1.25,
+    fontSize: "0.875rem",
     pt: 1.25,
     pb: 0.5,
     px: 1,
@@ -77,7 +73,6 @@ interface TournamentRefereePlanPanelProps {
   setMatchDayToDelete: (timestamp: number) => void;
   deleteMatchDayLoading: boolean;
   matchDayToDelete: number | null;
-  isMatchOutOfRange?: (scheduledAtIso: string) => boolean;
   isDayOutOfRange?: (dayTimestamp: number) => boolean;
 }
 
@@ -110,7 +105,6 @@ export default function TournamentRefereePlanPanel({
   getScheduleDayLabel,
   openAddRefereePlanDialog,
   personDisplayName,
-  isMatchOutOfRange,
   isDayOutOfRange,
 }: TournamentRefereePlanPanelProps) {
   const panelRef = useRef<HTMLDivElement | null>(null);
@@ -155,14 +149,7 @@ export default function TournamentRefereePlanPanel({
     },
   });
 
-  const tournamentDateRangeLabel = (() => {
-    const start = new Date(tournament.startDate);
-    const end = tournament.endDate ? new Date(tournament.endDate) : null;
-
-    if (Number.isNaN(start.getTime())) return "";
-    if (!end || Number.isNaN(end.getTime())) return start.toLocaleDateString("pl-PL");
-    return `${start.toLocaleDateString("pl-PL")} - ${end.toLocaleDateString("pl-PL")}`;
-  })();
+  const tournamentDateRangeLabel = formatDateRangePl(tournament.startDate, tournament.endDate);
 
   function handlePrintPlan() {
     if (!panelRef.current) return;
@@ -249,14 +236,14 @@ export default function TournamentRefereePlanPanel({
             </Alert>
           ) : null}
 
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 4 }}>
             {scheduleTableDayTimestamps.map((dayTimestamp) => {
               const dayMatches = matches.filter((m) => getMatchDayTimestamp(m.scheduledAt) === dayTimestamp);
               const dayLabel = getScheduleDayLabel(dayTimestamp);
               const dayHighlight = isDayOutOfRange?.(dayTimestamp) ?? false;
 
               return (
-                <Box key={dayTimestamp}>
+                <Box key={dayTimestamp} sx={{ display: "inline-flex", flexDirection: "column", maxWidth: "100%" }}>
                   <Typography
                     variant="h6"
                     sx={{
@@ -303,8 +290,22 @@ export default function TournamentRefereePlanPanel({
                       </Button>
                     </Box>
                   ) : (
-                    <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 3 }}>
-                      <Table size="small" aria-label={`Tabela planu sędziów: ${dayLabel}`}>
+                    <TableContainer
+                      component={Paper}
+                      variant="outlined"
+                      sx={{ borderRadius: 3, width: "fit-content", maxWidth: "100%", overflowX: "auto" }}
+                    >
+                      <Table
+                        size="small"
+                        aria-label={`Tabela planu sędziów: ${dayLabel}`}
+                        sx={{
+                          tableLayout: "auto",
+                          width: "max-content",
+                          "& .MuiTableCell-root": {
+                            px: 1,
+                          },
+                        }}
+                      >
                         <TableHead
                           sx={{
                             bgcolor: "#ffedd5",
@@ -357,8 +358,6 @@ export default function TournamentRefereePlanPanel({
 
                             const isSaving = savingMatchIds.has(m.id);
 
-                            const rowOut = isMatchOutOfRange?.(m.scheduledAt) ?? false;
-
                             const setRole = async (role: RefereeRole, refereeId: string) => {
                               if (isSaving) return;
                               setInlineSaveError(null);
@@ -393,10 +392,10 @@ export default function TournamentRefereePlanPanel({
                                 <TableCell align="center" sx={{ fontWeight: 600 }}>
                                   {teamAName}
                                 </TableCell>
-                                <TableCell align="center" sx={rowOut ? outOfRangeTimeCellSx : undefined}>
+                                <TableCell align="center">
                                   {startTime}
                                 </TableCell>
-                                <TableCell align="center" sx={rowOut ? outOfRangeTimeCellSx : undefined}>
+                                <TableCell align="center">
                                   {endTime}
                                 </TableCell>
                                 <TableCell align="center" sx={{ fontWeight: 600 }}>
@@ -404,7 +403,7 @@ export default function TournamentRefereePlanPanel({
                                 </TableCell>
                                 <TableCell align="center">{m.court ?? "—"}</TableCell>
 
-                                <TableCell align="center" sx={{ minWidth: 180 }}>
+                                <TableCell align="center">
                                   <TextField
                                     select
                                     size="small"
@@ -431,7 +430,7 @@ export default function TournamentRefereePlanPanel({
                                   </TextField>
                                 </TableCell>
 
-                                <TableCell align="center" sx={{ minWidth: 180 }}>
+                                <TableCell align="center">
                                   <TextField
                                     select
                                     size="small"
@@ -458,7 +457,7 @@ export default function TournamentRefereePlanPanel({
                                   </TextField>
                                 </TableCell>
 
-                                <TableCell align="center" sx={{ minWidth: 180 }}>
+                                <TableCell align="center">
                                   <TextField
                                     select
                                     size="small"
@@ -485,7 +484,7 @@ export default function TournamentRefereePlanPanel({
                                   </TextField>
                                 </TableCell>
 
-                                <TableCell align="center" sx={{ minWidth: 180 }}>
+                                <TableCell align="center">
                                   <TextField
                                     select
                                     size="small"

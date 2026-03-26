@@ -316,7 +316,6 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
             setMatchDayToDelete={setMatchDayToDelete}
             deleteMatchDayLoading={deleteMatchDayMutation.isPending}
             matchDayToDelete={matchDayToDelete}
-            isMatchOutOfRange={isScheduledDayOutsideTournamentRange}
             isDayOutOfRange={isDayTimestampOutsideTournamentRange}
           />
 
@@ -336,7 +335,6 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
             setMatchDayToDelete={setMatchDayToDelete}
             deleteMatchDayLoading={deleteMatchDayMutation.isPending}
             matchDayToDelete={matchDayToDelete}
-            isMatchOutOfRange={isScheduledDayOutsideTournamentRange}
             isDayOutOfRange={isDayTimestampOutsideTournamentRange}
           />
 
@@ -356,6 +354,7 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
             setDayToDelete={setClassifierDayToDelete}
             deleteDayLoading={deleteClassifierDayLoading}
             dayToDelete={classifierDayToDelete}
+            isDayOutOfRange={isDayTimestampOutsideTournamentRange}
           />
         </Box>
 

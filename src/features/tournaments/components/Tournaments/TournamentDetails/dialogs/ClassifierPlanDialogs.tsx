@@ -144,7 +144,7 @@ export function AddClassifierPlanDialog({ addClassifierPlan, tournament }: AddCl
             <TableHead>
               <TableRow>
                 <TableCell>Zawodnik</TableCell>
-                <TableCell align="center" sx={{ width: 120 }}>
+                <TableCell align="center">
                   Akcja
                 </TableCell>
               </TableRow>
@@ -217,10 +217,10 @@ export function EditClassifierPlanDialog({ editClassifierPlan, tournament }: Edi
           </Alert>
         ) : null}
         <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2 }}>
-          <Table size="small" aria-label="Tabela planu klasyfikatorów (edycja)">
+          <Table size="small" aria-label="Tabela planu klasyfikatorów (edycja)" sx={{ tableLayout: "auto" }}>
             <TableHead>
               <TableRow>
-                <TableCell align="center" sx={{ width: 48 }} />
+                <TableCell align="center" />
                 <TableCell align="center">Zawodnik</TableCell>
                 <TableCell align="center">Start</TableCell>
                 <TableCell align="center">Koniec</TableCell>
@@ -252,7 +252,7 @@ export function EditClassifierPlanDialog({ editClassifierPlan, tournament }: Edi
                       </Box>
                     </Tooltip>
                   </TableCell>
-                  <TableCell sx={{ minWidth: 240 }}>
+                  <TableCell>
                     <TextField
                       select
                       label="Zawodnik"
@@ -272,7 +272,7 @@ export function EditClassifierPlanDialog({ editClassifierPlan, tournament }: Edi
                       ))}
                     </TextField>
                   </TableCell>
-                  <TableCell sx={{ minWidth: 130 }}>
+                  <TableCell>
                     <TextField
                       type="time"
                       label="Start"
@@ -294,7 +294,7 @@ export function EditClassifierPlanDialog({ editClassifierPlan, tournament }: Edi
                       size="small"
                     />
                   </TableCell>
-                  <TableCell sx={{ minWidth: 130 }}>
+                  <TableCell>
                     <TextField
                       type="time"
                       label="Koniec"
@@ -308,7 +308,7 @@ export function EditClassifierPlanDialog({ editClassifierPlan, tournament }: Edi
                       size="small"
                     />
                   </TableCell>
-                  <TableCell sx={{ minWidth: 140 }}>
+                  <TableCell>
                     <TextField
                       type="number"
                       label="Klasyfikacja"
@@ -322,7 +322,7 @@ export function EditClassifierPlanDialog({ editClassifierPlan, tournament }: Edi
                       inputProps={{ step: "0.5", min: "0", max: "4" }}
                     />
                   </TableCell>
-                  <TableCell sx={{ minWidth: 160 }}>
+                  <TableCell>
                     <TextField
                       select
                       label="Obserwacja"

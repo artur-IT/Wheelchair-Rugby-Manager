@@ -22,10 +22,6 @@ Użytkownikiem będzie 1 osoba odpowiedzialna za organizację całego turnieju. 
 <details style="margin-left: 1.5em">
 <summary><h3 style="display:inline; margin:0">v.2 (opcjonalne):</h3></summary>
 
-- plan klasyfikacji zawodników (+pdf):
-  - zawodnik,
-  - gdzie,
-  - o której,
 - tabela generalna drużyn po turnieju:
   - miejsca zajęte,
   - wynik,
@@ -239,15 +235,15 @@ Ta ściąga pomaga szybko zdecydować, gdzie trzymać kod po refaktorze na `feat
 
 ### Gdzie co trafia
 
-- `src/features/teams/...`  
+- `src/features/teams/...`
   Kod tylko dla drużyn: formularze, widoki szczegółów, pomocnicze hooki i testy.
-- `src/features/tournaments/...`  
+- `src/features/tournaments/...`
   Kod tylko dla turniejów: lista, szczegóły, plan meczów, dialogi i testy.
-- `src/features/settings/...`  
+- `src/features/settings/...`
   Kod tylko dla ustawień sezonu: zarządzanie personelem, sezonami, formularze.
-- `src/components/ui/...`  
+- `src/components/ui/...`
   Wspólne komponenty UI bez logiki domenowej (np. alert, dialog potwierdzenia).
-- `src/lib/...`  
+- `src/lib/...`
   Wspólne helpery i logika techniczna (np. formatowanie dat, walidacje, query keys, api klient).
 
 ### Szybki test decyzji (30 sekund)

@@ -15,14 +15,8 @@ import { useRef } from "react";
 import DataLoadAlert from "@/components/ui/DataLoadAlert";
 import type { Match, Tournament } from "@/types";
 import { MATCH_DURATION_MS } from "@/features/tournaments/components/Tournaments/TournamentDetails/hooks/matchPlanHelpers";
+import { formatDateRangePl } from "@/lib/dateFormat";
 import { printElementAsLandscapePdf } from "@/lib/print";
-
-/** Highlight for match times when the scheduled day is outside tournament dates. */
-const outOfRangeTimeCellSx = {
-  bgcolor: "error.main",
-  color: "common.white",
-  fontWeight: 700,
-} as const;
 
 function getTeamNameColor(scoreA?: number, scoreB?: number, side?: "A" | "B") {
   const hasBothScores = typeof scoreA === "number" && typeof scoreB === "number";
@@ -49,8 +43,7 @@ interface TournamentMatchesPlanPanelProps {
   setMatchDayToDelete: (timestamp: number) => void;
   deleteMatchDayLoading: boolean;
   matchDayToDelete: number | null;
-  /** When set, Start/Koniec cells and day headings use error styling if outside tournament window. */
-  isMatchOutOfRange?: (scheduledAtIso: string) => boolean;
+  /** When set, day headings use error styling if outside tournament window. */
   isDayOutOfRange?: (dayTimestamp: number) => boolean;
 }
 
@@ -71,19 +64,11 @@ export default function TournamentMatchesPlanPanel({
   setMatchDayToDelete,
   deleteMatchDayLoading,
   matchDayToDelete,
-  isMatchOutOfRange,
   isDayOutOfRange,
 }: TournamentMatchesPlanPanelProps) {
   const panelRef = useRef<HTMLDivElement | null>(null);
 
-  const tournamentDateRangeLabel = (() => {
-    const start = new Date(tournament.startDate);
-    const end = tournament.endDate ? new Date(tournament.endDate) : null;
-
-    if (Number.isNaN(start.getTime())) return "";
-    if (!end || Number.isNaN(end.getTime())) return start.toLocaleDateString("pl-PL");
-    return `${start.toLocaleDateString("pl-PL")} - ${end.toLocaleDateString("pl-PL")}`;
-  })();
+  const tournamentDateRangeLabel = formatDateRangePl(tournament.startDate, tournament.endDate);
 
   function handlePrintPlan() {
     if (!panelRef.current) return;
@@ -99,6 +84,8 @@ export default function TournamentMatchesPlanPanel({
         bgcolor: "#F1F7FC",
         border: "1px solid",
         borderColor: "grey.200",
+        width: "fit-content",
+        maxWidth: "100%",
       }}
     >
       <Typography className="wr-print-duplicate-title" variant="h6" sx={{ fontWeight: "bold", mb: 3 }}>
@@ -148,14 +135,14 @@ export default function TournamentMatchesPlanPanel({
             </Button>
           </Box>
 
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 4 }}>
             {scheduleTableDayTimestamps.map((dayTimestamp) => {
               const dayMatches = matches.filter((m) => getMatchDayTimestamp(m.scheduledAt) === dayTimestamp);
               const dayLabel = getScheduleDayLabel(dayTimestamp);
               const dayHighlight = isDayOutOfRange?.(dayTimestamp) ?? false;
 
               return (
-                <Box key={dayTimestamp}>
+                <Box key={dayTimestamp} sx={{ display: "inline-flex", flexDirection: "column", maxWidth: "100%" }}>
                   <Typography
                     variant="h6"
                     sx={{
@@ -202,8 +189,22 @@ export default function TournamentMatchesPlanPanel({
                       </Button>
                     </Box>
                   ) : (
-                    <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 3 }}>
-                      <Table size="small" aria-label={`Tabela planu rozgrywek: ${dayLabel}`}>
+                    <TableContainer
+                      component={Paper}
+                      variant="outlined"
+                      sx={{ borderRadius: 3, width: "fit-content", maxWidth: "100%", overflowX: "auto" }}
+                    >
+                      <Table
+                        size="small"
+                        aria-label={`Tabela planu rozgrywek: ${dayLabel}`}
+                        sx={{
+                          tableLayout: "auto",
+                          width: "max-content",
+                          "& .MuiTableCell-root": {
+                            px: 1,
+                          },
+                        }}
+                      >
                         <TableHead
                           sx={{
                             bgcolor: "#dbeafe",
@@ -215,10 +216,10 @@ export default function TournamentMatchesPlanPanel({
                         >
                           <TableRow>
                             <TableCell align="center">Drużyna A</TableCell>
-                            <TableCell align="center">Punkty A</TableCell>
+                            <TableCell align="center">Punkty</TableCell>
                             <TableCell align="center">Start</TableCell>
                             <TableCell align="center">Koniec</TableCell>
-                            <TableCell align="center">Punkty B</TableCell>
+                            <TableCell align="center">Punkty</TableCell>
                             <TableCell align="center">Drużyna B</TableCell>
                             <TableCell align="center">Boisko</TableCell>
                             <TableCell align="center">Koszulki</TableCell>
@@ -226,8 +227,6 @@ export default function TournamentMatchesPlanPanel({
                         </TableHead>
                         <TableBody>
                           {dayMatches.map((m) => {
-                            // Jeśli drużyna została usunięta z turnieju, jej nazwa już nie istnieje w `tournament.teams`.
-                            // Wtedy pokazujemy „—” zamiast surowego ID.
                             const teamAName = tournament.teams.find((t) => t.id === m.teamAId)?.name ?? "—";
                             const teamBName = tournament.teams.find((t) => t.id === m.teamBId)?.name ?? "—";
                             const startD = new Date(m.scheduledAt);
@@ -247,7 +246,6 @@ export default function TournamentMatchesPlanPanel({
                                 })
                               : "—";
                             const { teamA: jerseyA, teamB: jerseyB } = parseJerseyInfo(m.jerseyInfo);
-                            const rowOut = isMatchOutOfRange?.(m.scheduledAt) ?? false;
 
                             return (
                               <TableRow key={m.id}>
@@ -260,10 +258,10 @@ export default function TournamentMatchesPlanPanel({
                                 <TableCell align="center" sx={{ fontSize: "1.4rem" }}>
                                   {m.scoreA ?? "—"}
                                 </TableCell>
-                                <TableCell align="center" sx={rowOut ? outOfRangeTimeCellSx : undefined}>
+                                <TableCell align="center">
                                   {startTime}
                                 </TableCell>
-                                <TableCell align="center" sx={rowOut ? outOfRangeTimeCellSx : undefined}>
+                                <TableCell align="center">
                                   {endTime}
                                 </TableCell>
                                 <TableCell align="center" sx={{ fontSize: "1.4rem" }}>
@@ -276,7 +274,7 @@ export default function TournamentMatchesPlanPanel({
                                   {teamBName}
                                 </TableCell>
                                 <TableCell align="center">{m.court ?? "—"}</TableCell>
-                                <TableCell align="center" sx={{ minWidth: 260 }}>
+                                <TableCell align="center">
                                   <Box
                                     sx={{
                                       display: "flex",
@@ -287,7 +285,7 @@ export default function TournamentMatchesPlanPanel({
                                     <Typography
                                       variant="body2"
                                       component="div"
-                                      sx={{ textAlign: "center", whiteSpace: "pre-line" }}
+                                      sx={{ textAlign: "left", whiteSpace: "pre-line" }}
                                     >
                                       {`A: ${jerseyValueToNounLabel(jerseyA)}\nB: ${jerseyValueToNounLabel(jerseyB)}`}
                                     </Typography>

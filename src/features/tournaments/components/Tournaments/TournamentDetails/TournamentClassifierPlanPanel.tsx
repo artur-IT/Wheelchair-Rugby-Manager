@@ -39,6 +39,8 @@ interface TournamentClassifierPlanPanelProps {
   setDayToDelete: (timestamp: number) => void;
   deleteDayLoading: boolean;
   dayToDelete: number | null;
+  /** When set, day headings use error styling if outside tournament window. */
+  isDayOutOfRange?: (dayTimestamp: number) => boolean;
 }
 
 function toDayTimestamp(iso: string) {
@@ -67,6 +69,7 @@ export default function TournamentClassifierPlanPanel({
   setDayToDelete,
   deleteDayLoading,
   dayToDelete,
+  isDayOutOfRange,
 }: TournamentClassifierPlanPanelProps) {
   const panelRef = useRef<HTMLDivElement | null>(null);
   const rowsByDay = useMemo(() => {
@@ -100,7 +103,15 @@ export default function TournamentClassifierPlanPanel({
   return (
     <Paper
       ref={panelRef}
-      sx={{ p: 4, borderRadius: 3, bgcolor: "#eef2ff", border: "1px solid", borderColor: "grey.200" }}
+      sx={{
+        p: 4,
+        borderRadius: 3,
+        bgcolor: "#eef2ff",
+        border: "1px solid",
+        borderColor: "grey.200",
+        width: "fit-content",
+        maxWidth: "100%",
+      }}
     >
       <Box className="wr-print-duplicate-title" sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
         <Box sx={{ bgcolor: "#c7d2fe", p: 1, borderRadius: 2, color: "#3730a3" }}>
@@ -160,13 +171,38 @@ export default function TournamentClassifierPlanPanel({
             )}
           </Box>
 
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 4 }}>
             {scheduleTableDayTimestamps.map((dayTimestamp) => {
               const dayRows = rowsByDay.get(dayTimestamp) ?? [];
               const dayLabel = getScheduleDayLabel(dayTimestamp);
+              const dayHighlight = isDayOutOfRange?.(dayTimestamp) ?? false;
               return (
-                <Box key={dayTimestamp}>
-                  <Typography variant="h6" sx={{ fontWeight: 900, mb: 2 }}>
+                <Box
+                  key={dayTimestamp}
+                  sx={{
+                    display: "inline-flex",
+                    flexDirection: "column",
+                    maxWidth: "100%",
+                    width: "100%",
+                  }}
+                >
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      fontWeight: 900,
+                      mb: 2,
+                      ...(dayHighlight
+                        ? {
+                            color: "common.white",
+                            bgcolor: "error.main",
+                            px: 1,
+                            py: 0.5,
+                            borderRadius: 1,
+                            display: "inline-block",
+                          }
+                        : {}),
+                    }}
+                  >
                     {dayLabel}
                   </Typography>
                   {dayRows.length === 0 ? (
@@ -187,8 +223,22 @@ export default function TournamentClassifierPlanPanel({
                       </Button>
                     </Box>
                   ) : (
-                    <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 3 }}>
-                      <Table size="small" aria-label={`Tabela planu klasyfikatorów: ${dayLabel}`}>
+                    <TableContainer
+                      component={Paper}
+                      variant="outlined"
+                      sx={{ borderRadius: 3, width: "100%", maxWidth: "100%", overflowX: "auto" }}
+                    >
+                      <Table
+                        size="small"
+                        aria-label={`Tabela planu klasyfikatorów: ${dayLabel}`}
+                        sx={{
+                          tableLayout: "auto",
+                          width: "100%",
+                          "& .MuiTableCell-root": {
+                            px: 1,
+                          },
+                        }}
+                      >
                         <TableHead sx={{ bgcolor: "#e0e7ff", "& .MuiTableCell-root": { fontWeight: 700 } }}>
                           <TableRow>
                             <TableCell align="center">Zawodnik</TableCell>

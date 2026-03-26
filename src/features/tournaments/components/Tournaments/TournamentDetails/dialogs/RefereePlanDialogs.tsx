@@ -337,10 +337,10 @@ export function EditRefereePlanDialog({
         ) : null}
 
         <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2 }}>
-          <Table size="small" aria-label="Tabela planu sędziów (edycja)">
+          <Table size="small" aria-label="Tabela planu sędziów (edycja)" sx={{ tableLayout: "auto" }}>
             <TableHead>
               <TableRow>
-                <TableCell align="center" sx={{ width: 48 }} />
+                <TableCell align="center" />
                 <TableCell align="center">Drużyna A</TableCell>
                 <TableCell align="center">Start</TableCell>
                 <TableCell align="center">Koniec</TableCell>
@@ -359,10 +359,7 @@ export function EditRefereePlanDialog({
 
                 return (
                   <TableRow key={draft.id ?? `ref-row-${idx}`}>
-                    <TableCell
-                      align="center"
-                      sx={{ width: 48, paddingLeft: 1, paddingRight: 1, verticalAlign: "middle" }}
-                    >
+                    <TableCell align="center" sx={{ paddingLeft: 1, paddingRight: 1, verticalAlign: "middle" }}>
                       <Tooltip title="Usuń pozycję">
                         <Box sx={{ display: "flex", justifyContent: "center", width: "100%" }}>
                           <IconButton
@@ -396,7 +393,7 @@ export function EditRefereePlanDialog({
                       </Tooltip>
                     </TableCell>
 
-                    <TableCell sx={{ minWidth: 180 }}>
+                    <TableCell>
                       <TextField
                         select
                         label="Drużyna A"
@@ -429,7 +426,7 @@ export function EditRefereePlanDialog({
                       </TextField>
                     </TableCell>
 
-                    <TableCell sx={{ minWidth: 120 }}>
+                    <TableCell>
                       <TextField
                         type="time"
                         label="Start"
@@ -446,7 +443,7 @@ export function EditRefereePlanDialog({
                       />
                     </TableCell>
 
-                    <TableCell sx={{ minWidth: 120 }}>
+                    <TableCell>
                       <TextField
                         type="time"
                         label="Koniec"
@@ -457,7 +454,7 @@ export function EditRefereePlanDialog({
                       />
                     </TableCell>
 
-                    <TableCell sx={{ minWidth: 180 }}>
+                    <TableCell>
                       <TextField
                         select
                         label="Drużyna B"
@@ -478,7 +475,7 @@ export function EditRefereePlanDialog({
                       </TextField>
                     </TableCell>
 
-                    <TableCell sx={{ minWidth: 95 }}>
+                    <TableCell>
                       <TextField
                         select
                         label="Boisko"
@@ -495,7 +492,7 @@ export function EditRefereePlanDialog({
                       </TextField>
                     </TableCell>
 
-                    <TableCell sx={{ minWidth: 160 }}>
+                    <TableCell>
                       <TextField
                         select
                         label="Sędzia 1"
@@ -524,7 +521,7 @@ export function EditRefereePlanDialog({
                       </TextField>
                     </TableCell>
 
-                    <TableCell sx={{ minWidth: 160 }}>
+                    <TableCell>
                       <TextField
                         select
                         label="Sędzia 2"
@@ -553,7 +550,7 @@ export function EditRefereePlanDialog({
                       </TextField>
                     </TableCell>
 
-                    <TableCell sx={{ minWidth: 160 }}>
+                    <TableCell>
                       <TextField
                         select
                         label="Stolik kar"
@@ -582,7 +579,7 @@ export function EditRefereePlanDialog({
                       </TextField>
                     </TableCell>
 
-                    <TableCell sx={{ minWidth: 160 }}>
+                    <TableCell>
                       <TextField
                         select
                         label="Zagary"

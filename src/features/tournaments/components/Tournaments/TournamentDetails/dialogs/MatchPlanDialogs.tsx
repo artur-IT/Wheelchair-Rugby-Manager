@@ -128,7 +128,7 @@ export function AddMatchDialog({ addMatch, tournament }: AddMatchDialogProps) {
         <Box
           sx={{
             display: "grid",
-            gridTemplateColumns: { xs: "1fr", sm: "120px 120px 95px 95px 95px" },
+            gridTemplateColumns: { xs: "1fr", sm: "120px 120px 105px 105px 105px" },
             gap: 1.5,
             mb: 2,
             alignItems: "end",
@@ -160,7 +160,7 @@ export function AddMatchDialog({ addMatch, tournament }: AddMatchDialogProps) {
             value={addMatch.court}
             onChange={(e) => addMatch.setCourt(String(e.target.value))}
             size="small"
-            sx={{ minWidth: 95 }}
+            sx={{ minWidth: 105 }}
           >
             <MenuItem value="1">1</MenuItem>
             <MenuItem value="2">2</MenuItem>
@@ -173,7 +173,7 @@ export function AddMatchDialog({ addMatch, tournament }: AddMatchDialogProps) {
             onChange={(e) => addMatch.setScoreA(e.target.value)}
             InputLabelProps={{ shrink: true }}
             size="small"
-            sx={{ minWidth: 95 }}
+            sx={{ minWidth: 105 }}
           />
 
           <TextField
@@ -183,7 +183,7 @@ export function AddMatchDialog({ addMatch, tournament }: AddMatchDialogProps) {
             onChange={(e) => addMatch.setScoreB(e.target.value)}
             InputLabelProps={{ shrink: true }}
             size="small"
-            sx={{ minWidth: 95 }}
+            sx={{ minWidth: 105 }}
           />
         </Box>
 
@@ -309,10 +309,22 @@ export function EditMatchDialog({
         ) : null}
 
         <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: 2 }}>
-          <Table size="small" aria-label="Tabela meczów">
+          <Table
+            size="small"
+            aria-label="Tabela meczów"
+            sx={{
+              tableLayout: "auto",
+              "& .MuiTableCell-root": {
+                px: 1,
+              },
+              "& .MuiTableCell-head": {
+                px: 1,
+              },
+            }}
+          >
             <TableHead>
               <TableRow>
-                <TableCell align="center" sx={{ width: 48 }} />
+                <TableCell align="center" />
                 <TableCell align="center">Drużyna A</TableCell>
                 <TableCell align="center">Wynik A</TableCell>
                 <TableCell align="center">Start</TableCell>
@@ -326,10 +338,7 @@ export function EditMatchDialog({
             <TableBody>
               {editMatch.drafts.map((draft, idx) => (
                 <TableRow key={draft.id ?? `row-${idx}`}>
-                  <TableCell
-                    align="center"
-                    sx={{ width: 48, paddingLeft: 1, paddingRight: 1, verticalAlign: "middle" }}
-                  >
+                  <TableCell align="center" sx={{ paddingLeft: 1, paddingRight: 1, verticalAlign: "middle" }}>
                     {(() => {
                       const teamAName = tournament.teams.find((t) => t.id === draft.teamAId)?.name ?? draft.teamAId;
                       const teamBName = tournament.teams.find((t) => t.id === draft.teamBId)?.name ?? draft.teamBId;
@@ -375,7 +384,7 @@ export function EditMatchDialog({
                       );
                     })()}
                   </TableCell>
-                  <TableCell sx={{ minWidth: 180 }}>
+                  <TableCell>
                     <TextField
                       select
                       label="Drużyna A"
@@ -404,7 +413,7 @@ export function EditMatchDialog({
                     </TextField>
                   </TableCell>
 
-                  <TableCell sx={{ minWidth: 140 }}>
+                  <TableCell>
                     <TextField
                       type="number"
                       label="Wynik A"
@@ -416,10 +425,12 @@ export function EditMatchDialog({
                       }
                       InputLabelProps={{ shrink: true }}
                       size="small"
+                      fullWidth
+                      sx={{ minWidth: 90 }}
                     />
                   </TableCell>
 
-                  <TableCell sx={{ minWidth: 120 }}>
+                  <TableCell>
                     <TextField
                       type="time"
                       label="Start"
@@ -436,7 +447,7 @@ export function EditMatchDialog({
                     />
                   </TableCell>
 
-                  <TableCell sx={{ minWidth: 120 }}>
+                  <TableCell>
                     <TextField
                       type="time"
                       label="Koniec"
@@ -447,7 +458,7 @@ export function EditMatchDialog({
                     />
                   </TableCell>
 
-                  <TableCell sx={{ minWidth: 140 }}>
+                  <TableCell>
                     <TextField
                       type="number"
                       label="Wynik B"
@@ -459,10 +470,12 @@ export function EditMatchDialog({
                       }
                       InputLabelProps={{ shrink: true }}
                       size="small"
+                      fullWidth
+                      sx={{ minWidth: 90 }}
                     />
                   </TableCell>
 
-                  <TableCell sx={{ minWidth: 180 }}>
+                  <TableCell>
                     <TextField
                       select
                       label="Drużyna B"
@@ -483,7 +496,7 @@ export function EditMatchDialog({
                     </TextField>
                   </TableCell>
 
-                  <TableCell sx={{ minWidth: 120 }}>
+                  <TableCell>
                     <TextField
                       select
                       label="Boisko"
@@ -495,28 +508,29 @@ export function EditMatchDialog({
                       }
                       size="small"
                       fullWidth
+                      sx={{ minWidth: 90 }}
                     >
                       <MenuItem value="1">1</MenuItem>
                       <MenuItem value="2">2</MenuItem>
                     </TextField>
                   </TableCell>
 
-                  <TableCell sx={{ minWidth: 230, verticalAlign: "middle" }}>
+                  <TableCell sx={{ verticalAlign: "middle", px: 1.5 }}>
                     <Box
                       sx={{
                         display: "grid",
-                        gridTemplateColumns: "1fr 1fr",
-                        gap: 1,
-                        alignItems: "center",
+                        gridTemplateColumns: "1fr",
+                        gap: 0.25,
                       }}
                     >
-                      <Box>
-                        <Typography variant="caption" color="text.secondary">
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "nowrap" }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ minWidth: 12, lineHeight: 1 }}>
                           A
                         </Typography>
                         <RadioGroup
                           row
                           value={draft.jerseyA}
+                          sx={{ flexWrap: "nowrap", whiteSpace: "nowrap", my: -0.25 }}
                           onChange={(e) => {
                             const next = e.target.value as "jasne" | "ciemne";
                             editMatch.setDrafts((prev) =>
@@ -530,23 +544,33 @@ export function EditMatchDialog({
                             value="jasne"
                             control={<Radio size="small" />}
                             label="Jasne"
-                            sx={{ "& .MuiFormControlLabel-label": { fontSize: 12 } }}
+                            sx={{
+                              mr: 0.75,
+                              my: 0,
+                              "& .MuiFormControlLabel-label": { fontSize: 12, whiteSpace: "nowrap", lineHeight: 1 },
+                            }}
                           />
                           <FormControlLabel
                             value="ciemne"
                             control={<Radio size="small" />}
                             label="Ciemne"
-                            sx={{ "& .MuiFormControlLabel-label": { fontSize: 12 } }}
+                            sx={{
+                              mr: 0,
+                              my: 0,
+                              "& .MuiFormControlLabel-label": { fontSize: 12, whiteSpace: "nowrap", lineHeight: 1 },
+                            }}
                           />
                         </RadioGroup>
                       </Box>
-                      <Box>
-                        <Typography variant="caption" color="text.secondary">
+
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "nowrap" }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ minWidth: 12, lineHeight: 1 }}>
                           B
                         </Typography>
                         <RadioGroup
                           row
                           value={draft.jerseyB}
+                          sx={{ flexWrap: "nowrap", whiteSpace: "nowrap", my: -0.25 }}
                           onChange={(e) => {
                             const next = e.target.value as "jasne" | "ciemne";
                             editMatch.setDrafts((prev) =>
@@ -560,13 +584,21 @@ export function EditMatchDialog({
                             value="jasne"
                             control={<Radio size="small" />}
                             label="Jasne"
-                            sx={{ "& .MuiFormControlLabel-label": { fontSize: 12 } }}
+                            sx={{
+                              mr: 0.75,
+                              my: 0,
+                              "& .MuiFormControlLabel-label": { fontSize: 12, whiteSpace: "nowrap", lineHeight: 1 },
+                            }}
                           />
                           <FormControlLabel
                             value="ciemne"
                             control={<Radio size="small" />}
                             label="Ciemne"
-                            sx={{ "& .MuiFormControlLabel-label": { fontSize: 12 } }}
+                            sx={{
+                              mr: 0,
+                              my: 0,
+                              "& .MuiFormControlLabel-label": { fontSize: 12, whiteSpace: "nowrap", lineHeight: 1 },
+                            }}
                           />
                         </RadioGroup>
                       </Box>
