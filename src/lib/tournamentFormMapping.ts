@@ -31,6 +31,7 @@ export function tournamentDatesChangedForEdit(prev: Tournament, next: Tournament
 }
 
 const ZIP_CODE_REGEX = /^\d{2}-\d{3}$/;
+const DEFAULT_MEAL_LOCATION = "hotel";
 
 export function parseAddressParts(address: string): { street: string; zipCode: string; city: string } {
   const fallback = { street: "", zipCode: "00-000", city: "Miasto" };
@@ -58,6 +59,11 @@ export function parseAddressParts(address: string): { street: string; zipCode: s
   return { street: streetFromComma || normalized, zipCode: fallback.zipCode, city: restFromComma || fallback.city };
 }
 
+function mapMealLocationToForm(location: Tournament["breakfastLocation"]): "hotel" | "hala" {
+  if (location === "HALL") return "hala";
+  return DEFAULT_MEAL_LOCATION;
+}
+
 export function tournamentToTournamentFormDefaults(tournament: Tournament): TournamentFormData {
   const startDate = new Date(tournament.startDate);
   const validStart = !Number.isNaN(startDate.getTime()) ? startDate : new Date();
@@ -76,7 +82,6 @@ export function tournamentToTournamentFormDefaults(tournament: Tournament): Tour
   // Hotel (accommodation) address — parsed from single address string
   const accommodationAddress = tournament.accommodation?.address ?? "";
   const hotelParts = parseAddressParts(accommodationAddress);
-
   return {
     name: tournament.name,
     startDate: validStart,
@@ -89,7 +94,14 @@ export function tournamentToTournamentFormDefaults(tournament: Tournament): Tour
     city,
     zipCode,
     street,
-    catering: tournament.catering ?? "Brak danych",
+    catering: tournament.catering ?? "",
+    breakfastServingTime: tournament.breakfastServingTime ?? "",
+    breakfastLocation: mapMealLocationToForm(tournament.breakfastLocation),
+    lunchServingTime: tournament.lunchServingTime ?? "",
+    lunchLocation: mapMealLocationToForm(tournament.lunchLocation),
+    dinnerServingTime: tournament.dinnerServingTime ?? "",
+    dinnerLocation: mapMealLocationToForm(tournament.dinnerLocation),
+    cateringNotes: tournament.cateringNotes ?? "",
     parking: tournament.parking ?? "",
     hallName: tournament.venue?.name ?? "Brak danych",
     hallMapLink: tournament.venue?.mapUrl ?? "",

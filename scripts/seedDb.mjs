@@ -235,6 +235,14 @@ async function seedDb() {
       name: "Turniej demo",
       startDate: new Date("2026-05-10T09:00:00.000Z"),
       endDate: new Date("2026-05-12T18:00:00.000Z"),
+      catering: "Pelne wyzywienie dla uczestnikow turnieju.",
+      breakfastServingTime: "07:00 - 09:00",
+      breakfastLocation: "HOTEL",
+      lunchServingTime: "12:00 - 14:00",
+      lunchLocation: "HALL",
+      dinnerServingTime: "18:00 - 20:00",
+      dinnerLocation: "HOTEL",
+      cateringNotes: "Opcje bezglutenowe po wczesniejszym zgloszeniu.",
       venues: {
         create: [
           {
@@ -250,14 +258,6 @@ async function seedDb() {
             name: "Hotel Sport",
             address: "ul. Hotelowa 5, 11-222 Kraków",
             mapUrl: "https://maps.google.com",
-          },
-        ],
-      },
-      mealPlans: {
-        create: [
-          {
-            location: "HALL",
-            details: "Obiad na hali, kolacja w hotelu.",
           },
         ],
       },

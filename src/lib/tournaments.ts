@@ -2,6 +2,10 @@ import { prisma } from "@/lib/prisma";
 import type { Match, Tournament } from "@/types";
 import type { TournamentFormData } from "@/lib/validateInputs";
 
+function mapMealLocationFromForm(location: TournamentFormData["breakfastLocation"]): "HALL" | "HOTEL" {
+  return location === "hala" ? "HALL" : "HOTEL";
+}
+
 /** Creates a tournament with basic details plus accommodation, hall and meal plan. */
 export async function createTournamentWithDetails(form: TournamentFormData) {
   const latestSeason = await prisma.season.findFirst({
@@ -20,6 +24,14 @@ export async function createTournamentWithDetails(form: TournamentFormData) {
         name: form.name,
         startDate: form.startDate,
         endDate: form.endDate ?? null,
+        catering: form.catering,
+        breakfastServingTime: form.breakfastServingTime,
+        breakfastLocation: mapMealLocationFromForm(form.breakfastLocation),
+        lunchServingTime: form.lunchServingTime,
+        lunchLocation: mapMealLocationFromForm(form.lunchLocation),
+        dinnerServingTime: form.dinnerServingTime,
+        dinnerLocation: mapMealLocationFromForm(form.dinnerLocation),
+        cateringNotes: form.cateringNotes,
         seasonId: latestSeason.id,
       },
     });
@@ -46,14 +58,6 @@ export async function createTournamentWithDetails(form: TournamentFormData) {
       },
     });
 
-    await tx.mealPlan.create({
-      data: {
-        location: "OTHER",
-        details: form.catering,
-        tournamentId: tournament.id,
-      },
-    });
-
     return tournament;
   });
 }
@@ -65,7 +69,6 @@ export async function listTournamentsWithDetails(): Promise<Tournament[]> {
     include: {
       venues: { orderBy: { id: "asc" } },
       accommodations: { orderBy: { id: "asc" } },
-      mealPlans: { orderBy: { id: "asc" } },
       volunteers: true,
       teams: {
         include: {
@@ -86,8 +89,6 @@ export async function listTournamentsWithDetails(): Promise<Tournament[]> {
   return tournaments.map((t) => {
     const primaryVenue = t.venues[0] ?? null;
     const primaryAccommodation = t.accommodations[0] ?? null;
-    const cateringMeal = t.mealPlans.find((m) => (m.details ?? "").trim().length > 0) ?? t.mealPlans[0] ?? null;
-
     return {
       id: t.id,
       name: t.name,
@@ -121,7 +122,14 @@ export async function listTournamentsWithDetails(): Promise<Tournament[]> {
             tournamentId: primaryAccommodation.tournamentId,
           }
         : undefined,
-      catering: cateringMeal?.details ?? undefined,
+      catering: t.catering ?? undefined,
+      breakfastServingTime: t.breakfastServingTime ?? undefined,
+      breakfastLocation: t.breakfastLocation ?? undefined,
+      lunchServingTime: t.lunchServingTime ?? undefined,
+      lunchLocation: t.lunchLocation ?? undefined,
+      dinnerServingTime: t.dinnerServingTime ?? undefined,
+      dinnerLocation: t.dinnerLocation ?? undefined,
+      cateringNotes: t.cateringNotes ?? undefined,
       parking: primaryAccommodation?.notes ?? undefined,
       teams: t.teams.map((tt) => ({
         id: tt.team.id,
@@ -191,13 +199,20 @@ export async function updateTournamentWithDetails(tournamentId: string, form: To
         name: form.name,
         startDate: form.startDate,
         endDate: form.endDate ?? null,
+        catering: form.catering,
+        breakfastServingTime: form.breakfastServingTime,
+        breakfastLocation: mapMealLocationFromForm(form.breakfastLocation),
+        lunchServingTime: form.lunchServingTime,
+        lunchLocation: mapMealLocationFromForm(form.lunchLocation),
+        dinnerServingTime: form.dinnerServingTime,
+        dinnerLocation: mapMealLocationFromForm(form.dinnerLocation),
+        cateringNotes: form.cateringNotes,
       },
     });
 
     // Replace tournament-specific details.
     await tx.sportsHall.deleteMany({ where: { tournamentId } });
     await tx.accommodation.deleteMany({ where: { tournamentId } });
-    await tx.mealPlan.deleteMany({ where: { tournamentId } });
 
     await tx.accommodation.create({
       data: {
@@ -217,14 +232,6 @@ export async function updateTournamentWithDetails(tournamentId: string, form: To
         postalCode: form.zipCode || null,
         notes: null,
         mapUrl: form.hallMapLink || null,
-        tournamentId,
-      },
-    });
-
-    await tx.mealPlan.create({
-      data: {
-        location: "OTHER",
-        details: form.catering,
         tournamentId,
       },
     });

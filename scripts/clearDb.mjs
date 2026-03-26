@@ -20,7 +20,6 @@ async function clearDb() {
     prisma.classificationExam.deleteMany(),
 
     prisma.volunteer.deleteMany(),
-    prisma.mealPlan.deleteMany(),
     prisma.accommodation.deleteMany(),
     prisma.sportsHall.deleteMany(),
     prisma.tournament.deleteMany(),

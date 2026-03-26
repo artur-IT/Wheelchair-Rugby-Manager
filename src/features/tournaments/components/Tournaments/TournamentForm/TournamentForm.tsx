@@ -1,5 +1,19 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Box, Button, Grid, TextField, Typography, Paper, Divider, CircularProgress, Alert } from "@mui/material";
+import {
+  Box,
+  Button,
+  Grid,
+  TextField,
+  Typography,
+  Paper,
+  Divider,
+  CircularProgress,
+  Alert,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+} from "@mui/material";
 import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
 import AppShell from "@/components/AppShell/AppShell";
 import QueryProvider from "@/components/QueryProvider/QueryProvider";
@@ -46,6 +60,8 @@ function TournamentFormContent({ tournamentId }: Props) {
     control,
     handleSubmit,
     setFocus,
+    setValue,
+    watch,
     formState: { errors, touchedFields, submitCount },
     reset,
   } = useForm<TournamentFormData>({
@@ -68,8 +84,42 @@ function TournamentFormContent({ tournamentId }: Props) {
       zipCode: "",
       street: "",
       hallMapLink: "",
+      breakfastServingTime: "",
+      breakfastLocation: "hotel",
+      lunchServingTime: "",
+      lunchLocation: "hotel",
+      dinnerServingTime: "",
+      dinnerLocation: "hotel",
+      cateringNotes: "",
     },
   });
+
+  const breakfastServingTimeValue = watch("breakfastServingTime");
+  const breakfastLocationValue = watch("breakfastLocation");
+  const lunchServingTimeValue = watch("lunchServingTime");
+  const lunchLocationValue = watch("lunchLocation");
+  const dinnerServingTimeValue = watch("dinnerServingTime");
+  const dinnerLocationValue = watch("dinnerLocation");
+  const cateringNotesValue = watch("cateringNotes");
+
+  useEffect(() => {
+    const mealDescription = [
+      `Śniadanie: ${breakfastServingTimeValue} | Miejsce: ${breakfastLocationValue}`,
+      `Obiad: ${lunchServingTimeValue} | Miejsce: ${lunchLocationValue}`,
+      `Kolacja: ${dinnerServingTimeValue} | Miejsce: ${dinnerLocationValue}`,
+      `Uwagi: ${cateringNotesValue}`,
+    ].join("\n");
+    setValue("catering", mealDescription, { shouldValidate: true });
+  }, [
+    breakfastServingTimeValue,
+    breakfastLocationValue,
+    lunchServingTimeValue,
+    lunchLocationValue,
+    dinnerServingTimeValue,
+    dinnerLocationValue,
+    cateringNotesValue,
+    setValue,
+  ]);
 
   const {
     data: tournamentForEdit,
@@ -297,6 +347,22 @@ function TournamentFormContent({ tournamentId }: Props) {
             </Grid>
             <Grid size={{ xs: 12 }}>
               <Controller
+                name="parking"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    fullWidth
+                    label="Parking"
+                    placeholder="Parking"
+                    error={Boolean((touchedFields.parking || showAllErrors) && errors.parking)}
+                    helperText={touchedFields.parking || showAllErrors ? errors.parking?.message : undefined}
+                  />
+                )}
+              />
+            </Grid>
+            <Grid size={{ xs: 12 }}>
+              <Controller
                 name="mapLink"
                 control={control}
                 render={({ field }) => (
@@ -312,36 +378,165 @@ function TournamentFormContent({ tournamentId }: Props) {
               />
             </Grid>
             <Grid size={{ xs: 12 }}>
-              <Controller
-                name="catering"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    fullWidth
-                    label="Wyżywienie"
-                    placeholder="np. Hotel + Catering na hali"
-                    error={Boolean((touchedFields.catering || showAllErrors) && errors.catering)}
-                    helperText={touchedFields.catering || showAllErrors ? errors.catering?.message : undefined}
+              <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
+                Wyżywienie
+              </Typography>
+              <Grid container columnSpacing={2} rowSpacing={1}>
+                <Grid size={{ xs: 12 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.25 }}>
+                    Śniadania
+                  </Typography>
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <Controller
+                    name="breakfastServingTime"
+                    control={control}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        fullWidth
+                        label="Godziny wydawania"
+                        placeholder="np. 07:00 - 09:00"
+                        error={Boolean(
+                          (touchedFields.breakfastServingTime || showAllErrors) && errors.breakfastServingTime
+                        )}
+                        helperText={
+                          touchedFields.breakfastServingTime || showAllErrors
+                            ? errors.breakfastServingTime?.message
+                            : undefined
+                        }
+                      />
+                    )}
                   />
-                )}
-              />
-            </Grid>
-            <Grid size={{ xs: 12 }}>
-              <Controller
-                name="parking"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    fullWidth
-                    label="Parking"
-                    placeholder="Parking"
-                    error={Boolean((touchedFields.parking || showAllErrors) && errors.parking)}
-                    helperText={touchedFields.parking || showAllErrors ? errors.parking?.message : undefined}
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <Controller
+                    name="breakfastLocation"
+                    control={control}
+                    render={({ field }) => (
+                      <FormControl
+                        fullWidth
+                        error={Boolean((touchedFields.breakfastLocation || showAllErrors) && errors.breakfastLocation)}
+                      >
+                        <InputLabel id="breakfast-location-label">Miejsce posiłku</InputLabel>
+                        <Select {...field} labelId="breakfast-location-label" label="Miejsce posiłku">
+                          <MenuItem value="hotel">Hotel</MenuItem>
+                          <MenuItem value="hala">Hala</MenuItem>
+                        </Select>
+                      </FormControl>
+                    )}
                   />
-                )}
-              />
+                </Grid>
+                <Grid size={{ xs: 12 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.25 }}>
+                    Obiady
+                  </Typography>
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <Controller
+                    name="lunchServingTime"
+                    control={control}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        fullWidth
+                        label="Godziny wydawania"
+                        placeholder="np. 12:00 - 14:00"
+                        error={Boolean((touchedFields.lunchServingTime || showAllErrors) && errors.lunchServingTime)}
+                        helperText={
+                          touchedFields.lunchServingTime || showAllErrors ? errors.lunchServingTime?.message : undefined
+                        }
+                      />
+                    )}
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <Controller
+                    name="lunchLocation"
+                    control={control}
+                    render={({ field }) => (
+                      <FormControl
+                        fullWidth
+                        error={Boolean((touchedFields.lunchLocation || showAllErrors) && errors.lunchLocation)}
+                      >
+                        <InputLabel id="lunch-location-label">Miejsce posiłku</InputLabel>
+                        <Select {...field} labelId="lunch-location-label" label="Miejsce posiłku">
+                          <MenuItem value="hotel">Hotel</MenuItem>
+                          <MenuItem value="hala">Hala</MenuItem>
+                        </Select>
+                      </FormControl>
+                    )}
+                  />
+                </Grid>
+                <Grid size={{ xs: 12 }}>
+                  <Typography variant="body2" sx={{ fontWeight: 600, mb: 0.25 }}>
+                    Kolacje
+                  </Typography>
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <Controller
+                    name="dinnerServingTime"
+                    control={control}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        fullWidth
+                        label="Godziny wydawania"
+                        placeholder="np. 18:00 - 20:00"
+                        error={Boolean((touchedFields.dinnerServingTime || showAllErrors) && errors.dinnerServingTime)}
+                        helperText={
+                          touchedFields.dinnerServingTime || showAllErrors
+                            ? errors.dinnerServingTime?.message
+                            : undefined
+                        }
+                      />
+                    )}
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, sm: 6 }}>
+                  <Controller
+                    name="dinnerLocation"
+                    control={control}
+                    render={({ field }) => (
+                      <FormControl
+                        fullWidth
+                        error={Boolean((touchedFields.dinnerLocation || showAllErrors) && errors.dinnerLocation)}
+                      >
+                        <InputLabel id="dinner-location-label">Miejsce posiłku</InputLabel>
+                        <Select {...field} labelId="dinner-location-label" label="Miejsce posiłku">
+                          <MenuItem value="hotel">Hotel</MenuItem>
+                          <MenuItem value="hala">Hala</MenuItem>
+                        </Select>
+                      </FormControl>
+                    )}
+                  />
+                </Grid>
+                <Grid size={{ xs: 12 }}>
+                  <Controller
+                    name="cateringNotes"
+                    control={control}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        fullWidth
+                        multiline
+                        minRows={3}
+                        label="Uwagi"
+                        placeholder="Dodatkowe informacje o wyżywieniu"
+                        error={Boolean((touchedFields.cateringNotes || showAllErrors) && errors.cateringNotes)}
+                        helperText={
+                          touchedFields.cateringNotes || showAllErrors ? errors.cateringNotes?.message : undefined
+                        }
+                      />
+                    )}
+                  />
+                </Grid>
+              </Grid>
+              {(touchedFields.catering || showAllErrors) && errors.catering ? (
+                <Typography sx={{ mt: 1, color: "error.main", fontSize: "0.75rem" }}>
+                  {errors.catering.message}
+                </Typography>
+              ) : null}
             </Grid>
           </Grid>
 

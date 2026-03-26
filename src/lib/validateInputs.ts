@@ -159,6 +159,10 @@ export const requiredCateringSchema = z
   .min(3, "Opis wyżywienia musi mieć co najmniej 3 znaki")
   .max(MAX_LONG_TEXT, `Wyżywienie nie może przekraczać ${MAX_LONG_TEXT} znaków`);
 
+const mealLocationSchema = z.enum(["hotel", "hala"], {
+  message: "Wybierz miejsce posiłku",
+});
+
 export const requiredHallNameSchema = z
   .string()
   .min(1, "Nazwa hali jest wymagana")
@@ -195,6 +199,22 @@ export const tournamentFormSchema = z
     zipCode: requiredPostalCodeSchema,
     street: requiredAddressSchema,
     catering: requiredCateringSchema,
+    breakfastServingTime: z
+      .string()
+      .min(1, "Podaj przedział godzinowy")
+      .max(MAX_LONG_TEXT, `Przedział godzinowy nie może przekraczać ${MAX_LONG_TEXT} znaków`),
+    breakfastLocation: mealLocationSchema,
+    lunchServingTime: z
+      .string()
+      .min(1, "Podaj przedział godzinowy")
+      .max(MAX_LONG_TEXT, `Przedział godzinowy nie może przekraczać ${MAX_LONG_TEXT} znaków`),
+    lunchLocation: mealLocationSchema,
+    dinnerServingTime: z
+      .string()
+      .min(1, "Podaj przedział godzinowy")
+      .max(MAX_LONG_TEXT, `Przedział godzinowy nie może przekraczać ${MAX_LONG_TEXT} znaków`),
+    dinnerLocation: mealLocationSchema,
+    cateringNotes: z.string().max(MAX_LONG_TEXT, `Uwagi nie mogą przekraczać ${MAX_LONG_TEXT} znaków`),
     parking: optionalParkingSchema,
     hallName: requiredHallNameSchema,
     hallMapLink: optionalMapLinkSchema,

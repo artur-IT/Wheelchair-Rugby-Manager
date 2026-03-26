@@ -95,13 +95,20 @@ model Tournament {
   name         String
   startDate    DateTime
   endDate      DateTime?
+  catering     String?
+  breakfastServingTime String?
+  breakfastLocation    MealLocation?
+  lunchServingTime     String?
+  lunchLocation        MealLocation?
+  dinnerServingTime    String?
+  dinnerLocation       MealLocation?
+  cateringNotes        String?
   createdAt    DateTime               @default(now())
   updatedAt    DateTime               @updatedAt
   seasonId     String
   season       Season                 @relation(fields: [seasonId], references: [id], onDelete: Cascade)
   venues        SportsHall[]
   accommodations Accommodation[]
-  mealPlans    MealPlan[]
   teams        TournamentTeam[]
   referees     TournamentReferee[]
   classifiers  TournamentClassifier[]
@@ -187,17 +194,6 @@ model Accommodation {
 enum MealLocation {
   HALL
   HOTEL
-  OTHER
-}
-
-model MealPlan {
-  id           String       @id @default(cuid())
-  location     MealLocation
-  details      String?
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-  tournamentId String
-  tournament   Tournament   @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
 }
 
 // ─── Phase 2: Junction tables ─────────────────────────────────────────────────

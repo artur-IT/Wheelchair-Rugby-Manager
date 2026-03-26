@@ -2,7 +2,7 @@
 
 export type UserRole = "COACH" | "ORGANIZER";
 export type MatchStatus = "SCHEDULED" | "COMPLETED" | "CANCELLED";
-export type MealLocation = "HALL" | "HOTEL" | "OTHER";
+export type MealLocation = "HALL" | "HOTEL";
 export type RefereeRole = "REFEREE_1" | "REFEREE_2" | "TABLE_CLOCK" | "TABLE_PENALTY";
 
 // ─── Entities ────────────────────────────────────────────────────────────────
@@ -80,19 +80,19 @@ export interface Accommodation {
   tournamentId: string;
 }
 
-export interface MealPlan {
-  id: string;
-  location: MealLocation;
-  details?: string;
-  tournamentId: string;
-}
-
 export interface Tournament {
   id: string;
   name: string;
   venue?: SportsHall;
   accommodation?: Accommodation;
   catering?: string;
+  breakfastServingTime?: string;
+  breakfastLocation?: MealLocation;
+  lunchServingTime?: string;
+  lunchLocation?: MealLocation;
+  dinnerServingTime?: string;
+  dinnerLocation?: MealLocation;
+  cateringNotes?: string;
   parking?: string;
   teams: Team[];
   referees: Person[];

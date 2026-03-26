@@ -8,6 +8,18 @@ interface TournamentInfoPanelsProps {
 }
 
 export default function TournamentInfoPanels({ tournament }: TournamentInfoPanelsProps) {
+  const mealLocationLabel = (location?: Tournament["breakfastLocation"]) => {
+    if (location === "HALL") return "Hala";
+    if (location === "HOTEL") return "Hotel";
+    return "Brak danych";
+  };
+  const hasStructuredCatering = Boolean(
+    tournament.breakfastServingTime ||
+    tournament.lunchServingTime ||
+    tournament.dinnerServingTime ||
+    tournament.cateringNotes
+  );
+
   const venue = tournament.venue;
   const accommodation = tournament.accommodation;
   const venueMapsHref = resolvePlaceMapsHref(venue);
@@ -15,6 +27,9 @@ export default function TournamentInfoPanels({ tournament }: TournamentInfoPanel
   const cardSx = {
     p: 3,
     borderRadius: 3,
+    bgcolor: "background.paper",
+    border: 1,
+    borderColor: "divider",
     width: 400,
     minWidth: 400,
     maxWidth: 400,
@@ -33,7 +48,7 @@ export default function TournamentInfoPanels({ tournament }: TournamentInfoPanel
       }}
     >
       {venue ? (
-        <Paper sx={cardSx}>
+        <Paper variant="outlined" sx={cardSx}>
           <Box
             sx={{
               display: "flex",
@@ -75,7 +90,7 @@ export default function TournamentInfoPanels({ tournament }: TournamentInfoPanel
       ) : null}
 
       {accommodation ? (
-        <Paper sx={cardSx}>
+        <Paper variant="outlined" sx={cardSx}>
           <Box
             sx={{
               display: "flex",
@@ -121,7 +136,7 @@ export default function TournamentInfoPanels({ tournament }: TournamentInfoPanel
         </Paper>
       ) : null}
 
-      <Paper sx={cardSx}>
+      <Paper variant="outlined" sx={cardSx}>
         <Box
           sx={{
             display: "flex",
@@ -144,7 +159,27 @@ export default function TournamentInfoPanels({ tournament }: TournamentInfoPanel
             Wyżywienie
           </Typography>
         </Box>
-        {tournament.catering ? (
+        {hasStructuredCatering ? (
+          <Box sx={{ display: "grid", gap: 1 }}>
+            <Typography>
+              <strong>Śniadania:</strong> {tournament.breakfastServingTime || "Brak danych"} | <strong>Miejsce:</strong>{" "}
+              {mealLocationLabel(tournament.breakfastLocation)}
+            </Typography>
+            <Typography>
+              <strong>Obiady:</strong> {tournament.lunchServingTime || "Brak danych"} | <strong>Miejsce:</strong>{" "}
+              {mealLocationLabel(tournament.lunchLocation)}
+            </Typography>
+            <Typography>
+              <strong>Kolacje:</strong> {tournament.dinnerServingTime || "Brak danych"} | <strong>Miejsce:</strong>{" "}
+              {mealLocationLabel(tournament.dinnerLocation)}
+            </Typography>
+            {tournament.cateringNotes ? (
+              <Typography sx={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>
+                <strong>Uwagi:</strong> {tournament.cateringNotes}
+              </Typography>
+            ) : null}
+          </Box>
+        ) : tournament.catering ? (
           <Typography sx={{ fontWeight: 600, whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>
             {tournament.catering}
           </Typography>
