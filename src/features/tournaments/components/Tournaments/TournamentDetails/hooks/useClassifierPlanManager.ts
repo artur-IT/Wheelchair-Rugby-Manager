@@ -224,7 +224,7 @@ export default function useClassifierPlanManager({
   useEffect(() => {
     // When tournament dates change, drop empty days that are no longer in the allowed tournament window.
     // Real saved rows are kept (they come from API), only UI "empty placeholders" are cleaned up.
-    if (!storageKey) return;
+    if (!storageKey || matchDayOptions.length === 0) return;
     const allowed = new Set(matchDayOptions.map((o) => o.timestamp));
     setSavedEmptyDays((prev) => prev.filter((ts) => allowed.has(ts)));
   }, [matchDayOptions, storageKey]);
