@@ -13,6 +13,7 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  FormHelperText,
 } from "@mui/material";
 import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
 import AppShell from "@/components/AppShell/AppShell";
@@ -423,6 +424,9 @@ function TournamentFormContent({ tournamentId }: Props) {
                           <MenuItem value="hotel">Hotel</MenuItem>
                           <MenuItem value="hala">Hala</MenuItem>
                         </Select>
+                        {(touchedFields.breakfastLocation || showAllErrors) && errors.breakfastLocation ? (
+                          <FormHelperText>{errors.breakfastLocation.message}</FormHelperText>
+                        ) : null}
                       </FormControl>
                     )}
                   />
