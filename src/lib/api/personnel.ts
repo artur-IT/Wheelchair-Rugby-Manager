@@ -11,7 +11,7 @@ interface PersonnelPayload {
   firstName: string;
   lastName: string;
   email?: string;
-  phone?: string;
+  phone: string;
 }
 
 /** GET /api/referees?seasonId=… or /api/classifiers?seasonId=… */

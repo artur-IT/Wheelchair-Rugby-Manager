@@ -13,13 +13,13 @@ export interface Person {
   firstName: string;
   lastName: string;
   email?: string;
-  phone?: string | null;
+  phone: string;
 }
 
 export interface Season {
   id: string;
   name: string;
-  year?: number;
+  year: number;
   description?: string;
 }
 
@@ -47,7 +47,7 @@ export interface Staff {
   id: string;
   firstName: string;
   lastName: string;
-  teamId: string;
+  seasonId: string;
 }
 
 export interface Player {
@@ -97,7 +97,7 @@ export interface Tournament {
   teams: Team[];
   referees: Person[];
   classifiers: Person[];
-  volunteers?: Person[];
+  volunteers?: Volunteer[];
   startDate: string;
   endDate?: string;
   seasonId: string;
@@ -211,7 +211,7 @@ interface CreatePersonDto {
   firstName: string;
   lastName: string;
   email?: string;
-  phone?: string;
+  phone: string;
   seasonId: string;
 }
 

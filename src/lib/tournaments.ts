@@ -159,14 +159,14 @@ export async function listTournamentsWithDetails(): Promise<Tournament[]> {
         firstName: tr.referee.firstName,
         lastName: tr.referee.lastName,
         email: tr.referee.email ?? undefined,
-        phone: tr.referee.phone ?? undefined,
+        phone: tr.referee.phone,
       })),
       classifiers: t.classifiers.map((tc) => ({
         id: tc.classifier.id,
         firstName: tc.classifier.firstName,
         lastName: tc.classifier.lastName,
         email: tc.classifier.email ?? undefined,
-        phone: tc.classifier.phone ?? undefined,
+        phone: tc.classifier.phone,
       })),
       volunteers: t.volunteers.map((v) => ({
         id: v.id,

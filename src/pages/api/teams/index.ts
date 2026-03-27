@@ -3,6 +3,7 @@ import { z } from "@/lib/zodPl";
 import { prisma } from "@/lib/prisma";
 import { json } from "@/lib/api";
 import { createTeam } from "@/lib/teams";
+import { Prisma } from "generated/prisma/client";
 import { LOOSE_URL_REGEX, POSTAL_CODE_REGEX, toTitleCase } from "@/lib/validateInputs";
 
 const CreateTeamSchema = z
@@ -77,6 +78,18 @@ export const POST: APIRoute = async ({ request }) => {
   const parsed = CreateTeamSchema.safeParse(body);
   if (!parsed.success) return json({ error: parsed.error.flatten() }, 400);
 
-  const team = await createTeam(parsed.data);
-  return json(team, 201);
+  try {
+    const team = await createTeam(parsed.data);
+    return json(team, 201);
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === "P2002") {
+        return json({ error: "Drużyna o tej nazwie już istnieje w tym sezonie" }, 409);
+      }
+      if (error.code === "P2003") {
+        return json({ error: "Nieprawidłowy identyfikator sezonu" }, 400);
+      }
+    }
+    return json({ error: "Nie udało się utworzyć drużyny" }, 500);
+  }
 };

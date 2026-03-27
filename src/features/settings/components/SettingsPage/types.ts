@@ -6,7 +6,7 @@ export interface PersonFormPayload {
   firstName: string;
   lastName: string;
   email?: string | null;
-  phone?: string | null;
+  phone: string;
 }
 
 export interface PersonnelTableProps {

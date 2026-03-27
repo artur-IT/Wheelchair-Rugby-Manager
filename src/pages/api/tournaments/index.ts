@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { z } from "@/lib/zodPl";
 import { json } from "@/lib/api";
+import { Prisma } from "generated/prisma/client";
 import {
   requiredCateringSchema,
   requiredCitySchema,
@@ -98,6 +99,11 @@ export const POST: APIRoute = async ({ request }) => {
   } catch (error) {
     if (error instanceof Error && error.message === "NO_SEASON_AVAILABLE") {
       return json({ error: "Brak sezonu. Utwórz sezon przed dodaniem turnieju." }, 400);
+    }
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === "P2002") {
+        return json({ error: "Turniej o tej nazwie już istnieje w tym sezonie" }, 409);
+      }
     }
 
     return json({ error: "Nie udało się zapisać turnieju." }, 500);
