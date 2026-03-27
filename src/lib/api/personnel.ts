@@ -1,11 +1,17 @@
-import { getErrorMessageFromResponse } from "@/lib/apiHttp";
+import {
+  ApiValidationError,
+  getErrorMessageFromResponse,
+  httpStatusFallbackMessage,
+  parseApiErrorBody,
+  parseApiFieldErrors,
+} from "@/lib/apiHttp";
 import type { Person } from "@/types";
 
 interface PersonnelPayload {
   firstName: string;
   lastName: string;
-  email?: string | null;
-  phone?: string | null;
+  email?: string;
+  phone: string;
 }
 
 /** GET /api/referees?seasonId=… or /api/classifiers?seasonId=… */
@@ -34,8 +40,11 @@ export async function createPersonnel(
     body: JSON.stringify(payload),
   });
   if (!res.ok) {
-    const msg = await getErrorMessageFromResponse(res, "Nie udało się zapisać osoby");
-    throw new Error(msg);
+    const raw = await res.json().catch(() => null);
+    const fieldErrors = parseApiFieldErrors(raw) ?? undefined;
+    const message = parseApiErrorBody(raw) ?? httpStatusFallbackMessage(res) ?? "Nie udało się zapisać osoby";
+    if (fieldErrors) throw new ApiValidationError(message, fieldErrors);
+    throw new Error(message);
   }
   return res.json() as Promise<Person>;
 }

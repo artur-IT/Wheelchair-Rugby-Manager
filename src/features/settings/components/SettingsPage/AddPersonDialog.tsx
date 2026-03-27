@@ -76,8 +76,8 @@ export default function AddPersonDialog({
       return;
     }
     const phone = form.phone.trim();
-    if (phone && phone.length !== 9) {
-      setLocalError("Numer telefonu musi zawierać dokładnie 9 cyfr");
+    if (phone.length !== 9) {
+      setLocalError("Telefon jest wymagany i musi zawierać dokładnie 9 cyfr");
       return;
     }
 
@@ -86,7 +86,7 @@ export default function AddPersonDialog({
       firstName,
       lastName,
       email: email || null,
-      phone: phone || null,
+      phone,
     });
   };
 

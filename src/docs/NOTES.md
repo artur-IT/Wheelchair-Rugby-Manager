@@ -76,6 +76,8 @@ Klasyfikatorzy badają wybranych zawodników w turnieju.
 ### GitHub Gists (odkrycie projektu!)
 
 Daily Notes robić modelem: Sonnet 4.6 lub Auto
+prompt:
+_podsumuj dzisiejszy dzień w moim github gists wg @.cursor/commands/gists.mdc_
 
 ---
 
@@ -189,3 +191,15 @@ DO POPRAWKI:
 - jeśli wszystkie dni są już dodane to przycisk 'nowy dzień' musi byhć nie aktywny
 - po różnych operacjach na planie klasyfikatorów np. utworzeniu nowego dnia, dodaniu zawodników i odswieżeniu strony zostaje tylko piątek
 - po usunięciu planu sędziów zostaje też usunięty cały plan rozgrywek i klasyfikatorów. Każdy Plan ma działać niezależnie od siebie bez wpływu na pozostałe plany .
+
+---
+
+### Playwright tests:
+
+Są kosztowne i czasochłonne. Stworzyć tylko kilka takich testów dla kluczowych elementów systemu (np. Logowanie).
+
+---
+
+React 19.2 - najpierw (przed innymi bibl.) stosować jego rozwiązania w projektach! (np. Actions, useAction, Suspend Boundary)
+
+---

@@ -70,7 +70,6 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
     getScheduleDayLabel,
     refreshMatches,
     hasMatchesOutsideTournamentRange,
-    isScheduledDayOutsideTournamentRange,
     isDayTimestampOutsideTournamentRange,
   } = useTournamentDetails(id);
 

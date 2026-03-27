@@ -26,7 +26,7 @@ enum UserRole {
 model Season {
   id          String       @id @default(cuid())
   name        String
-  year        Int?
+  year        Int          @unique
   description String?
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
@@ -34,6 +34,7 @@ model Season {
   coaches     Coach[]
   referees    Referee[]
   classifiers Classifier[]
+  staff       Staff[]
   tournaments Tournament[]
 }
 
@@ -61,6 +62,8 @@ model Team {
   tournaments      TournamentTeam[]
   matchesAsTeamA   Match[] @relation("TeamA")
   matchesAsTeamB   Match[] @relation("TeamB")
+
+  @@unique([seasonId, name])
 }
 
 model Staff {
@@ -69,9 +72,12 @@ model Staff {
   lastName    String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  teamId      String
-  team        Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  seasonId    String
+  season      Season   @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  teams       Team[]
   tournaments TournamentStaff[]
+
+  @@unique([seasonId, firstName, lastName])
 }
 
 model Player {
@@ -117,6 +123,8 @@ model Tournament {
   volunteers           Volunteer[]
   players              TournamentPlayer[]
   staffMembers         TournamentStaff[]
+
+  @@unique([seasonId, name])
 }
 
 // ─── Phase 2: Season details ──────────────────────────────────────────────────
@@ -126,12 +134,14 @@ model Coach {
   firstName String
   lastName  String
   email     String?
-  phone     String?
+  phone     String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   seasonId  String
   season    Season   @relation(fields: [seasonId], references: [id], onDelete: Cascade)
   teams     Team[]
+
+  @@unique([seasonId, phone])
 }
 
 model Referee {
@@ -139,7 +149,7 @@ model Referee {
   firstName   String
   lastName    String
   email       String?
-  phone       String?
+  phone       String
   createdAt   DateTime            @default(now())
   updatedAt   DateTime            @updatedAt
   seasonId    String
@@ -147,6 +157,8 @@ model Referee {
   teams       Team[]
   tournaments TournamentReferee[]
   assignments RefereeAssignment[]
+
+  @@unique([seasonId, phone])
 }
 
 model Classifier {
@@ -154,13 +166,15 @@ model Classifier {
   firstName           String
   lastName            String
   email               String?
-  phone               String?
+  phone               String
   createdAt           DateTime               @default(now())
   updatedAt           DateTime               @updatedAt
   seasonId            String
   season              Season                 @relation(fields: [seasonId], references: [id], onDelete: Cascade)
   tournaments         TournamentClassifier[]
   classificationExams ClassificationExam[]
+
+  @@unique([seasonId, phone])
 }
 
 // ─── Phase 2: Tournament details ─────────────────────────────────────────────

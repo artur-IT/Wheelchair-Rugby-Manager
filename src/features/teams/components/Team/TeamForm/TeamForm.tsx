@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, type ChangeEvent } from "react";
 import { useForm, type FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod/v4";
+import { z } from "@/lib/zodPl";
 import {
   Box,
   Button,
@@ -37,6 +37,7 @@ import { fetchSeasonsList } from "@/lib/api/seasons";
 import { createTeam, updateTeamById } from "@/lib/api/teams";
 import { queryKeys } from "@/lib/queryKeys";
 import type { Team } from "@/types";
+import { ApiValidationError, firstApiFieldErrorKey } from "@/lib/apiHttp";
 import {
   sanitizePhone,
   optionalPhoneSchema,
@@ -218,26 +219,31 @@ async function resolvePersonnelId({
   const ln = normalizeText(lastName);
   if (!fn || !ln) return initialId;
 
-  const normalizedEmail = normalizeText(email) || null;
-  const normalizedPhone = normalizeText(phone) || null;
+  const normalizedEmail = normalizeText(email) || undefined;
+  const normalizedPhone = normalizeText(phone) || undefined;
   const matchesInitial =
     Boolean(initialId) &&
     fn === (initialPerson?.firstName ?? "").trim() &&
     ln === (initialPerson?.lastName ?? "").trim() &&
-    normalizedEmail === ((initialPerson?.email ?? "").trim() || null) &&
-    normalizedPhone === ((initialPerson?.phone != null ? String(initialPerson.phone) : "").trim() || null);
+    normalizedEmail === ((initialPerson?.email ?? "").trim() || undefined) &&
+    normalizedPhone === ((initialPerson?.phone != null ? String(initialPerson.phone) : "").trim() || undefined);
 
   if (matchesInitial) {
     return initialId;
   }
 
   const createdPerson = await createPersonnel(endpoint, {
-    firstName: fn,
-    lastName: ln,
-    email: normalizedEmail,
-    phone: normalizedPhone,
-    seasonId,
-  });
+      firstName: fn,
+      lastName: ln,
+      email: normalizedEmail,
+      phone: normalizedPhone,
+      seasonId,
+    }).catch((e: unknown) => {
+      if (e instanceof ApiValidationError) {
+        throw new ApiValidationError(e.message, e.fieldErrors, endpoint);
+      }
+      throw e;
+    });
 
   return createdPerson.id;
 }
@@ -405,6 +411,33 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
         redirectToSettings();
       }
     },
+    onError: (error) => {
+      if (!(error instanceof ApiValidationError) || !error.fieldErrors) return;
+      const key = firstApiFieldErrorKey(error.fieldErrors);
+      if (!key) return;
+
+      if (key === "seasonId") {
+        document.getElementById("season-select")?.focus();
+        return;
+      }
+
+      const coachMap: Record<string, keyof TeamFormValues> = {
+        firstName: "coachFirstName",
+        lastName: "coachLastName",
+        email: "coachEmail",
+        phone: "coachPhone",
+      };
+      const refereeMap: Record<string, keyof TeamFormValues> = {
+        firstName: "refereeFirstName",
+        lastName: "refereeLastName",
+        email: "refereeEmail",
+        phone: "refereePhone",
+      };
+
+      const map = error.context === "/api/referees" ? refereeMap : coachMap;
+      const field = map[key];
+      if (field) setFocus(field);
+    },
   });
 
   const onSubmit = (data: TeamFormValues) => submitMutation.mutate(data);
@@ -459,6 +492,7 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
             value={seasonId}
             onChange={(e: SelectChangeEvent) => setSeasonId(e.target.value)}
             readOnly={isEdit && seasons.length <= 1}
+            inputProps={{ id: "season-select" }}
           >
             {seasons.map((s) => (
               <MenuItem key={s.id} value={s.id}>

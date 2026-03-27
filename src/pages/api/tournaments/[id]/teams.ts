@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { z } from "zod";
+import { z } from "@/lib/zodPl";
 import { json } from "@/lib/api";
 import { addTeamsToTournament } from "@/lib/tournaments";
 

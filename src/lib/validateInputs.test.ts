@@ -154,6 +154,14 @@ describe("tournamentFormSchema", () => {
       zipCode: "00-001",
       street: "Ulica Główna 1",
       hallMapLink: "https://maps.google.com/hala",
+      breakfastServingTime: "07:00-09:00",
+      breakfastLocation: "hotel",
+      lunchServingTime: "12:00-14:00",
+      lunchLocation: "hala",
+      dinnerServingTime: "18:00-20:00",
+      dinnerLocation: "hotel",
+      cateringNotes: "",
+      parking: "",
     };
     expect(tournamentFormSchema.safeParse(validData).success).toBe(true);
   });
@@ -174,6 +182,14 @@ describe("tournamentFormSchema", () => {
       zipCode: "00-001",
       street: "Ulica Główna 1",
       hallMapLink: "",
+      breakfastServingTime: "07:00-09:00",
+      breakfastLocation: "hotel",
+      lunchServingTime: "12:00-14:00",
+      lunchLocation: "hala",
+      dinnerServingTime: "18:00-20:00",
+      dinnerLocation: "hotel",
+      cateringNotes: "",
+      parking: "",
     };
     expect(tournamentFormSchema.safeParse(invalidData).success).toBe(false);
   });

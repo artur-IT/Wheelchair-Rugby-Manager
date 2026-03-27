@@ -1,8 +1,9 @@
 import type { APIRoute } from "astro";
-import { z } from "zod";
+import { z } from "@/lib/zodPl";
 import { json } from "@/lib/api";
 import { getTeamById, updateTeam } from "@/lib/teams";
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "generated/prisma/client";
 import { LOOSE_URL_REGEX, POSTAL_CODE_REGEX, toTitleCase } from "@/lib/validateInputs";
 
 const UpdateTeamSchema = z
@@ -65,20 +66,20 @@ const UpdateTeamSchema = z
 
 export const GET: APIRoute = async ({ params }) => {
   const id = params?.id;
-  if (!id) return json({ error: "Missing team id" }, 400);
+  if (!id) return json({ error: "Brak id drużyny" }, 400);
 
   const team = await getTeamById(id);
-  if (!team) return json({ error: "Team not found" }, 404);
+  if (!team) return json({ error: "Nie znaleziono drużyny" }, 404);
 
   return json(team);
 };
 
 export const PUT: APIRoute = async ({ params, request }) => {
   const id = params?.id;
-  if (!id) return json({ error: "Missing team id" }, 400);
+  if (!id) return json({ error: "Brak id drużyny" }, 400);
 
   const existingTeam = await getTeamById(id);
-  if (!existingTeam) return json({ error: "Team not found" }, 404);
+  if (!existingTeam) return json({ error: "Nie znaleziono drużyny" }, 404);
 
   const body = await request.json().catch(() => null);
   const parsed = UpdateTeamSchema.safeParse(body);
@@ -87,17 +88,22 @@ export const PUT: APIRoute = async ({ params, request }) => {
   try {
     const team = await updateTeam(id, parsed.data);
     return json(team);
-  } catch {
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === "P2002") {
+        return json({ error: "Drużyna o tej nazwie już istnieje w tym sezonie" }, 409);
+      }
+    }
     return json({ error: "Nie udało się zaktualizować drużyny" }, 500);
   }
 };
 
 export const DELETE: APIRoute = async ({ params }) => {
   const id = params?.id;
-  if (!id) return json({ error: "Missing team id" }, 400);
+  if (!id) return json({ error: "Brak id drużyny" }, 400);
 
   const existingTeam = await getTeamById(id);
-  if (!existingTeam) return json({ error: "Team not found" }, 404);
+  if (!existingTeam) return json({ error: "Nie znaleziono drużyny" }, 404);
 
   try {
     await prisma.team.delete({ where: { id } });

@@ -118,7 +118,7 @@ describe("dashboardSeason", () => {
           teams: [],
           referees: [],
           classifiers: [],
-          volunteers: [{ id: "v1", firstName: "A", lastName: "B" }],
+          volunteers: [{ id: "v1", firstName: "A", lastName: "B", phone: "123456789", tournamentId: "1" }],
         },
         {
           id: "2",
@@ -128,7 +128,7 @@ describe("dashboardSeason", () => {
           teams: [],
           referees: [],
           classifiers: [],
-          volunteers: [{ id: "v2", firstName: "C", lastName: "D" }],
+          volunteers: [{ id: "v2", firstName: "C", lastName: "D", phone: "123456789", tournamentId: "2" }],
         },
       ];
       expect(totalVolunteersAcrossTournaments(t)).toBe(2);

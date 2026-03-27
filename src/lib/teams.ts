@@ -7,12 +7,20 @@ export async function createTeam(data: CreateTeamDto) {
   return prisma.$transaction(async (tx) => {
     const team = await tx.team.create({ data: teamData });
     if (staff?.length) {
-      await tx.staff.createMany({
-        data: staff.map((s) => ({
-          firstName: s.firstName.trim(),
-          lastName: s.lastName.trim(),
-          teamId: team.id,
-        })),
+      const staffIds: string[] = [];
+      for (const s of staff) {
+        const firstName = s.firstName.trim();
+        const lastName = s.lastName.trim();
+        const staffMember = await tx.staff.upsert({
+          where: { seasonId_firstName_lastName: { seasonId: teamData.seasonId, firstName, lastName } },
+          update: {},
+          create: { seasonId: teamData.seasonId, firstName, lastName },
+        });
+        staffIds.push(staffMember.id);
+      }
+      await tx.team.update({
+        where: { id: team.id },
+        data: { staff: { connect: staffIds.map((id) => ({ id })) } },
       });
     }
     if (players?.length) {
@@ -50,17 +58,23 @@ export async function updateTeam(id: string, data: UpdateTeamDto) {
       seasonId: teamData.seasonId ?? existing.seasonId,
     };
     await tx.team.update({ where: { id }, data: payload });
-    // await tx.staff.deleteMany({ where: { teamId: id } }); old good code
-    // await tx.player.deleteMany({ where: { teamId: id } });
     if (staff !== undefined) {
-      await tx.staff.deleteMany({ where: { teamId: id } });
+      await tx.team.update({ where: { id }, data: { staff: { set: [] } } });
       if (staff.length) {
-        await tx.staff.createMany({
-          data: staff.map((s) => ({
-            firstName: s.firstName.trim(),
-            lastName: s.lastName.trim(),
-            teamId: id,
-          })),
+        const staffIds: string[] = [];
+        for (const s of staff) {
+          const firstName = s.firstName.trim();
+          const lastName = s.lastName.trim();
+          const staffMember = await tx.staff.upsert({
+            where: { seasonId_firstName_lastName: { seasonId: payload.seasonId, firstName, lastName } },
+            update: {},
+            create: { seasonId: payload.seasonId, firstName, lastName },
+          });
+          staffIds.push(staffMember.id);
+        }
+        await tx.team.update({
+          where: { id },
+          data: { staff: { connect: staffIds.map((staffId) => ({ id: staffId })) } },
         });
       }
     }

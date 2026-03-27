@@ -26,7 +26,7 @@ describe("personnel mutations", () => {
   });
 
   it("creates person via API helper", async () => {
-    const created = { id: "r1", firstName: "A", lastName: "B" };
+    const created = { id: "r1", firstName: "A", lastName: "B", phone: "123456789" };
     const fetchMock = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) => {
       void _input;
       void _init;
@@ -35,7 +35,13 @@ describe("personnel mutations", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     await expect(
-      createPersonnel("/api/referees", { firstName: "A", lastName: "B", seasonId: "s1", email: null, phone: null })
+      createPersonnel("/api/referees", {
+        firstName: "A",
+        lastName: "B",
+        seasonId: "s1",
+        email: null,
+        phone: "123456789",
+      })
     ).resolves.toEqual(created);
 
     const options = fetchMock.mock.calls[0]?.[1];
@@ -44,13 +50,13 @@ describe("personnel mutations", () => {
   });
 
   it("updates person via API helper", async () => {
-    const updated = { id: "r1", firstName: "Anna", lastName: "Nowak" };
+    const updated = { id: "r1", firstName: "Anna", lastName: "Nowak", phone: "123456789" };
     const fetchMock = vi.fn(async () => new Response(JSON.stringify(updated), { status: 200 }));
     vi.stubGlobal("fetch", fetchMock);
 
-    await expect(updatePersonnel("/api/referees", "r1", { firstName: "Anna", lastName: "Nowak" })).resolves.toEqual(
-      updated
-    );
+    await expect(
+      updatePersonnel("/api/referees", "r1", { firstName: "Anna", lastName: "Nowak", phone: "123456789" })
+    ).resolves.toEqual(updated);
   });
 
   it("deletes person via API helper", async () => {

@@ -27,7 +27,7 @@ export const CLASSIFIERS_CONFIG: PersonnelConfig = {
   queryKey: (seasonId) => queryKeys.classifiers.bySeason(seasonId),
   title: "Klasyfikatorzy",
   noSeasonMessage: "Wybierz sezon, aby zarządzać klasyfikatorami.",
-  emptyMessage: "Brak zapisanych klasyfikatorów. Dodaj pierwszą osobę, aby uruchomić egzaminy.",
+  emptyMessage: "Brak zapisanych klasyfikatorów. Dodaj ich, aby przeprowadzali badania zawodników.",
   emptyActionLabel: "Dodaj Klasyfikatora",
   dialogTitles: {
     add: "Dodaj Klasyfikatora",

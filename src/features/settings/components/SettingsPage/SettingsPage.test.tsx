@@ -70,13 +70,14 @@ describe("AddPersonDialog — validation", () => {
 
     await user.type(screen.getByLabelText("Imię"), "Jan");
     await user.type(screen.getByLabelText("Nazwisko"), "Kowalski");
+    await user.type(screen.getByLabelText("Telefon"), "123456789");
     await user.click(screen.getByRole("button", { name: "Zapisz" }));
 
     expect(onSubmit).toHaveBeenCalledWith({
       firstName: "Jan",
       lastName: "Kowalski",
       email: null,
-      phone: null,
+      phone: "123456789",
     });
   });
 });

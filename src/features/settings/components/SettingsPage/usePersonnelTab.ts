@@ -85,7 +85,7 @@ export function usePersonnelTab(seasonId: string, config: PersonnelConfig): UseP
         firstName: payload.firstName,
         lastName: payload.lastName,
         email: payload.email ?? undefined,
-        phone: payload.phone ?? null,
+        phone: payload.phone,
       };
       queryClient.setQueryData<Person[]>(queryKey(targetSeasonId), (current) => [...(current ?? []), optimisticPerson]);
       return { previousPeople, targetSeasonId };
