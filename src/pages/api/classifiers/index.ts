@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { z } from "zod";
+import { z } from "@/lib/zodPl";
 import { json } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "generated/prisma/client";
@@ -11,7 +11,7 @@ const CreateClassifierSchema = z
     lastName: z.string().min(1, "Nazwisko jest wymagane"),
     email: z.union([z.string().email("Nieprawidłowy email"), z.literal(""), z.null()]).optional(),
     phone: z.string().nullable().optional(),
-    seasonId: z.string().min(1, "SeasonId jest wymagany"),
+    seasonId: z.string().min(1, "Id sezonu jest wymagane"),
   })
   .transform((o) => ({
     firstName: toTitleCase(o.firstName),
@@ -43,12 +43,12 @@ export const POST: APIRoute = async ({ request }) => {
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       if (error.code === "P2003") {
-        return json({ error: "Invalid seasonId" }, 400);
+        return json({ error: "Nieprawidłowy identyfikator sezonu" }, 400);
       }
       if (error.code === "P2002") {
-        return json({ error: "Classifier already exists" }, 409);
+        return json({ error: "Klasyfikator już istnieje" }, 409);
       }
     }
-    return json({ error: "Failed to create classifier" }, 500);
+    return json({ error: "Nie udało się utworzyć klasyfikatora" }, 500);
   }
 };

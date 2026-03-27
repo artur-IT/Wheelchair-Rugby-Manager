@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { z } from "zod";
+import { z } from "@/lib/zodPl";
 import { prisma } from "@/lib/prisma";
 import { json } from "@/lib/api";
 import { createTeam } from "@/lib/teams";
@@ -18,7 +18,7 @@ const CreateTeamSchema = z
     contactLastName: z.string().min(1, "Nazwisko jest wymagane"),
     contactEmail: z.string().email("Nieprawidłowy email"),
     contactPhone: z.string().min(1, "Telefon jest wymagany"),
-    seasonId: z.string().min(1, "SeasonId jest wymagany"),
+    seasonId: z.string().min(1, "Id sezonu jest wymagane"),
     coachId: z.string().optional(),
     refereeId: z.string().optional(),
     staff: z.array(z.object({ firstName: z.string().min(1), lastName: z.string().min(1) })).optional(),

@@ -162,16 +162,16 @@ export default function TournamentInfoPanels({ tournament }: TournamentInfoPanel
         {hasStructuredCatering ? (
           <Box sx={{ display: "grid", gap: 1 }}>
             <Typography>
-              <strong>Śniadania:</strong> {tournament.breakfastServingTime || "Brak danych"} | <strong>Miejsce:</strong>{" "}
-              {mealLocationLabel(tournament.breakfastLocation)}
+              <strong>Śniadania:</strong> {tournament.breakfastServingTime || "Brak danych"} /{" "}
+              <strong>{mealLocationLabel(tournament.breakfastLocation)}</strong>
             </Typography>
             <Typography>
-              <strong>Obiady:</strong> {tournament.lunchServingTime || "Brak danych"} | <strong>Miejsce:</strong>{" "}
-              {mealLocationLabel(tournament.lunchLocation)}
+              <strong>Obiady:</strong> {tournament.lunchServingTime || "Brak danych"} /{" "}
+              <strong>{mealLocationLabel(tournament.lunchLocation)}</strong>
             </Typography>
             <Typography>
-              <strong>Kolacje:</strong> {tournament.dinnerServingTime || "Brak danych"} | <strong>Miejsce:</strong>{" "}
-              {mealLocationLabel(tournament.dinnerLocation)}
+              <strong>Kolacje:</strong> {tournament.dinnerServingTime || "Brak danych"} /{" "}
+              <strong>{mealLocationLabel(tournament.dinnerLocation)}</strong>
             </Typography>
             {tournament.cateringNotes ? (
               <Typography sx={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>

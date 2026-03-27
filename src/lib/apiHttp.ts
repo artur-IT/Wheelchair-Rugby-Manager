@@ -20,6 +20,32 @@ export function parseApiErrorBody(raw: unknown): string | null {
   return null;
 }
 
+export class ApiValidationError extends Error {
+  fieldErrors?: Record<string, string[] | undefined>;
+  context?: string;
+  constructor(message: string, fieldErrors?: Record<string, string[] | undefined>, context?: string) {
+    super(message);
+    this.name = "ApiValidationError";
+    this.fieldErrors = fieldErrors;
+    this.context = context;
+  }
+}
+
+export function parseApiFieldErrors(raw: unknown): Record<string, string[] | undefined> | null {
+  if (!raw || typeof raw !== "object") return null;
+  const o = raw as Record<string, unknown>;
+  if (!o.error || typeof o.error !== "object") return null;
+  const e = o.error as Record<string, unknown>;
+  const fieldErrors = e.fieldErrors;
+  if (!fieldErrors || typeof fieldErrors !== "object") return null;
+  return fieldErrors as Record<string, string[] | undefined>;
+}
+
+export function firstApiFieldErrorKey(fieldErrors: Record<string, string[] | undefined>): string | null {
+  const entry = Object.entries(fieldErrors).find(([, errors]) => Array.isArray(errors) && errors.length > 0);
+  return entry?.[0] ?? null;
+}
+
 /** User-facing message when the response body has no parseable error. */
 export function httpStatusFallbackMessage(res: Response): string {
   if (res.status >= 500) return "Serwer jest chwilowo niedostępny. Spróbuj ponownie za chwilę.";

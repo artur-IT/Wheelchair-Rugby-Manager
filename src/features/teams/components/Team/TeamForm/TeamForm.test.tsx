@@ -72,8 +72,6 @@ describe("TeamForm", () => {
     expect(JSON.parse(String(coachOptions.body))).toEqual({
       firstName: "Anna",
       lastName: "Nowak",
-      email: null,
-      phone: null,
       seasonId: "s1",
     });
 

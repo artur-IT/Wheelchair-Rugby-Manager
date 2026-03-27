@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { z } from "zod";
+import { z } from "@/lib/zodPl";
 import { json } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
 import { createReferee } from "@/lib/referees";
@@ -11,7 +11,7 @@ const CreateRefereeSchema = z
     lastName: z.string().min(1, "Nazwisko jest wymagane"),
     email: z.union([z.string().email("Nieprawidłowy email"), z.literal(""), z.null()]).optional(),
     phone: z.string().nullable().optional(),
-    seasonId: z.string().min(1, "SeasonId jest wymagany"),
+    seasonId: z.string().min(1, "Id sezonu jest wymagane"),
   })
   .transform((o) => ({
     firstName: toTitleCase(o.firstName),
