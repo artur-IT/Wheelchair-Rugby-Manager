@@ -28,12 +28,15 @@ const CreateCoachSchema = z
 export const GET: APIRoute = async ({ url }) => {
   const seasonId = url.searchParams.get("seasonId");
 
-  const coaches = await prisma.coach.findMany({
-    where: seasonId ? { seasonId } : undefined,
-    orderBy: { createdAt: "desc" },
-  });
-
-  return json(coaches);
+  try {
+    const coaches = await prisma.coach.findMany({
+      where: seasonId ? { seasonId } : undefined,
+      orderBy: { createdAt: "desc" },
+    });
+    return json(coaches);
+  } catch (error) {
+    return json({ error: `Nie udało się pobrać trenerów: ${error}` }, 500);
+  }
 };
 
 export const POST: APIRoute = async ({ request }) => {

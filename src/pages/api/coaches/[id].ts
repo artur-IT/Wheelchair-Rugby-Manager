@@ -45,8 +45,17 @@ export const PATCH: APIRoute = async ({ params, request }) => {
   } catch (error) {
     if (isNotFound(error)) return json({ error: "Nie znaleziono trenera" }, 404);
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === "P2002") {
-        return json({ error: "Trener już istnieje (numer telefonu jest zajęty)" }, 409);
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+        if (error.code === "P2002") {
+          const target = error.meta?.target as string[] | undefined;
+          if (target?.includes("phone")) {
+            return json({ error: "Trener już istnieje (numer telefonu jest zajęty)" }, 409);
+          }
+          if (target?.includes("email")) {
+            return json({ error: "Trener już istnieje (adres email jest zajęty)" }, 409);
+          }
+          return json({ error: "Trener już istnieje" }, 409);
+        }
       }
     }
     throw error;
