@@ -1,0 +1,16 @@
+---
+alwaysApply: false
+description: Enforce accessibility best practices
+---
+
+# Accessibility Rules
+
+- **Accessibility First**: All code should meet WCAG 2.2 Level AAA standards
+- All interactive components MUST be keyboard accessible.
+- Use semantic HTML elements (button, a, nav).
+- Use `aria-label` for icons, interactive elements without text labels, or elements with interactive ARIA roles. Don't use `aria-label` on non-interactive elements without appropriate ARIA roles
+- Ensure focus states are visible.
+- Ensure text has a minimum 4.5:1 contrast ratio (3:1 for large text). UI components and graphical objects require 3:1.
+- do not abuse ARIA! according to the slogan "No ARIA is better than bad ARIA".
+
+  Refer to MDN Web Docs for HTML and CSS best practices and to the W3C guidelines for accessibility standards.

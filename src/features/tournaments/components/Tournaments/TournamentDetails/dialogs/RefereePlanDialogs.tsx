@@ -69,7 +69,7 @@ export function AddRefereePlanDialog({ addRefereePlan, tournament, personDisplay
   ];
 
   return (
-    <Dialog open={addRefereePlan.open} onClose={addRefereePlan.closeDialog} fullWidth maxWidth="md">
+    <Dialog open={addRefereePlan.open} onClose={addRefereePlan.closeDialog} fullWidth maxWidth="md" disableRestoreFocus>
       <DialogTitle
         sx={{
           display: "flex",
@@ -299,7 +299,7 @@ export function EditRefereePlanDialog({
   personDisplayName,
 }: EditRefereePlanDialogProps) {
   return (
-    <Dialog open={editRefereePlan.open} onClose={editRefereePlan.closeDialog} fullWidth maxWidth="md">
+    <Dialog open={editRefereePlan.open} onClose={editRefereePlan.closeDialog} fullWidth maxWidth="md" disableRestoreFocus>
       <DialogTitle
         sx={{
           display: "flex",

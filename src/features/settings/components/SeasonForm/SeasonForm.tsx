@@ -10,6 +10,7 @@ import QueryProvider from "@/components/QueryProvider/QueryProvider";
 import DataLoadAlert from "@/components/ui/DataLoadAlert";
 import MutationErrorAlert from "@/components/ui/MutationErrorAlert";
 import { createSeason, fetchSeasonById, updateSeason, type SeasonUpsertBody } from "@/lib/api/seasons";
+import { blurActiveElement } from "@/lib/a11y/blurActiveElement";
 import { focusFirstFieldError } from "@/lib/forms/focusFirstFieldError";
 import { queryKeys } from "@/lib/queryKeys";
 import { requiredSeasonNameSchema } from "@/lib/validateInputs";
@@ -98,6 +99,7 @@ function SeasonFormContent({ id }: Props) {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: queryKeys.seasons.list() });
       await queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all });
+      blurActiveElement();
       redirectToSettings();
     },
   });

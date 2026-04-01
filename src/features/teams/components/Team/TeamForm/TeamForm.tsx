@@ -31,13 +31,14 @@ import { buildPlayerPayloadFromRow, normalizeText } from "@/features/teams/compo
 import { useEditableRows } from "@/features/teams/components/Team/shared/useEditableRows";
 import DataLoadAlert from "@/components/ui/DataLoadAlert";
 import MutationErrorAlert from "@/components/ui/MutationErrorAlert";
-import { createPersonnel } from "@/lib/api/personnel";
+import { createPersonnel, fetchPersonnelBySeason, updatePersonnel } from "@/lib/api/personnel";
 import { focusFirstFieldError } from "@/lib/forms/focusFirstFieldError";
 import { fetchSeasonsList } from "@/lib/api/seasons";
 import { createTeam, updateTeamById } from "@/lib/api/teams";
 import { queryKeys } from "@/lib/queryKeys";
 import type { Team } from "@/types";
 import { ApiValidationError, firstApiFieldErrorKey } from "@/lib/apiHttp";
+import { blurActiveElement } from "@/lib/a11y/blurActiveElement";
 import {
   sanitizePhone,
   optionalPhoneSchema,
@@ -53,6 +54,8 @@ import {
   requiredCitySchema,
   requiredPostalCodeSchema,
   optionalWebsiteUrlSchema,
+  playerClassificationSchema,
+  playerNumberSchema,
   MAX_SHORT_TEXT,
 } from "@/lib/validateInputs";
 
@@ -114,6 +117,7 @@ interface StaffRow {
 }
 
 interface TeamPersonnelLike {
+  id?: string;
   firstName?: string | null;
   lastName?: string | null;
   email?: string | null;
@@ -131,6 +135,40 @@ interface ResolvePersonnelIdParams {
   endpoint: "/api/coaches" | "/api/referees";
 }
 
+const normalizeComparableEmail = (value?: string | null) => normalizeText(value).toLowerCase() || undefined;
+const normalizeComparablePhone = (value?: string | number | null) =>
+  sanitizePhone(value != null ? String(value) : "") || undefined;
+
+function findPersonnelByIdentity(
+  people: TeamPersonnelLike[],
+  firstName: string,
+  lastName: string,
+  email?: string,
+  phone?: string
+): string | undefined {
+  const normalizedEmail = normalizeComparableEmail(email);
+  const normalizedPhone = normalizeComparablePhone(phone);
+
+  const byPhone = normalizedPhone
+    ? people.find((person) => normalizeComparablePhone(person.phone) === normalizedPhone)?.id
+    : undefined;
+  if (byPhone) return byPhone;
+
+  const byNameAndEmail =
+    normalizedEmail &&
+    people.find(
+      (person) =>
+        normalizeText(person.firstName) === firstName &&
+        normalizeText(person.lastName) === lastName &&
+        normalizeComparableEmail(person.email) === normalizedEmail
+    )?.id;
+  if (byNameAndEmail) return byNameAndEmail;
+
+  return people.find(
+    (person) => normalizeText(person.firstName) === firstName && normalizeText(person.lastName) === lastName
+  )?.id;
+}
+
 export interface TeamFormContentProps {
   /** When "edit", form is pre-filled from initialTeam and submit does PUT. */
   mode?: "create" | "edit";
@@ -145,16 +183,16 @@ function redirectToSettings() {
 
 const toPlayerRow = (player: Team["players"][number]): PlayerRow => ({
   id: player.id,
-  firstName: player.firstName,
-  lastName: player.lastName,
+  firstName: player.firstName ?? "",
+  lastName: player.lastName ?? "",
   classification: player.classification != null ? String(player.classification) : "",
   number: player.number != null ? String(player.number) : "",
 });
 
 const toStaffRow = (staffMember: Team["staff"][number]): StaffRow => ({
   id: staffMember.id,
-  firstName: staffMember.firstName,
-  lastName: staffMember.lastName,
+  firstName: staffMember.firstName ?? "",
+  lastName: staffMember.lastName ?? "",
 });
 
 const toDefaultValues = (team: Team): TeamFormValues => ({
@@ -217,33 +255,59 @@ async function resolvePersonnelId({
 }: ResolvePersonnelIdParams): Promise<string | undefined> {
   const fn = normalizeText(firstName);
   const ln = normalizeText(lastName);
-  if (!fn || !ln) return initialId;
+  const effectiveInitialId = initialId || initialPerson?.id;
+  if (!fn || !ln) return effectiveInitialId;
 
-  const normalizedEmail = normalizeText(email) || undefined;
-  const normalizedPhone = normalizeText(phone) || undefined;
-  const matchesInitial =
-    Boolean(initialId) &&
-    fn === (initialPerson?.firstName ?? "").trim() &&
-    ln === (initialPerson?.lastName ?? "").trim() &&
-    normalizedEmail === ((initialPerson?.email ?? "").trim() || undefined) &&
-    normalizedPhone === ((initialPerson?.phone != null ? String(initialPerson.phone) : "").trim() || undefined);
+  const normalizedEmail = normalizeComparableEmail(email);
+  const normalizedPhone = normalizeComparablePhone(phone);
+  const matchesInitialByIdentity =
+    Boolean(effectiveInitialId) &&
+    fn === normalizeText(initialPerson?.firstName) &&
+    ln === normalizeText(initialPerson?.lastName);
 
-  if (matchesInitial) {
-    return initialId;
+  if (matchesInitialByIdentity) {
+    const supportsUpdateEndpoint = endpoint === "/api/referees" || endpoint === "/api/coaches";
+    if (effectiveInitialId && supportsUpdateEndpoint && normalizedPhone) {
+      const existingPersonnel = await fetchPersonnelBySeason(endpoint, seasonId, "Nie udało się pobrać osób");
+      const initialStillExists = existingPersonnel.some((person) => person.id === effectiveInitialId);
+      const matchedId = initialStillExists
+        ? effectiveInitialId
+        : findPersonnelByIdentity(existingPersonnel, fn, ln, normalizedEmail, normalizedPhone);
+
+      if (matchedId) {
+        await updatePersonnel(endpoint, matchedId, {
+          firstName: fn,
+          lastName: ln,
+          email: normalizedEmail,
+          phone: normalizedPhone,
+        });
+        return matchedId;
+      }
+
+      const createdPerson = await createPersonnel(endpoint, {
+        firstName: fn,
+        lastName: ln,
+        email: normalizedEmail,
+        phone: normalizedPhone,
+        seasonId,
+      });
+      return createdPerson.id;
+    }
+    return effectiveInitialId;
   }
 
   const createdPerson = await createPersonnel(endpoint, {
-      firstName: fn,
-      lastName: ln,
-      email: normalizedEmail,
-      phone: normalizedPhone,
-      seasonId,
-    }).catch((e: unknown) => {
-      if (e instanceof ApiValidationError) {
-        throw new ApiValidationError(e.message, e.fieldErrors, endpoint);
-      }
-      throw e;
-    });
+    firstName: fn,
+    lastName: ln,
+    email: normalizedEmail,
+    phone: normalizedPhone,
+    seasonId,
+  }).catch((e: unknown) => {
+    if (e instanceof ApiValidationError) {
+      throw new ApiValidationError(e.message, e.fieldErrors, endpoint);
+    }
+    throw e;
+  });
 
   return createdPerson.id;
 }
@@ -265,6 +329,8 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
   const isEdit = mode === "edit" && initialTeam;
 
   const [seasonId, setSeasonId] = useState<string>("");
+  const [playerClassificationErrors, setPlayerClassificationErrors] = useState<Record<string, string>>({});
+  const [playerNumberErrors, setPlayerNumberErrors] = useState<Record<string, string>>({});
   const {
     rows: players,
     setRows: setPlayers,
@@ -298,9 +364,51 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
 
   const addPlayer = () =>
     addPlayerRow({ id: crypto.randomUUID(), firstName: "", lastName: "", classification: "", number: "" });
-  const removePlayer = (id: string) => removePlayerRow(id);
+
+  const removePlayer = (id: string) => {
+    removePlayerRow(id);
+    setPlayerClassificationErrors((prev) => {
+      if (!prev[id]) return prev;
+      return Object.fromEntries(Object.entries(prev).filter(([key]) => key !== id));
+    });
+    setPlayerNumberErrors((prev) => {
+      if (!prev[id]) return prev;
+      return Object.fromEntries(Object.entries(prev).filter(([key]) => key !== id));
+    });
+  };
   const updatePlayer = (id: string, field: keyof PlayerRow, value: string) =>
     updatePlayerRow(id, (player) => ({ ...player, [field]: value }));
+
+  const validatePlayers = () => {
+    const nextClassificationErrors: Record<string, string> = {};
+    const nextNumberErrors: Record<string, string> = {};
+    for (const player of players) {
+      const hasAnyValue =
+        normalizeText(player.firstName) ||
+        normalizeText(player.lastName) ||
+        normalizeText(player.classification) ||
+        normalizeText(player.number);
+      if (!hasAnyValue) continue;
+
+      const parsedClassification = player.classification.trim()
+        ? Number(player.classification.trim().replace(",", "."))
+        : undefined;
+      const result = playerClassificationSchema.optional().safeParse(parsedClassification);
+      if (!result.success) {
+        nextClassificationErrors[player.id] = result.error.issues[0]?.message ?? "Nieprawidłowa klasyfikacja";
+      }
+
+      const parsedNumber = player.number.trim() ? Number(player.number.trim()) : undefined;
+      const numberResult = playerNumberSchema.optional().safeParse(parsedNumber);
+      if (!numberResult.success) {
+        nextNumberErrors[player.id] = numberResult.error.issues[0]?.message ?? "Nieprawidłowy numer";
+      }
+    }
+
+    setPlayerClassificationErrors(nextClassificationErrors);
+    setPlayerNumberErrors(nextNumberErrors);
+    return Object.keys(nextClassificationErrors).length === 0 && Object.keys(nextNumberErrors).length === 0;
+  };
 
   const addStaff = () => addStaffRow({ id: crypto.randomUUID(), firstName: "", lastName: "" });
   const removeStaff = (id: string) => removeStaffRow(id);
@@ -325,12 +433,16 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
   useEffect(() => {
     if (!seasons.length) return;
     if (isEdit && initialTeam) {
-      setSeasonId(initialTeam.seasonId);
+      setSeasonId(initialTeam.seasonId ?? "");
       setPlayers((initialTeam.players ?? []).map(toPlayerRow));
       setStaff((initialTeam.staff ?? []).map(toStaffRow));
       reset(toDefaultValues(initialTeam));
+      setPlayerClassificationErrors({});
+      setPlayerNumberErrors({});
     } else if (seasons.length > 0 && !isEdit) {
       setSeasonId(seasons[0].id);
+      setPlayerClassificationErrors({});
+      setPlayerNumberErrors({});
     }
   }, [seasons, isEdit, initialTeam, reset, setPlayers, setStaff]);
 
@@ -405,6 +517,8 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
       if (initialTeam?.id) {
         void queryClient.invalidateQueries({ queryKey: queryKeys.teams.detail(initialTeam.id) });
       }
+      // Prevent focus from staying on an element inside a dialog/island that is about to be hidden.
+      blurActiveElement();
       if (onSuccess) {
         onSuccess(updated);
       } else {
@@ -440,7 +554,10 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
     },
   });
 
-  const onSubmit = (data: TeamFormValues) => submitMutation.mutate(data);
+  const onSubmit = (data: TeamFormValues) => {
+    if (!validatePlayers()) return;
+    submitMutation.mutate(data);
+  };
   const onInvalid = (invalidErrors: FieldErrors<TeamFormValues>) => {
     focusFirstFieldError(invalidErrors, setFocus);
   };
@@ -489,7 +606,7 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
           <InputLabel>Sezon</InputLabel>
           <Select
             label="Sezon"
-            value={seasonId}
+            value={seasonId ?? ""}
             onChange={(e: SelectChangeEvent) => setSeasonId(e.target.value)}
             readOnly={isEdit && seasons.length <= 1}
             inputProps={{ id: "season-select" }}
@@ -591,10 +708,26 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
         <TeamStaffSection staff={staff} updateStaff={updateStaff} removeStaff={removeStaff} addStaff={addStaff} />
         <TeamPlayersSection
           players={players}
-          updatePlayer={updatePlayer}
+          updatePlayer={(id, field, value) => {
+            updatePlayer(id, field, value);
+            if (field === "classification") {
+              setPlayerClassificationErrors((prev) => {
+                if (!prev[id]) return prev;
+                return Object.fromEntries(Object.entries(prev).filter(([key]) => key !== id));
+              });
+            }
+            if (field === "number") {
+              setPlayerNumberErrors((prev) => {
+                if (!prev[id]) return prev;
+                return Object.fromEntries(Object.entries(prev).filter(([key]) => key !== id));
+              });
+            }
+          }}
           removePlayer={removePlayer}
           addPlayer={addPlayer}
           requiredFieldSx={requiredFieldSx}
+          classificationErrors={playerClassificationErrors}
+          numberErrors={playerNumberErrors}
         />
 
         <Divider sx={{ my: 2 }} />

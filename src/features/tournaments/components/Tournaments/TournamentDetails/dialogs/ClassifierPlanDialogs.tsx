@@ -46,7 +46,13 @@ export function AddClassifierPlanDialog({ addClassifierPlan, tournament }: AddCl
   const filteredPlayers = q ? players.filter((p) => `${p.firstName} ${p.lastName}`.toLowerCase().includes(q)) : players;
 
   return (
-    <Dialog open={addClassifierPlan.open} onClose={addClassifierPlan.closeDialog} fullWidth maxWidth="md">
+    <Dialog
+      open={addClassifierPlan.open}
+      onClose={addClassifierPlan.closeDialog}
+      fullWidth
+      maxWidth="md"
+      disableRestoreFocus
+    >
       <DialogTitle
         sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2, flexWrap: "wrap" }}
       >
@@ -187,7 +193,13 @@ export function EditClassifierPlanDialog({ editClassifierPlan, tournament }: Edi
   const players = getPlayers(tournament);
 
   return (
-    <Dialog open={editClassifierPlan.open} onClose={editClassifierPlan.closeDialog} fullWidth maxWidth="md">
+    <Dialog
+      open={editClassifierPlan.open}
+      onClose={editClassifierPlan.closeDialog}
+      fullWidth
+      maxWidth="md"
+      disableRestoreFocus
+    >
       <DialogTitle
         sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2, flexWrap: "wrap" }}
       >

@@ -51,7 +51,7 @@ export default function TeamRefereeSection({
         <Grid size={{ xs: 12, sm: 6 }}>
           <TextField
             fullWidth
-            label="Telefon (opcjonalnie)"
+            label="Telefon"
             {...refereePhoneField}
             placeholder="9 cyfr"
             inputProps={{ inputMode: "numeric" }}

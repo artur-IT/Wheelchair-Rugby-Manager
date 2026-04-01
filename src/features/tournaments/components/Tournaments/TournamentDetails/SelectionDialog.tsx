@@ -59,7 +59,7 @@ export default function SelectionDialog({
   const showEmptyState = !items.length && !availableLoading;
 
   return (
-    <Dialog open={open} onClose={loading ? undefined : onClose} fullWidth maxWidth="sm">
+    <Dialog open={open} onClose={loading ? undefined : onClose} fullWidth maxWidth="sm" disableRestoreFocus>
       <DialogTitle>{title}</DialogTitle>
       <DialogContent dividers>
         {description}
