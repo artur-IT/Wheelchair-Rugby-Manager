@@ -1,6 +1,6 @@
 import AddIcon from "@mui/icons-material/Add";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
-import { Button, IconButton, TextField, Typography } from "@mui/material";
+import { Box, Button, IconButton, TextField, Typography } from "@mui/material";
 import { Grid } from "@mui/material";
 
 interface PlayerRow {
@@ -17,6 +17,8 @@ interface TeamPlayersSectionProps {
   removePlayer: (id: string) => void;
   addPlayer: () => void;
   requiredFieldSx: object;
+  classificationErrors: Record<string, string>;
+  numberErrors: Record<string, string>;
 }
 
 export default function TeamPlayersSection({
@@ -25,6 +27,8 @@ export default function TeamPlayersSection({
   removePlayer,
   addPlayer,
   requiredFieldSx,
+  classificationErrors,
+  numberErrors,
 }: TeamPlayersSectionProps) {
   return (
     <>
@@ -32,57 +36,72 @@ export default function TeamPlayersSection({
         Zawodnicy
       </Typography>
       {players.map((p) => (
-        <Grid container spacing={2} key={p.id} alignItems="center" sx={{ mb: 1 }}>
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField
-              fullWidth
-              size="small"
-              label="Imię"
-              required
-              value={p.firstName}
-              onChange={(e) => updatePlayer(p.id, "firstName", e.target.value)}
-              sx={requiredFieldSx}
-            />
+        <Box
+          key={p.id}
+          sx={{
+            mb: 2,
+            p: 1.5,
+            borderRadius: 2,
+            backgroundColor: "rgba(25, 118, 210, 0.04)",
+            border: "1px solid rgba(25, 118, 210, 0.12)",
+          }}
+        >
+          <Grid container spacing={1.5} alignItems="center">
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                fullWidth
+                size="small"
+                label="Imię"
+                required
+                value={p.firstName}
+                onChange={(e) => updatePlayer(p.id, "firstName", e.target.value)}
+                sx={requiredFieldSx}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <TextField
+                fullWidth
+                size="small"
+                label="Nazwisko"
+                required
+                value={p.lastName}
+                onChange={(e) => updatePlayer(p.id, "lastName", e.target.value)}
+                sx={requiredFieldSx}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 3 }}>
+              <TextField
+                fullWidth
+                size="small"
+                type="number"
+                inputProps={{ inputMode: "decimal" }}
+                label="Klasyfikacja"
+                value={p.classification}
+                onChange={(e) => updatePlayer(p.id, "classification", e.target.value)}
+                error={Boolean(classificationErrors[p.id])}
+                helperText={classificationErrors[p.id]}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 3 }}>
+              <TextField
+                fullWidth
+                size="small"
+                type="number"
+                inputProps={{ inputMode: "numeric" }}
+                label="Numer"
+                value={p.number}
+                onChange={(e) => updatePlayer(p.id, "number", e.target.value)}
+                error={Boolean(numberErrors[p.id])}
+                helperText={numberErrors[p.id]}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, sm: 2 }}>
+              <IconButton aria-label="Usuń zawodnika" onClick={() => removePlayer(p.id)} color="error" size="small">
+                <DeleteOutlineIcon />
+              </IconButton>
+            </Grid>
           </Grid>
-          <Grid size={{ xs: 12, sm: 6 }}>
-            <TextField
-              fullWidth
-              size="small"
-              label="Nazwisko"
-              required
-              value={p.lastName}
-              onChange={(e) => updatePlayer(p.id, "lastName", e.target.value)}
-              sx={requiredFieldSx}
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 4 }}>
-            <TextField
-              fullWidth
-              size="small"
-              type="number"
-              inputProps={{ inputMode: "decimal" }}
-              label="Klasyfikacja"
-              value={p.classification}
-              onChange={(e) => updatePlayer(p.id, "classification", e.target.value)}
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 4 }}>
-            <TextField
-              fullWidth
-              size="small"
-              type="number"
-              inputProps={{ inputMode: "numeric" }}
-              label="Numer"
-              value={p.number}
-              onChange={(e) => updatePlayer(p.id, "number", e.target.value)}
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 2 }}>
-            <IconButton aria-label="Usuń zawodnika" onClick={() => removePlayer(p.id)} color="error" size="small">
-              <DeleteOutlineIcon />
-            </IconButton>
-          </Grid>
-        </Grid>
+        </Box>
       ))}
       <Button type="button" variant="outlined" startIcon={<AddIcon />} onClick={addPlayer} sx={{ mb: 3 }}>
         Dodaj zawodnika

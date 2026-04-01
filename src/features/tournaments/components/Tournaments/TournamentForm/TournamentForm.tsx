@@ -27,6 +27,7 @@ import { pl } from "date-fns/locale";
 import { useForm, Controller, type FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import DataLoadAlert from "@/components/ui/DataLoadAlert";
+import { blurActiveElement } from "@/lib/a11y/blurActiveElement";
 import { createTournament, fetchTournamentById, updateTournament } from "@/lib/api/tournaments";
 import { focusFirstFieldError } from "@/lib/forms/focusFirstFieldError";
 import { queryKeys } from "@/lib/queryKeys";
@@ -167,6 +168,7 @@ function TournamentFormContent({ tournamentId }: Props) {
       } else {
         await queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all });
       }
+      blurActiveElement();
       redirectToTournamentsList();
     },
     onError: (e: unknown) => {

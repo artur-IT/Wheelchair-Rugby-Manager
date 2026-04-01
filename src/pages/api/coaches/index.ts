@@ -2,6 +2,7 @@ import type { APIRoute } from "astro";
 import { z } from "@/lib/zodPl";
 import { json } from "@/lib/api";
 import { createCoach } from "@/lib/coaches";
+import { prisma } from "@/lib/prisma";
 import { Prisma } from "generated/prisma/client";
 import { requiredPhoneSchema, sanitizePhone, toTitleCase } from "@/lib/validateInputs";
 
@@ -23,6 +24,17 @@ const CreateCoachSchema = z
     phone: o.phone,
     seasonId: o.seasonId,
   }));
+
+export const GET: APIRoute = async ({ url }) => {
+  const seasonId = url.searchParams.get("seasonId");
+
+  const coaches = await prisma.coach.findMany({
+    where: seasonId ? { seasonId } : undefined,
+    orderBy: { createdAt: "desc" },
+  });
+
+  return json(coaches);
+};
 
 export const POST: APIRoute = async ({ request }) => {
   const body = await request.json().catch(() => null);

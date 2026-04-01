@@ -10,6 +10,7 @@ import {
   DialogTitle,
   type Breakpoint,
 } from "@mui/material";
+import { blurActiveElement } from "@/lib/a11y/blurActiveElement";
 
 interface ConfirmationDialogProps {
   open: boolean;
@@ -49,9 +50,23 @@ export default function ConfirmationDialog({
 }: ConfirmationDialogProps) {
   const shouldWrapDescription =
     description != null && (typeof description === "string" || typeof description === "number");
+  const handleClose = () => {
+    blurActiveElement();
+    onClose();
+  };
+  const handleConfirm = () => {
+    blurActiveElement();
+    onConfirm();
+  };
 
   return (
-    <Dialog open={open} onClose={loading ? undefined : onClose} maxWidth={maxWidth} fullWidth={fullWidth}>
+    <Dialog
+      open={open}
+      onClose={loading ? undefined : handleClose}
+      maxWidth={maxWidth}
+      fullWidth={fullWidth}
+      disableRestoreFocus
+    >
       <DialogTitle>{title}</DialogTitle>
       <DialogContent>
         {errorMessage && (
@@ -64,13 +79,13 @@ export default function ConfirmationDialog({
         {children}
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose} disabled={Boolean(loading)}>
+        <Button onClick={handleClose} disabled={Boolean(loading)}>
           {cancelLabel}
         </Button>
         <Button
           color={confirmColor}
           variant={confirmVariant}
-          onClick={onConfirm}
+          onClick={handleConfirm}
           disabled={Boolean(loading) || confirmDisabled}
         >
           {loading ? (

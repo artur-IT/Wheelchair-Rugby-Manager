@@ -56,7 +56,7 @@ const computeDraftEndTime = (startTime: string) => {
 
 export function AddMatchDialog({ addMatch, tournament }: AddMatchDialogProps) {
   return (
-    <Dialog open={addMatch.open} onClose={addMatch.closeDialog} fullWidth maxWidth="md">
+    <Dialog open={addMatch.open} onClose={addMatch.closeDialog} fullWidth maxWidth="md" disableRestoreFocus>
       <DialogTitle
         sx={{
           display: "flex",
@@ -271,7 +271,7 @@ export function EditMatchDialog({
   setDeleteMatchError,
 }: EditMatchDialogProps) {
   return (
-    <Dialog open={editMatch.open} onClose={editMatch.closeDialog} fullWidth maxWidth="md">
+    <Dialog open={editMatch.open} onClose={editMatch.closeDialog} fullWidth maxWidth="md" disableRestoreFocus>
       <DialogTitle
         sx={{
           display: "flex",

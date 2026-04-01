@@ -34,6 +34,7 @@ import { TeamFormContent } from "@/features/teams/components/Team/TeamForm/TeamF
 import TeamNewPlayer, { type PlayerRow } from "@/features/teams/components/Team/TeamNewPlayer/TeamNewPlayer";
 import ConfirmationDialog from "@/components/ui/ConfirmationDialog";
 import DataLoadAlert from "@/components/ui/DataLoadAlert";
+import { blurActiveElement } from "@/lib/a11y/blurActiveElement";
 import { deleteTeamById, fetchTeamById, updateTeamById } from "@/lib/api/teams";
 import { queryKeys } from "@/lib/queryKeys";
 import { playerClassificationSchema } from "@/lib/validateInputs";
@@ -116,6 +117,7 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
   const deleteTeamMutation = useMutation({
     mutationFn: deleteTeamById,
     onSuccess: () => {
+      blurActiveElement();
       window.location.assign("/settings");
     },
   });
@@ -173,10 +175,14 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
 
   const handleEditClick = () => setEditOpen(true);
 
-  const handleEditClose = () => setEditOpen(false);
+  const handleEditClose = () => {
+    blurActiveElement();
+    setEditOpen(false);
+  };
 
   const handleEditSaved = (updated: Team) => {
     setTeamInCache(updated);
+    blurActiveElement();
     setEditOpen(false);
   };
 
@@ -187,6 +193,7 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
 
   const handleDeleteTeamClose = () => {
     if (deleteTeamMutation.isPending) return;
+    blurActiveElement();
     deleteTeamMutation.reset();
     setDeleteTeamDialogOpen(false);
   };
@@ -204,6 +211,7 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
   };
 
   const handleEditPlayerClose = () => {
+    blurActiveElement();
     updatePlayersMutation.reset();
     setEditingPlayer(null);
     setEditForm(null);
@@ -212,6 +220,7 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
 
   const handleDeletePlayerClick = (player: Player) => setDeleteConfirmPlayer(player);
   const handleDeleteConfirmClose = () => {
+    blurActiveElement();
     updatePlayersMutation.reset();
     setDeleteConfirmPlayer(null);
     setPlayerActionError(null);
@@ -285,6 +294,7 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
   };
 
   const handleAddPlayerClose = () => {
+    blurActiveElement();
     updatePlayersMutation.reset();
     setAddingNewPlayer(false);
     setNewPlayerForm(null);
@@ -376,7 +386,7 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
         </Box>
       </Box>
 
-      <Dialog open={editOpen} onClose={handleEditClose} maxWidth="md" fullWidth>
+      <Dialog open={editOpen} onClose={handleEditClose} maxWidth="sm" fullWidth disableRestoreFocus>
         <DialogContent sx={{ overflow: "auto", maxHeight: "90vh", p: 0 }}>
           <TeamFormContent mode="edit" initialTeam={team} onSuccess={handleEditSaved} onCancel={handleEditClose} />
         </DialogContent>
@@ -394,7 +404,7 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
       />
 
       {/* Edit player dialog */}
-      <Dialog open={!!editingPlayer} onClose={handleEditPlayerClose} maxWidth="xs" fullWidth>
+      <Dialog open={!!editingPlayer} onClose={handleEditPlayerClose} maxWidth="xs" fullWidth disableRestoreFocus>
         <DialogTitle>Edytuj zawodnika</DialogTitle>
         <DialogContent>
           {playerActionError && (

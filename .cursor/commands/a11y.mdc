@@ -1,0 +1,16 @@
+---
+alwaysApply: false
+description: Enforce accessibility best practices
+---
+
+# Accessibility Rules
+
+- **Accessibility First**: All code should meet latest WCAG standards
+- All interactive components MUST be keyboard accessible.
+- Use semantic HTML elements (button, a, nav).
+- Use `aria-label` for icons or non-text elements. Don't use `aria-label` for div, span, p elements.
+- Ensure focus states are visible.
+- Ensure text has a 4.5:1 contrast ratio.
+- do not abuse ARIA! according slogan "No ARIA is better than bad ARIA".
+
+  Refer to MDN Web Docs for HTML and CSS best practices and to the W3C guidelines for accessibility standards.

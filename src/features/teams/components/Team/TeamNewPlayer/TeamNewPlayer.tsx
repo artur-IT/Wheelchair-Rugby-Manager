@@ -84,7 +84,7 @@ export default function TeamNewPlayer({
   };
 
   return (
-    <Dialog open={open} onClose={playerActionLoading ? undefined : handleClose} maxWidth="xs" fullWidth>
+    <Dialog open={open} onClose={playerActionLoading ? undefined : handleClose} maxWidth="xs" fullWidth disableRestoreFocus>
       <DialogTitle>Dodaj zawodnika</DialogTitle>
       <DialogContent>
         {playerActionError && (
