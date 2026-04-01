@@ -291,11 +291,13 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
       <Box
         sx={{
           display: "grid",
-          gridTemplateColumns: { xs: "1fr", lg: "2fr 1fr" },
+          gridTemplateColumns: { xs: "minmax(0, 1fr)", lg: "minmax(0, 2fr) minmax(0, 1fr)" },
           gap: 4,
+          width: "100%",
+          minWidth: 0,
         }}
       >
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 0, maxWidth: "100%" }}>
           <TournamentInfoPanels tournament={tournament} />
 
           <TournamentMatchesPlanPanel
@@ -357,7 +359,7 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
           />
         </Box>
 
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 3, minWidth: 0, maxWidth: "100%" }}>
           <TournamentTeamsPanel
             tournament={tournament}
             openAddTeamsDialog={teams.openAddTeamsDialog}

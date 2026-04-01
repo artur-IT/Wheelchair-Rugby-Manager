@@ -18,7 +18,7 @@ export default function TournamentTeamsPanel({
   teamToRemove,
 }: TournamentTeamsPanelProps) {
   return (
-    <Paper sx={{ p: 3, borderRadius: 3 }}>
+    <Paper sx={{ p: 3, borderRadius: 3, maxWidth: "100%", minWidth: 0, boxSizing: "border-box" }}>
       <Typography variant="h6" sx={{ fontWeight: "bold", mb: 0.5 }}>
         Drużyny
         <Box
@@ -42,11 +42,11 @@ export default function TournamentTeamsPanel({
         <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
           <Box
             sx={{
-              display: "inline-flex",
+              display: "flex",
               flexDirection: "column",
               gap: 1,
-              width: "fit-content",
-              maxWidth: "100%",
+              width: "100%",
+              minWidth: 0,
               alignItems: "stretch",
             }}
           >
@@ -62,12 +62,15 @@ export default function TournamentTeamsPanel({
                   borderRadius: 2,
                   bgcolor: "grey.50",
                   width: "100%",
+                  minWidth: 0,
+                  boxSizing: "border-box",
                 }}
               >
                 <Box
                   sx={{
                     width: 32,
                     height: 32,
+                    flexShrink: 0,
                     bgcolor: "white",
                     borderRadius: 1,
                     border: "1px solid",
@@ -81,7 +84,9 @@ export default function TournamentTeamsPanel({
                 >
                   {team.name[0] ?? "?"}
                 </Box>
-                <Typography sx={{ fontWeight: 500 }}>{team.name}</Typography>
+                <Typography sx={{ fontWeight: 500, flex: 1, minWidth: 0, overflowWrap: "anywhere" }}>
+                  {team.name}
+                </Typography>
                 <Tooltip title="Usuń drużynę z turnieju">
                   <span>
                     <IconButton
