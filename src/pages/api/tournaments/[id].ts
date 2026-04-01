@@ -12,6 +12,7 @@ import {
   requiredAddressSchema,
   optionalMapLinkSchema,
   optionalParkingSchema,
+  toTitleCase,
 } from "@/lib/validateInputs";
 import { deleteTournament, listTournamentsWithDetails, updateTournamentWithDetails } from "@/lib/tournaments";
 
@@ -88,10 +89,10 @@ export const PUT: APIRoute = async ({ params, request }) => {
       name: payload.name,
       startDate: new Date(payload.startDate),
       endDate: payload.endDate ? new Date(payload.endDate) : undefined,
-      hotel: payload.hotel,
-      hotelCity: payload.hotelCity,
+      hotel: toTitleCase(payload.hotel),
+      hotelCity: toTitleCase(payload.hotelCity),
       hotelZipCode: payload.hotelZipCode,
-      hotelStreet: payload.hotelStreet,
+      hotelStreet: toTitleCase(payload.hotelStreet),
       mapLink: payload.mapLink ?? "",
       catering: payload.catering,
       breakfastServingTime: payload.breakfastServingTime,

@@ -19,7 +19,9 @@ import {
   Typography,
   Tooltip,
 } from "@mui/material";
+import { useId } from "react";
 import { Trash2 } from "lucide-react";
+import { muiSelectTextFieldAccessibilityProps } from "@/lib/muiSelectTextFieldAccessibility";
 import type { Tournament } from "@/types";
 import type {
   ClassifierPlanAddState,
@@ -41,6 +43,7 @@ function getPlayers(tournament: Tournament) {
 }
 
 export function AddClassifierPlanDialog({ addClassifierPlan, tournament }: AddClassifierPlanDialogProps) {
+  const classifierSelectId = useId().replace(/:/g, "");
   const players = getPlayers(tournament);
   const q = addClassifierPlan.search.trim().toLowerCase();
   const filteredPlayers = q ? players.filter((p) => `${p.firstName} ${p.lastName}`.toLowerCase().includes(q)) : players;
@@ -62,6 +65,7 @@ export function AddClassifierPlanDialog({ addClassifierPlan, tournament }: AddCl
         <TextField
           select
           label="Dzień tygodnia"
+          {...muiSelectTextFieldAccessibilityProps(`${classifierSelectId}-weekday`)}
           value={String(addClassifierPlan.dayTimestamp ?? "")}
           onChange={(e) => addClassifierPlan.setDayTimestamp(Number(e.target.value))}
           size="small"
@@ -127,6 +131,7 @@ export function AddClassifierPlanDialog({ addClassifierPlan, tournament }: AddCl
           <TextField
             select
             label="Obserwacja"
+            {...muiSelectTextFieldAccessibilityProps(`${classifierSelectId}-observation`)}
             value={addClassifierPlan.observation ? "yes" : "no"}
             onChange={(e) => addClassifierPlan.setObservation(String(e.target.value) === "yes")}
             size="small"
@@ -150,9 +155,7 @@ export function AddClassifierPlanDialog({ addClassifierPlan, tournament }: AddCl
             <TableHead>
               <TableRow>
                 <TableCell>Zawodnik</TableCell>
-                <TableCell align="center">
-                  Akcja
-                </TableCell>
+                <TableCell align="center">Akcja</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -190,6 +193,7 @@ export function AddClassifierPlanDialog({ addClassifierPlan, tournament }: AddCl
 }
 
 export function EditClassifierPlanDialog({ editClassifierPlan, tournament }: EditClassifierPlanDialogProps) {
+  const classifierSelectId = useId().replace(/:/g, "");
   const players = getPlayers(tournament);
 
   return (
@@ -209,6 +213,7 @@ export function EditClassifierPlanDialog({ editClassifierPlan, tournament }: Edi
         <TextField
           select
           label="Dzień tygodnia"
+          {...muiSelectTextFieldAccessibilityProps(`${classifierSelectId}-weekday`)}
           value={String(editClassifierPlan.dayTimestamp ?? "")}
           onChange={(e) => editClassifierPlan.setDayTimestamp(Number(e.target.value))}
           size="small"
@@ -268,6 +273,7 @@ export function EditClassifierPlanDialog({ editClassifierPlan, tournament }: Edi
                     <TextField
                       select
                       label="Zawodnik"
+                      {...muiSelectTextFieldAccessibilityProps(`${classifierSelectId}-player-${idx}`)}
                       value={draft.playerId}
                       onChange={(e) =>
                         editClassifierPlan.setDrafts((prev) =>
@@ -338,6 +344,7 @@ export function EditClassifierPlanDialog({ editClassifierPlan, tournament }: Edi
                     <TextField
                       select
                       label="Obserwacja"
+                      {...muiSelectTextFieldAccessibilityProps(`${classifierSelectId}-observation-${idx}`)}
                       value={draft.observation ? "yes" : "no"}
                       onChange={(e) => {
                         const observation = String(e.target.value) === "yes";

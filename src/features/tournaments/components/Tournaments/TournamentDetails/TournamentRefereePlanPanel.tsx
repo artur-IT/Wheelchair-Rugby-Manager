@@ -21,7 +21,7 @@ import type { Match, Person, RefereeRole, Tournament } from "@/types";
 import { MATCH_DURATION_MS } from "@/features/tournaments/components/Tournaments/TournamentDetails/hooks/matchPlanHelpers";
 import { updateTournamentRefereePlanEntry } from "@/lib/api/tournaments";
 import { formatDateRangePl } from "@/lib/dateFormat";
-import { printElementAsLandscapePdf } from "@/lib/print";
+import { printElementAsPdf } from "@/lib/print";
 import { queryKeys } from "@/lib/queryKeys";
 
 const refereeSelectSx = {
@@ -153,7 +153,9 @@ export default function TournamentRefereePlanPanel({
 
   function handlePrintPlan() {
     if (!panelRef.current) return;
-    printElementAsLandscapePdf(`Plan sędziów - ${tournament.name}`, panelRef.current, tournamentDateRangeLabel);
+    printElementAsPdf(`Plan sędziów - ${tournament.name}`, panelRef.current, {
+      tournamentDateRange: tournamentDateRangeLabel,
+    });
   }
 
   return (

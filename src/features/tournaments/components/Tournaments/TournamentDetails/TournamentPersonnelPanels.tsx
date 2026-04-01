@@ -28,12 +28,20 @@ export default function TournamentPersonnelPanels({
   classifierToRemove,
 }: TournamentPersonnelPanelsProps) {
   return (
-    <Paper sx={{ p: 3, borderRadius: 3 }}>
+    <Paper sx={{ p: 3, borderRadius: 3, maxWidth: "100%", minWidth: 0, boxSizing: "border-box" }}>
       <Typography variant="h6" sx={{ fontWeight: "bold", mb: 2 }}>
         Personel
       </Typography>
-      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" }, gap: 2 }}>
-        <Box>
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: "minmax(0, 1fr)",
+          gap: 2,
+          width: "100%",
+          minWidth: 0,
+        }}
+      >
+        <Box sx={{ minWidth: 0, maxWidth: "100%" }}>
           <Typography
             variant="caption"
             sx={{
@@ -67,11 +75,11 @@ export default function TournamentPersonnelPanels({
           ) : (
             <Box
               sx={{
-                display: "inline-flex",
+                display: "flex",
                 flexDirection: "column",
                 gap: 1,
-                width: "fit-content",
-                maxWidth: "100%",
+                width: "100%",
+                minWidth: 0,
                 alignItems: "stretch",
               }}
             >
@@ -87,12 +95,15 @@ export default function TournamentPersonnelPanels({
                     borderRadius: 2,
                     bgcolor: "grey.50",
                     width: "100%",
+                    minWidth: 0,
+                    boxSizing: "border-box",
                   }}
                 >
                   <Box
                     sx={{
                       width: 32,
                       height: 32,
+                      flexShrink: 0,
                       bgcolor: "white",
                       borderRadius: 1,
                       border: "1px solid",
@@ -106,7 +117,9 @@ export default function TournamentPersonnelPanels({
                   >
                     {r.firstName?.[0] ?? "?"}
                   </Box>
-                  <Typography sx={{ fontWeight: 500 }}>{personDisplayName(r)}</Typography>
+                  <Typography sx={{ fontWeight: 500, flex: 1, minWidth: 0, overflowWrap: "anywhere" }}>
+                    {personDisplayName(r)}
+                  </Typography>
                   <Tooltip title="Usuń sędziego z turnieju">
                     <span>
                       <IconButton
@@ -130,7 +143,7 @@ export default function TournamentPersonnelPanels({
           )}
         </Box>
 
-        <Box>
+        <Box sx={{ minWidth: 0, maxWidth: "100%" }}>
           <Typography
             variant="caption"
             sx={{
@@ -164,11 +177,11 @@ export default function TournamentPersonnelPanels({
           ) : (
             <Box
               sx={{
-                display: "inline-flex",
+                display: "flex",
                 flexDirection: "column",
                 gap: 1,
-                width: "fit-content",
-                maxWidth: "100%",
+                width: "100%",
+                minWidth: 0,
                 alignItems: "stretch",
               }}
             >
@@ -184,12 +197,15 @@ export default function TournamentPersonnelPanels({
                     borderRadius: 2,
                     bgcolor: "grey.50",
                     width: "100%",
+                    minWidth: 0,
+                    boxSizing: "border-box",
                   }}
                 >
                   <Box
                     sx={{
                       width: 32,
                       height: 32,
+                      flexShrink: 0,
                       bgcolor: "white",
                       borderRadius: 1,
                       border: "1px solid",
@@ -203,7 +219,9 @@ export default function TournamentPersonnelPanels({
                   >
                     {c.firstName?.[0] ?? "?"}
                   </Box>
-                  <Typography sx={{ fontWeight: 500 }}>{personDisplayName(c)}</Typography>
+                  <Typography sx={{ fontWeight: 500, flex: 1, minWidth: 0, overflowWrap: "anywhere" }}>
+                    {personDisplayName(c)}
+                  </Typography>
                   <Tooltip title="Usuń klasyfikatora z turnieju">
                     <span>
                       <IconButton

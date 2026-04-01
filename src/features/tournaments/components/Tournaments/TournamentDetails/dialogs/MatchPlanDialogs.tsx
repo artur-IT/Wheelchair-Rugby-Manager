@@ -23,7 +23,9 @@ import {
   Paper,
   Tooltip,
 } from "@mui/material";
+import { useId } from "react";
 import { Trash2 } from "lucide-react";
+import { muiSelectTextFieldAccessibilityProps } from "@/lib/muiSelectTextFieldAccessibility";
 import type { Match, Tournament } from "@/types";
 import {
   MATCH_DURATION_MINUTES,
@@ -55,6 +57,8 @@ const computeDraftEndTime = (startTime: string) => {
 };
 
 export function AddMatchDialog({ addMatch, tournament }: AddMatchDialogProps) {
+  const matchPlanSelectId = useId().replace(/:/g, "");
+
   return (
     <Dialog open={addMatch.open} onClose={addMatch.closeDialog} fullWidth maxWidth="md" disableRestoreFocus>
       <DialogTitle
@@ -73,6 +77,7 @@ export function AddMatchDialog({ addMatch, tournament }: AddMatchDialogProps) {
         <TextField
           select
           label="Dzień tygodnia"
+          {...muiSelectTextFieldAccessibilityProps(`${matchPlanSelectId}-weekday`)}
           value={String(addMatch.dayTimestamp ?? "")}
           onChange={(e) => addMatch.setDayTimestamp(Number(e.target.value))}
           size="small"
@@ -97,6 +102,7 @@ export function AddMatchDialog({ addMatch, tournament }: AddMatchDialogProps) {
           <TextField
             select
             label="Drużyna A"
+            {...muiSelectTextFieldAccessibilityProps(`${matchPlanSelectId}-team-a`)}
             value={addMatch.teamAId}
             onChange={(e) => addMatch.setTeamAId(String(e.target.value))}
             fullWidth
@@ -112,6 +118,7 @@ export function AddMatchDialog({ addMatch, tournament }: AddMatchDialogProps) {
           <TextField
             select
             label="Drużyna B"
+            {...muiSelectTextFieldAccessibilityProps(`${matchPlanSelectId}-team-b`)}
             value={addMatch.teamBId}
             onChange={(e) => addMatch.setTeamBId(String(e.target.value))}
             fullWidth
@@ -157,6 +164,7 @@ export function AddMatchDialog({ addMatch, tournament }: AddMatchDialogProps) {
           <TextField
             select
             label="Boisko"
+            {...muiSelectTextFieldAccessibilityProps(`${matchPlanSelectId}-court`)}
             value={addMatch.court}
             onChange={(e) => addMatch.setCourt(String(e.target.value))}
             size="small"
@@ -270,6 +278,8 @@ export function EditMatchDialog({
   setMatchToDelete,
   setDeleteMatchError,
 }: EditMatchDialogProps) {
+  const matchPlanSelectId = useId().replace(/:/g, "");
+
   return (
     <Dialog open={editMatch.open} onClose={editMatch.closeDialog} fullWidth maxWidth="md" disableRestoreFocus>
       <DialogTitle
@@ -288,6 +298,7 @@ export function EditMatchDialog({
         <TextField
           select
           label="Dzień tygodnia"
+          {...muiSelectTextFieldAccessibilityProps(`${matchPlanSelectId}-weekday`)}
           value={String(editMatch.dayTimestamp ?? "")}
           onChange={(e) => editMatch.setDayTimestamp(Number(e.target.value))}
           size="small"
@@ -388,6 +399,7 @@ export function EditMatchDialog({
                     <TextField
                       select
                       label="Drużyna A"
+                      {...muiSelectTextFieldAccessibilityProps(`${matchPlanSelectId}-team-a-${idx}`)}
                       value={draft.teamAId}
                       onChange={(e) => {
                         const nextTeamAId = String(e.target.value);
@@ -479,6 +491,7 @@ export function EditMatchDialog({
                     <TextField
                       select
                       label="Drużyna B"
+                      {...muiSelectTextFieldAccessibilityProps(`${matchPlanSelectId}-team-b-${idx}`)}
                       value={draft.teamBId}
                       onChange={(e) =>
                         editMatch.setDrafts((prev) =>
@@ -500,6 +513,7 @@ export function EditMatchDialog({
                     <TextField
                       select
                       label="Boisko"
+                      {...muiSelectTextFieldAccessibilityProps(`${matchPlanSelectId}-court-${idx}`)}
                       value={draft.court}
                       onChange={(e) =>
                         editMatch.setDrafts((prev) =>

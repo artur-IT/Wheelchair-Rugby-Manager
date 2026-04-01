@@ -20,7 +20,9 @@ import {
   Typography,
   Tooltip,
 } from "@mui/material";
+import { useId } from "react";
 import { Trash2 } from "lucide-react";
+import { muiSelectTextFieldAccessibilityProps } from "@/lib/muiSelectTextFieldAccessibility";
 import type { Match, Person, Tournament } from "@/types";
 import {
   MATCH_DURATION_MINUTES,
@@ -57,6 +59,8 @@ const computeRefereeDialogEndTimeFromStart = (startTime: string) => {
 };
 
 export function AddRefereePlanDialog({ addRefereePlan, tournament, personDisplayName }: AddRefereePlanDialogProps) {
+  const refereePlanSelectId = useId().replace(/:/g, "");
+
   const addRefereePlanPenaltyConflicts = [
     addRefereePlan.referee1Id,
     addRefereePlan.referee2Id,
@@ -86,6 +90,7 @@ export function AddRefereePlanDialog({ addRefereePlan, tournament, personDisplay
         <TextField
           select
           label="Dzień tygodnia"
+          {...muiSelectTextFieldAccessibilityProps(`${refereePlanSelectId}-weekday`)}
           value={String(addRefereePlan.dayTimestamp ?? "")}
           onChange={(e) => addRefereePlan.setDayTimestamp(Number(e.target.value))}
           size="small"
@@ -118,6 +123,7 @@ export function AddRefereePlanDialog({ addRefereePlan, tournament, personDisplay
             <TextField
               select
               label="Drużyna A"
+              {...muiSelectTextFieldAccessibilityProps(`${refereePlanSelectId}-team-a`)}
               value={addRefereePlan.teamAId}
               onChange={(e) => addRefereePlan.setTeamAId(String(e.target.value))}
               fullWidth
@@ -151,6 +157,7 @@ export function AddRefereePlanDialog({ addRefereePlan, tournament, personDisplay
             <TextField
               select
               label="Drużyna B"
+              {...muiSelectTextFieldAccessibilityProps(`${refereePlanSelectId}-team-b`)}
               value={addRefereePlan.teamBId}
               onChange={(e) => addRefereePlan.setTeamBId(String(e.target.value))}
               fullWidth
@@ -166,6 +173,7 @@ export function AddRefereePlanDialog({ addRefereePlan, tournament, personDisplay
             <TextField
               select
               label="Boisko"
+              {...muiSelectTextFieldAccessibilityProps(`${refereePlanSelectId}-court`)}
               value={addRefereePlan.court}
               onChange={(e) => addRefereePlan.setCourt(String(e.target.value))}
               size="small"
@@ -189,6 +197,7 @@ export function AddRefereePlanDialog({ addRefereePlan, tournament, personDisplay
             <TextField
               select
               label="Sędzia 1"
+              {...muiSelectTextFieldAccessibilityProps(`${refereePlanSelectId}-ref1`)}
               value={addRefereePlan.referee1Id}
               onChange={(e) => addRefereePlan.setReferee1Id(String(e.target.value))}
               size="small"
@@ -213,6 +222,7 @@ export function AddRefereePlanDialog({ addRefereePlan, tournament, personDisplay
             <TextField
               select
               label="Sędzia 2"
+              {...muiSelectTextFieldAccessibilityProps(`${refereePlanSelectId}-ref2`)}
               value={addRefereePlan.referee2Id}
               onChange={(e) => addRefereePlan.setReferee2Id(String(e.target.value))}
               size="small"
@@ -237,6 +247,7 @@ export function AddRefereePlanDialog({ addRefereePlan, tournament, personDisplay
             <TextField
               select
               label="Stolik kar"
+              {...muiSelectTextFieldAccessibilityProps(`${refereePlanSelectId}-penalty`)}
               value={addRefereePlan.tablePenaltyId}
               onChange={(e) => addRefereePlan.setTablePenaltyId(String(e.target.value))}
               size="small"
@@ -259,6 +270,7 @@ export function AddRefereePlanDialog({ addRefereePlan, tournament, personDisplay
             <TextField
               select
               label="Zagary"
+              {...muiSelectTextFieldAccessibilityProps(`${refereePlanSelectId}-clock`)}
               value={addRefereePlan.tableClockId}
               onChange={(e) => addRefereePlan.setTableClockId(String(e.target.value))}
               size="small"
@@ -298,8 +310,16 @@ export function EditRefereePlanDialog({
   setDeleteMatchError,
   personDisplayName,
 }: EditRefereePlanDialogProps) {
+  const refereePlanSelectId = useId().replace(/:/g, "");
+
   return (
-    <Dialog open={editRefereePlan.open} onClose={editRefereePlan.closeDialog} fullWidth maxWidth="md" disableRestoreFocus>
+    <Dialog
+      open={editRefereePlan.open}
+      onClose={editRefereePlan.closeDialog}
+      fullWidth
+      maxWidth="md"
+      disableRestoreFocus
+    >
       <DialogTitle
         sx={{
           display: "flex",
@@ -316,6 +336,7 @@ export function EditRefereePlanDialog({
         <TextField
           select
           label="Dzień tygodnia"
+          {...muiSelectTextFieldAccessibilityProps(`${refereePlanSelectId}-weekday`)}
           value={String(editRefereePlan.dayTimestamp ?? "")}
           onChange={(e) => editRefereePlan.setDayTimestamp(Number(e.target.value))}
           size="small"
@@ -397,6 +418,7 @@ export function EditRefereePlanDialog({
                       <TextField
                         select
                         label="Drużyna A"
+                        {...muiSelectTextFieldAccessibilityProps(`${refereePlanSelectId}-team-a-${idx}`)}
                         value={draft.teamAId}
                         onChange={(e) => {
                           const nextTeamAId = String(e.target.value);
@@ -458,6 +480,7 @@ export function EditRefereePlanDialog({
                       <TextField
                         select
                         label="Drużyna B"
+                        {...muiSelectTextFieldAccessibilityProps(`${refereePlanSelectId}-team-b-${idx}`)}
                         value={draft.teamBId}
                         onChange={(e) =>
                           editRefereePlan.setDrafts((prev) =>
@@ -479,6 +502,7 @@ export function EditRefereePlanDialog({
                       <TextField
                         select
                         label="Boisko"
+                        {...muiSelectTextFieldAccessibilityProps(`${refereePlanSelectId}-court-${idx}`)}
                         value={draft.court}
                         onChange={(e) =>
                           editRefereePlan.setDrafts((prev) =>
@@ -496,6 +520,7 @@ export function EditRefereePlanDialog({
                       <TextField
                         select
                         label="Sędzia 1"
+                        {...muiSelectTextFieldAccessibilityProps(`${refereePlanSelectId}-ref1-${idx}`)}
                         value={draft.referee1Id}
                         onChange={(e) =>
                           editRefereePlan.setDrafts((prev) =>
@@ -525,6 +550,7 @@ export function EditRefereePlanDialog({
                       <TextField
                         select
                         label="Sędzia 2"
+                        {...muiSelectTextFieldAccessibilityProps(`${refereePlanSelectId}-ref2-${idx}`)}
                         value={draft.referee2Id}
                         onChange={(e) =>
                           editRefereePlan.setDrafts((prev) =>
@@ -554,6 +580,7 @@ export function EditRefereePlanDialog({
                       <TextField
                         select
                         label="Stolik kar"
+                        {...muiSelectTextFieldAccessibilityProps(`${refereePlanSelectId}-penalty-${idx}`)}
                         value={draft.tablePenaltyId}
                         onChange={(e) =>
                           editRefereePlan.setDrafts((prev) =>
@@ -583,6 +610,7 @@ export function EditRefereePlanDialog({
                       <TextField
                         select
                         label="Zagary"
+                        {...muiSelectTextFieldAccessibilityProps(`${refereePlanSelectId}-clock-${idx}`)}
                         value={draft.tableClockId}
                         onChange={(e) =>
                           editRefereePlan.setDrafts((prev) =>

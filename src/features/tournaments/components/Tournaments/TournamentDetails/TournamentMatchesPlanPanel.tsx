@@ -16,7 +16,7 @@ import DataLoadAlert from "@/components/ui/DataLoadAlert";
 import type { Match, Tournament } from "@/types";
 import { MATCH_DURATION_MS } from "@/features/tournaments/components/Tournaments/TournamentDetails/hooks/matchPlanHelpers";
 import { formatDateRangePl } from "@/lib/dateFormat";
-import { printElementAsLandscapePdf } from "@/lib/print";
+import { printElementAsPdf } from "@/lib/print";
 
 function getTeamNameColor(scoreA?: number, scoreB?: number, side?: "A" | "B") {
   const hasBothScores = typeof scoreA === "number" && typeof scoreB === "number";
@@ -72,7 +72,9 @@ export default function TournamentMatchesPlanPanel({
 
   function handlePrintPlan() {
     if (!panelRef.current) return;
-    printElementAsLandscapePdf(`Plan rozgrywek - ${tournament.name}`, panelRef.current, tournamentDateRangeLabel);
+    printElementAsPdf(`Plan rozgrywek - ${tournament.name}`, panelRef.current, {
+      tournamentDateRange: tournamentDateRangeLabel,
+    });
   }
 
   return (

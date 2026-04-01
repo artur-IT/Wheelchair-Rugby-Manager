@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { Prisma } from "@prisma/client";
 import { z } from "@/lib/zodPl";
 import { json } from "@/lib/api";
 import { createClassifierPlanEntryForTournament, listClassifierPlanForTournament } from "@/lib/classifierPlan";
@@ -60,6 +61,15 @@ export const POST: APIRoute = async ({ params, request }) => {
       if (error.message === "INVALID_ENDS_AT") return json({ error: "Nieprawidłowa data/godzina zakończenia" }, 400);
       if (error.message === "TIME_CONFLICT")
         return json({ error: "W tym czasie jest już zaplanowane inne badanie" }, 400);
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+        return json(
+          {
+            error:
+              "Ten zawodnik ma już badanie u tego klasyfikatora w turnieju. Zmień termin w edycji planu zamiast dodawać wpis ponownie.",
+          },
+          409
+        );
+      }
     }
     return json({ error: "Nie udało się utworzyć wpisu w planie klasyfikatorów" }, 500);
   }

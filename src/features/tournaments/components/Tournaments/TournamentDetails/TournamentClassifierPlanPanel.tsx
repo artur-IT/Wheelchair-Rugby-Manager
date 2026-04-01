@@ -13,7 +13,7 @@ import {
 } from "@mui/material";
 import { useMemo, useRef } from "react";
 import DataLoadAlert from "@/components/ui/DataLoadAlert";
-import { printElementAsLandscapePdf } from "@/lib/print";
+import { printElementAsPdf } from "@/lib/print";
 import type { Tournament } from "@/types";
 
 interface TournamentClassifierPlanPanelProps {
@@ -97,7 +97,7 @@ export default function TournamentClassifierPlanPanel({
 
   function handlePrint() {
     if (!panelRef.current) return;
-    printElementAsLandscapePdf(`Plan klasyfikatorów - ${tournament.name}`, panelRef.current);
+    printElementAsPdf(`Plan klasyfikatorów - ${tournament.name}`, panelRef.current);
   }
 
   return (

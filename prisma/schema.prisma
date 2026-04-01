@@ -322,8 +322,6 @@ model ClassificationExam {
   classifier   Classifier @relation(fields: [classifierId], references: [id])
   playerId     String
   player       Player     @relation(fields: [playerId], references: [id])
-
-  @@unique([tournamentId, classifierId, playerId])
 }
 
 model Volunteer {
