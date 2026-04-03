@@ -167,6 +167,10 @@ export default function TournamentRefereePlanPanel({
         bgcolor: "#fff7ed",
         border: "1px solid",
         borderColor: "grey.200",
+        alignSelf: "flex-start",
+        width: "fit-content",
+        maxWidth: "100%",
+        boxSizing: "border-box",
       }}
     >
       <Box className="wr-print-duplicate-title" sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
@@ -245,7 +249,22 @@ export default function TournamentRefereePlanPanel({
               const dayHighlight = isDayOutOfRange?.(dayTimestamp) ?? false;
 
               return (
-                <Box key={dayTimestamp} sx={{ display: "inline-flex", flexDirection: "column", maxWidth: "100%" }}>
+                <Box
+                  key={dayTimestamp}
+                  sx={{
+                    display: "inline-flex",
+                    flexDirection: "column",
+                    alignSelf: "flex-start",
+                    maxWidth: "100%",
+                    width: "fit-content",
+                    boxSizing: "border-box",
+                    bgcolor: "rgba(255, 255, 255, 0.55)",
+                    border: "1px solid",
+                    borderColor: "rgba(0, 0, 0, 0.06)",
+                    borderRadius: 2,
+                    p: 2,
+                  }}
+                >
                   <Typography
                     variant="h6"
                     sx={{
@@ -280,6 +299,10 @@ export default function TournamentRefereePlanPanel({
                         flexDirection: "column",
                         alignItems: "center",
                         gap: 2,
+                        width: "fit-content",
+                        maxWidth: "100%",
+                        alignSelf: "center",
+                        minWidth: { xs: "min(100%, 280px)", sm: 320 },
                       }}
                     >
                       <Typography>Brak zaplanowanych meczów w tym dniu.</Typography>

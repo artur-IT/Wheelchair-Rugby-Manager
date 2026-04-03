@@ -109,8 +109,10 @@ export default function TournamentClassifierPlanPanel({
         bgcolor: "#eef2ff",
         border: "1px solid",
         borderColor: "grey.200",
+        alignSelf: "flex-start",
         width: "fit-content",
         maxWidth: "100%",
+        boxSizing: "border-box",
       }}
     >
       <Box className="wr-print-duplicate-title" sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
@@ -182,8 +184,15 @@ export default function TournamentClassifierPlanPanel({
                   sx={{
                     display: "inline-flex",
                     flexDirection: "column",
+                    alignSelf: "flex-start",
                     maxWidth: "100%",
-                    width: "100%",
+                    width: "fit-content",
+                    boxSizing: "border-box",
+                    bgcolor: "rgba(255, 255, 255, 0.55)",
+                    border: "1px solid",
+                    borderColor: "rgba(0, 0, 0, 0.06)",
+                    borderRadius: 2,
+                    p: 2,
                   }}
                 >
                   <Typography
@@ -215,6 +224,10 @@ export default function TournamentClassifierPlanPanel({
                         border: "2px dashed",
                         borderColor: "grey.200",
                         borderRadius: 2,
+                        width: "fit-content",
+                        maxWidth: "100%",
+                        alignSelf: "center",
+                        minWidth: { xs: "min(100%, 280px)", sm: 320 },
                       }}
                     >
                       <Typography>Brak zaplanowanych badań w tym dniu.</Typography>
@@ -226,14 +239,14 @@ export default function TournamentClassifierPlanPanel({
                     <TableContainer
                       component={Paper}
                       variant="outlined"
-                      sx={{ borderRadius: 3, width: "100%", maxWidth: "100%", overflowX: "auto" }}
+                      sx={{ borderRadius: 3, width: "fit-content", maxWidth: "100%", overflowX: "auto" }}
                     >
                       <Table
                         size="small"
                         aria-label={`Tabela planu klasyfikatorów: ${dayLabel}`}
                         sx={{
                           tableLayout: "auto",
-                          width: "100%",
+                          width: "max-content",
                           "& .MuiTableCell-root": {
                             px: 1,
                           },

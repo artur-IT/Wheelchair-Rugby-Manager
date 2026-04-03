@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { Alert, Box, Typography, CircularProgress } from "@mui/material";
+import { Alert, Box, Collapse, Typography, CircularProgress } from "@mui/material";
+import { ChevronDown } from "lucide-react";
 import QueryProvider from "@/components/QueryProvider/QueryProvider";
 import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
 import AppShell from "@/components/AppShell/AppShell";
@@ -12,7 +13,8 @@ import TournamentMatchesPlanPanel from "@/features/tournaments/components/Tourna
 import TournamentRefereePlanPanel from "@/features/tournaments/components/Tournaments/TournamentDetails/TournamentRefereePlanPanel";
 import TournamentClassifierPlanPanel from "@/features/tournaments/components/Tournaments/TournamentDetails/TournamentClassifierPlanPanel";
 import TournamentTeamsPanel from "@/features/tournaments/components/Tournaments/TournamentDetails/TournamentTeamsPanel";
-import TournamentPersonnelPanels from "@/features/tournaments/components/Tournaments/TournamentDetails/TournamentPersonnelPanels";
+import TournamentRefereesPanel from "@/features/tournaments/components/Tournaments/TournamentDetails/TournamentRefereesPanel";
+import TournamentClassifiersPanel from "@/features/tournaments/components/Tournaments/TournamentDetails/TournamentClassifiersPanel";
 import {
   AddMatchDialog,
   EditMatchDialog,
@@ -44,7 +46,7 @@ interface TournamentDetailsProps {
 export default function TournamentDetails({ id }: TournamentDetailsProps) {
   return (
     <ThemeRegistry>
-      <AppShell currentPath="/tournaments">
+      <AppShell currentPath="/tournaments" containerMaxWidth="xl">
         <QueryProvider>
           <TournamentDetailsContent id={id} />
         </QueryProvider>
@@ -55,6 +57,7 @@ export default function TournamentDetails({ id }: TournamentDetailsProps) {
 
 function TournamentDetailsContent({ id }: TournamentDetailsProps) {
   const [showPostEditDateHint, setShowPostEditDateHint] = useState(false);
+  const [teamsPersonnelRowExpanded, setTeamsPersonnelRowExpanded] = useState(true);
 
   const {
     tournament,
@@ -288,18 +291,110 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
         </Alert>
       ) : null}
 
-      <Box
-        sx={{
-          display: "grid",
-          gridTemplateColumns: { xs: "minmax(0, 1fr)", lg: "minmax(0, 2fr) minmax(0, 1fr)" },
-          gap: 4,
-          width: "100%",
-          minWidth: 0,
-        }}
-      >
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 0, maxWidth: "100%" }}>
-          <TournamentInfoPanels tournament={tournament} />
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 4, width: "100%", minWidth: 0 }}>
+        <TournamentInfoPanels tournament={tournament} />
 
+        <Box
+          sx={{
+            border: 1,
+            borderColor: "divider",
+            borderRadius: 3,
+            bgcolor: "background.paper",
+            overflow: "hidden",
+          }}
+        >
+          <Box
+            component="button"
+            type="button"
+            id="tournament-teams-personnel-toggle"
+            onClick={() => setTeamsPersonnelRowExpanded((open) => !open)}
+            aria-expanded={teamsPersonnelRowExpanded}
+            aria-controls="tournament-teams-personnel-region"
+            sx={{
+              display: "flex",
+              width: "100%",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 2,
+              px: 2,
+              py: 1.5,
+              border: "none",
+              bgcolor: "grey.50",
+              cursor: "pointer",
+              textAlign: "left",
+              "&:hover": { bgcolor: "grey.100" },
+            }}
+          >
+            <Typography component="span" variant="subtitle1" sx={{ fontWeight: "bold" }}>
+              Drużyny / Sędziowie / Klasyfikatorzy
+            </Typography>
+            <ChevronDown
+              size={22}
+              aria-hidden
+              style={{
+                flexShrink: 0,
+                transition: "transform 0.2s ease",
+                transform: teamsPersonnelRowExpanded ? "rotate(180deg)" : "rotate(0deg)",
+              }}
+            />
+          </Box>
+          <Collapse in={teamsPersonnelRowExpanded}>
+            <Box
+              id="tournament-teams-personnel-region"
+              role="region"
+              aria-labelledby="tournament-teams-personnel-toggle"
+              sx={{ p: 2, pt: 0 }}
+            >
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: { xs: "minmax(0, 1fr)", lg: "repeat(3, minmax(0, 1fr))" },
+                  gap: 2,
+                  width: "100%",
+                  minWidth: 0,
+                  alignItems: "stretch",
+                }}
+              >
+                <TournamentTeamsPanel
+                  tournament={tournament}
+                  openAddTeamsDialog={teams.openAddTeamsDialog}
+                  openRemoveTeamDialog={teams.openRemoveTeamDialog}
+                  removeTeamLoading={teams.removeTeamLoading}
+                  teamToRemove={teams.teamToRemove}
+                />
+
+                <TournamentRefereesPanel
+                  tournament={tournament}
+                  personDisplayName={getPersonDisplayName}
+                  openAddRefereesDialog={referees.openAddRefereesDialog}
+                  openRemoveRefereeDialog={referees.openRemoveRefereeDialog}
+                  removeRefereeLoading={referees.removeRefereeLoading}
+                  refereeToRemove={referees.refereeToRemove}
+                />
+
+                <TournamentClassifiersPanel
+                  tournament={tournament}
+                  personDisplayName={getPersonDisplayName}
+                  openAddClassifiersDialog={classifiers.openAddClassifiersDialog}
+                  openRemoveClassifierDialog={classifiers.openRemoveClassifierDialog}
+                  removeClassifierLoading={classifiers.removeClassifierLoading}
+                  classifierToRemove={classifiers.classifierToRemove}
+                />
+              </Box>
+            </Box>
+          </Collapse>
+        </Box>
+
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "flex-start",
+            gap: 4,
+            minWidth: 0,
+            width: "100%",
+          }}
+        >
           <TournamentMatchesPlanPanel
             tournament={tournament}
             matches={matches}
@@ -356,29 +451,6 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
             deleteDayLoading={deleteClassifierDayLoading}
             dayToDelete={classifierDayToDelete}
             isDayOutOfRange={isDayTimestampOutsideTournamentRange}
-          />
-        </Box>
-
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 3, minWidth: 0, maxWidth: "100%" }}>
-          <TournamentTeamsPanel
-            tournament={tournament}
-            openAddTeamsDialog={teams.openAddTeamsDialog}
-            openRemoveTeamDialog={teams.openRemoveTeamDialog}
-            removeTeamLoading={teams.removeTeamLoading}
-            teamToRemove={teams.teamToRemove}
-          />
-
-          <TournamentPersonnelPanels
-            tournament={tournament}
-            personDisplayName={getPersonDisplayName}
-            openAddRefereesDialog={referees.openAddRefereesDialog}
-            openRemoveRefereeDialog={referees.openRemoveRefereeDialog}
-            removeRefereeLoading={referees.removeRefereeLoading}
-            refereeToRemove={referees.refereeToRemove}
-            openAddClassifiersDialog={classifiers.openAddClassifiersDialog}
-            openRemoveClassifierDialog={classifiers.openRemoveClassifierDialog}
-            removeClassifierLoading={classifiers.removeClassifierLoading}
-            classifierToRemove={classifiers.classifierToRemove}
           />
         </Box>
       </Box>

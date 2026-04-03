@@ -86,8 +86,10 @@ export default function TournamentMatchesPlanPanel({
         bgcolor: "#F1F7FC",
         border: "1px solid",
         borderColor: "grey.200",
+        alignSelf: "flex-start",
         width: "fit-content",
         maxWidth: "100%",
+        boxSizing: "border-box",
       }}
     >
       <Typography className="wr-print-duplicate-title" variant="h6" sx={{ fontWeight: "bold", mb: 3 }}>
@@ -144,7 +146,22 @@ export default function TournamentMatchesPlanPanel({
               const dayHighlight = isDayOutOfRange?.(dayTimestamp) ?? false;
 
               return (
-                <Box key={dayTimestamp} sx={{ display: "inline-flex", flexDirection: "column", maxWidth: "100%" }}>
+                <Box
+                  key={dayTimestamp}
+                  sx={{
+                    display: "inline-flex",
+                    flexDirection: "column",
+                    alignSelf: "flex-start",
+                    maxWidth: "100%",
+                    width: "fit-content",
+                    boxSizing: "border-box",
+                    bgcolor: "rgba(255, 255, 255, 0.55)",
+                    border: "1px solid",
+                    borderColor: "rgba(0, 0, 0, 0.06)",
+                    borderRadius: 2,
+                    p: 2,
+                  }}
+                >
                   <Typography
                     variant="h6"
                     sx={{
@@ -179,6 +196,10 @@ export default function TournamentMatchesPlanPanel({
                         flexDirection: "column",
                         alignItems: "center",
                         gap: 2,
+                        width: "fit-content",
+                        maxWidth: "100%",
+                        alignSelf: "center",
+                        minWidth: { xs: "min(100%, 280px)", sm: 320 },
                       }}
                     >
                       <Typography>Brak zaplanowanych meczów w tym dniu.</Typography>

@@ -17,10 +17,13 @@ import {
   Divider,
   Container,
 } from "@mui/material";
+import type { ContainerProps } from "@mui/material/Container";
 
 interface AppShellProps {
   children: ReactNode;
   currentPath: string;
+  /** MUI Container maxWidth; default "lg". Wider values give more room for fixed-width multi-column layouts. */
+  containerMaxWidth?: ContainerProps["maxWidth"];
 }
 
 const MENU_ITEMS = [
@@ -125,7 +128,7 @@ function DrawerContent({
   );
 }
 
-export default function AppShell({ children, currentPath }: AppShellProps) {
+export default function AppShell({ children, currentPath, containerMaxWidth = "lg" }: AppShellProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const closeMobileDrawer = () => setMobileOpen(false);
   const toggleMobileDrawer = () => setMobileOpen((prev) => !prev);
@@ -204,7 +207,7 @@ export default function AppShell({ children, currentPath }: AppShellProps) {
             overflowX: "auto",
           }}
         >
-          <Container maxWidth="lg">{children}</Container>
+          <Container maxWidth={containerMaxWidth}>{children}</Container>
         </Box>
       </Box>
     </Box>
