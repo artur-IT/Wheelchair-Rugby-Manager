@@ -389,10 +389,16 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
           sx={{
             display: "flex",
             flexDirection: "column",
-            alignItems: "flex-start",
+            alignItems: "stretch",
             gap: 4,
             minWidth: 0,
-            width: "100%",
+            width: {
+              xs: "calc(100% + 48px)",
+              sm: "calc(100% + 64px)",
+              md: "calc(100% + 80px)",
+              lg: "100%",
+            },
+            mx: { xs: -3, sm: -4, md: -5, lg: 0 },
           }}
         >
           <TournamentMatchesPlanPanel

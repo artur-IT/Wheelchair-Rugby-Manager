@@ -104,13 +104,14 @@ export default function TournamentClassifierPlanPanel({
     <Paper
       ref={panelRef}
       sx={{
-        p: 4,
+        py: 4,
+        px: 2,
         borderRadius: 3,
         bgcolor: "#eef2ff",
         border: "1px solid",
         borderColor: "grey.200",
-        alignSelf: "flex-start",
-        width: "fit-content",
+        alignSelf: { xs: "stretch", lg: "flex-start" },
+        width: { xs: "100%", lg: "fit-content" },
         maxWidth: "100%",
         boxSizing: "border-box",
       }}
@@ -173,7 +174,7 @@ export default function TournamentClassifierPlanPanel({
             )}
           </Box>
 
-          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 4 }}>
+          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "stretch", gap: 4, width: "100%" }}>
             {scheduleTableDayTimestamps.map((dayTimestamp) => {
               const dayRows = rowsByDay.get(dayTimestamp) ?? [];
               const dayLabel = getScheduleDayLabel(dayTimestamp);
@@ -182,11 +183,11 @@ export default function TournamentClassifierPlanPanel({
                 <Box
                   key={dayTimestamp}
                   sx={{
-                    display: "inline-flex",
+                    display: "flex",
                     flexDirection: "column",
-                    alignSelf: "flex-start",
+                    alignSelf: { xs: "stretch", lg: "flex-start" },
                     maxWidth: "100%",
-                    width: "fit-content",
+                    width: { xs: "100%", lg: "fit-content" },
                     boxSizing: "border-box",
                     bgcolor: "rgba(255, 255, 255, 0.55)",
                     border: "1px solid",
