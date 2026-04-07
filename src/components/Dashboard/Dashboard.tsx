@@ -16,10 +16,10 @@ import type { Tournament } from "@/types";
 const DEFAULT_STATS = { tournaments: 0, teams: 0, referees: 0, volunteers: 0 } as const;
 
 const STAT_ITEMS = [
-  { key: "tournaments", label: "Turnieje", icon: Trophy, color: "#3b82f6" },
-  { key: "teams", label: "Drużyny", icon: Users, color: "#10b981" },
-  { key: "referees", label: "Sędziowie", icon: UserCircle, color: "#f59e0b" },
-  { key: "volunteers", label: "Wolontariusze", icon: UserCircle, color: "#8b5cf6" },
+  { key: "tournaments", label: "Turnieje", icon: Trophy, color: "info.main" },
+  { key: "teams", label: "Drużyny", icon: Users, color: "secondary.main" },
+  { key: "referees", label: "Sędziowie", icon: UserCircle, color: "primary.main" },
+  { key: "volunteers", label: "Wolontariusze", icon: UserCircle, color: "warning.main" },
 ] as const;
 
 const getErrorMessage = (isError: boolean, error: unknown) =>
@@ -188,7 +188,9 @@ function DashboardContent() {
                 ) : upcoming.length === 0 ? (
                   <DashboardEmptyState message="Brak nadchodzących turniejów w tym sezonie." />
                 ) : (
-                  upcoming.map((t) => <DashboardTournamentRow key={t.id} tournament={t} calendarIconColor="#4f46e5" />)
+                  upcoming.map((t) => (
+                    <DashboardTournamentRow key={t.id} tournament={t} calendarIconColor="#FE9A00" />
+                  ))
                 )}
               </Box>
             </CardContent>
@@ -236,7 +238,9 @@ function DashboardContent() {
                 ) : completed.length === 0 ? (
                   <DashboardEmptyState message="Brak zakończonych turniejów w tym sezonie." />
                 ) : (
-                  completed.map((t) => <DashboardTournamentRow key={t.id} tournament={t} calendarIconColor="#64748b" />)
+                  completed.map((t) => (
+                    <DashboardTournamentRow key={t.id} tournament={t} calendarIconColor="#717171" />
+                  ))
                 )}
               </Box>
             </CardContent>
@@ -313,13 +317,13 @@ function DashboardTournamentRow({
         alignItems: "center",
         p: 2,
         mb: 1,
-        bgcolor: "grey.50",
+        bgcolor: "background.paper",
         borderRadius: 1.5,
         border: "1px solid",
-        borderColor: "grey.200",
+        borderColor: "divider",
         textDecoration: "none",
         color: "inherit",
-        "&:hover": { bgcolor: "grey.100" },
+        "&:hover": { bgcolor: "background.default" },
       }}
     >
       <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
@@ -333,7 +337,7 @@ function DashboardTournamentRow({
           </Typography>
         </Box>
       </Box>
-      <ChevronRight size={20} style={{ color: "#cbd5e1" }} />
+      <ChevronRight size={20} style={{ color: "#D4D4D4" }} />
     </Box>
   );
 }

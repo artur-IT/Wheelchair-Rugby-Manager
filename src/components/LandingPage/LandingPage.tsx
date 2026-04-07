@@ -22,8 +22,8 @@ const FEATURES = [
 
 const PAGE_SX = {
   minHeight: "100vh",
-  bgcolor: "#0f172a",
-  color: "white",
+  bgcolor: "background.default",
+  color: "text.primary",
   display: "flex",
   flexDirection: "column",
 } as const;
@@ -49,25 +49,26 @@ const HERO_SX = {
 } as const;
 
 const FEATURE_CARD_SX = {
-  bgcolor: "rgba(0, 16, 54, 0.6)",
-  color: "#cbd5e1",
+  bgcolor: "background.paper",
+  color: "text.secondary",
   borderRadius: "16px",
-  border: "1px solid #2563eb",
+  border: "1px solid",
+  borderColor: "divider",
 } as const;
 
 const CTA_BUTTON_SX = {
-  backgroundColor: "#ffffff",
-  color: "#0f172a",
+  backgroundColor: "primary.main",
+  color: "primary.contrastText",
   fontWeight: 700,
   px: 4,
   py: 2,
-  "&:hover": { backgroundColor: "#e2e8f0" },
+  "&:hover": { backgroundColor: "warning.main" },
 } as const;
 
 const FOOTER_SX = {
   p: 4,
   textAlign: "center",
-  color: "#64748b",
+  color: "text.secondary",
   fontSize: "0.875rem",
 } as const;
 
@@ -87,7 +88,7 @@ export default function LandingPage() {
       <Box sx={PAGE_SX}>
         <Box component="nav" sx={NAV_SX}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <Trophy color="#6366f1" size={32} />
+            <Trophy color="#FE9A00" size={32} />
             <Typography variant="h5" sx={{ letterSpacing: "-0.05em" }}>
               Wheelchair Rugby Manager
             </Typography>
@@ -109,13 +110,13 @@ export default function LandingPage() {
               }}
             >
               Zarządzaj Sezonem <br />
-              <Box component="span" sx={{ color: "#6366f1" }}>
+              <Box component="span" sx={{ color: "primary.main" }}>
                 Rugby na Wózkach
               </Box>
             </Typography>
             <Typography
               sx={{
-                color: "#94a3b8",
+                color: "text.secondary",
                 fontSize: "1.25rem",
                 maxWidth: "42rem",
                 mx: "auto",
@@ -139,7 +140,7 @@ export default function LandingPage() {
                       <Typography variant="h6" sx={{ fontWeight: "bold", mb: 1 }}>
                         {feature.title}
                       </Typography>
-                      <Typography sx={{ color: "#94a3b8" }}>{feature.desc}</Typography>
+                      <Typography sx={{ color: "text.secondary" }}>{feature.desc}</Typography>
                     </CardContent>
                   </Card>
                 </Grid>

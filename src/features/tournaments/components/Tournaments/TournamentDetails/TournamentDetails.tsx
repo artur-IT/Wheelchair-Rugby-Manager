@@ -319,10 +319,10 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
               px: 2,
               py: 1.5,
               border: "none",
-              bgcolor: "grey.50",
+              bgcolor: "background.paper",
               cursor: "pointer",
               textAlign: "left",
-              "&:hover": { bgcolor: "grey.100" },
+              "&:hover": { bgcolor: "background.default" },
             }}
           >
             <Typography component="span" variant="subtitle1" sx={{ fontWeight: "bold" }}>

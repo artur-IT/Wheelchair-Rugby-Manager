@@ -138,7 +138,7 @@ function TournamentsContent() {
             textAlign: "center",
             borderRadius: 3,
             border: "1px dashed",
-            borderColor: "grey.300",
+            borderColor: "divider",
           }}
         >
           <Typography sx={{ fontWeight: "bold", mb: 1 }}>Brak turniejów</Typography>

@@ -42,8 +42,9 @@ export default function TeamPlayersSection({
             mb: 2,
             p: 1.5,
             borderRadius: 2,
-            backgroundColor: "rgba(25, 118, 210, 0.04)",
-            border: "1px solid rgba(25, 118, 210, 0.12)",
+            backgroundColor: "background.paper",
+            border: "1px solid",
+            borderColor: "divider",
           }}
         >
           <Grid container spacing={1.5} alignItems="center">

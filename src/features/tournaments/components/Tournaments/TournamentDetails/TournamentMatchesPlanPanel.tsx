@@ -84,9 +84,7 @@ export default function TournamentMatchesPlanPanel({
         py: 4,
         px: 2,
         borderRadius: 3,
-        bgcolor: "#F1F7FC",
-        border: "1px solid",
-        borderColor: "grey.200",
+        bgcolor: "background.default",
         alignSelf: "stretch",
         width: "100%",
         maxWidth: "100%",
@@ -110,7 +108,7 @@ export default function TournamentMatchesPlanPanel({
             textAlign: "center",
             py: 5,
             border: "2px dashed",
-            borderColor: "grey.200",
+            borderColor: "divider",
             borderRadius: 2,
             display: "flex",
             flexDirection: "column",
@@ -140,7 +138,7 @@ export default function TournamentMatchesPlanPanel({
             </Button>
           </Box>
 
-          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "stretch", gap: 4, width: "100%" }}>
+          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "stretch", gap: 5, width: "100%" }}>
             {scheduleTableDayTimestamps.map((dayTimestamp) => {
               const dayMatches = matches.filter((m) => getMatchDayTimestamp(m.scheduledAt) === dayTimestamp);
               const dayLabel = getScheduleDayLabel(dayTimestamp);
@@ -156,11 +154,12 @@ export default function TournamentMatchesPlanPanel({
                     maxWidth: "100%",
                     width: "100%",
                     boxSizing: "border-box",
-                    bgcolor: "rgba(255, 255, 255, 0.55)",
+                    bgcolor: "background.paper",
                     border: "1px solid",
-                    borderColor: "rgba(0, 0, 0, 0.06)",
-                    borderRadius: 2,
-                    p: 2,
+                    borderColor: "rgba(212, 212, 212, 0.7)",
+                    borderRadius: 3,
+                    boxShadow: "0 2px 10px rgba(144, 161, 185, 0.12)",
+                    p: 2.5,
                   }}
                 >
                   <Typography
@@ -191,7 +190,7 @@ export default function TournamentMatchesPlanPanel({
                         textAlign: "center",
                         py: 4,
                         border: "2px dashed",
-                        borderColor: "grey.200",
+                        borderColor: "divider",
                         borderRadius: 2,
                         display: "flex",
                         flexDirection: "column",
@@ -215,8 +214,15 @@ export default function TournamentMatchesPlanPanel({
                   ) : (
                     <TableContainer
                       component={Paper}
-                      variant="outlined"
-                      sx={{ borderRadius: 3, width: "100%", maxWidth: "100%", overflowX: "auto" }}
+                      sx={{
+                        borderRadius: 2,
+                        width: "100%",
+                        maxWidth: "100%",
+                        overflowX: "auto",
+                        boxShadow: "none",
+                        border: "1px solid",
+                        borderColor: "rgba(212, 212, 212, 0.55)",
+                      }}
                     >
                       <Table
                         size="small"
@@ -226,15 +232,18 @@ export default function TournamentMatchesPlanPanel({
                           width: "100%",
                           "& .MuiTableCell-root": {
                             px: 1,
+                            borderBottom: "none",
                           },
                         }}
                       >
                         <TableHead
                           sx={{
-                            bgcolor: "#dbeafe",
+                            bgcolor: "rgba(75, 168, 222, 0.22)",
                             "& .MuiTableCell-root": {
                               whiteSpace: "nowrap",
                               fontWeight: 700,
+                              color: "text.primary",
+                              py: 1.25,
                             },
                           }}
                         >
@@ -272,7 +281,15 @@ export default function TournamentMatchesPlanPanel({
                             const { teamA: jerseyA, teamB: jerseyB } = parseJerseyInfo(m.jerseyInfo);
 
                             return (
-                              <TableRow key={m.id}>
+                              <TableRow
+                                key={m.id}
+                                sx={{
+                                  "&:not(:last-of-type) .MuiTableCell-root": {
+                                    borderBottom: "1px solid",
+                                    borderBottomColor: "rgba(212, 212, 212, 0.65)",
+                                  },
+                                }}
+                              >
                                 <TableCell
                                   align="center"
                                   sx={{ fontWeight: 600, color: getTeamNameColor(m.scoreA, m.scoreB, "A") }}

@@ -55,6 +55,20 @@ function getPlayerClassificationError(classification?: number) {
   return result.success ? null : (result.error.issues[0]?.message ?? "Nieprawidłowa klasyfikacja");
 }
 
+function getDuplicatePlayerNumberError(
+  playersPayload: { firstName: string; lastName: string; classification?: number; number?: number }[]
+) {
+  const seenNumbers = new Set<number>();
+  for (const player of playersPayload) {
+    if (player.number === undefined) continue;
+    if (seenNumbers.has(player.number)) {
+      return `Numer ${player.number} jest już zajęty w tej drużynie`;
+    }
+    seenNumbers.add(player.number);
+  }
+  return null;
+}
+
 const toEditForm = (player: Player) => ({
   firstName: player.firstName,
   lastName: player.lastName,
@@ -67,18 +81,9 @@ function buildTeamUpdateBody(
   team: Team,
   players: { firstName: string; lastName: string; classification?: number; number?: number }[]
 ) {
+  // Keep this payload minimal, so editing players does not validate unrelated team contact fields.
   return {
     name: team.name,
-    address: team.address,
-    websiteUrl: team.websiteUrl ?? undefined,
-    contactFirstName: team.contactFirstName,
-    contactLastName: team.contactLastName,
-    contactEmail: team.contactEmail,
-    contactPhone: team.contactPhone,
-    seasonId: team.seasonId,
-    coachId: team.coachId ?? undefined,
-    refereeId: team.refereeId ?? undefined,
-    staff: (team.staff ?? []).map((s) => ({ firstName: s.firstName, lastName: s.lastName })),
     players,
   };
 }
@@ -263,8 +268,13 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
       return;
     }
     const playersPayload = (team.players ?? []).map((p) =>
-      p.id === editingPlayer.id ? { firstName, lastName, classification, number } : buildPlayerPayloadFromEntity(p)
+      p.id === editingPlayer.id ? { id: p.id, firstName, lastName, classification, number } : buildPlayerPayloadFromEntity(p)
     );
+    const duplicateNumberError = getDuplicatePlayerNumberError(playersPayload);
+    if (duplicateNumberError) {
+      setPlayerActionError(duplicateNumberError);
+      return;
+    }
     const success = await updateTeamPlayers(playersPayload);
     if (success) {
       handleEditPlayerClose();
@@ -325,6 +335,11 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
       ...(team.players ?? []).map(buildPlayerPayloadFromEntity),
       { firstName, lastName, classification, number },
     ];
+    const duplicateNumberError = getDuplicatePlayerNumberError(playersPayload);
+    if (duplicateNumberError) {
+      setPlayerActionError(duplicateNumberError);
+      return;
+    }
     const success = await updateTeamPlayers(playersPayload);
     if (success) {
       handleAddPlayerClose();
@@ -356,7 +371,7 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
           >
             &larr; Powrót do ustawień
           </MuiLink>
-          <Typography variant="h3" sx={{ fontWeight: 900 }}>
+          <Typography variant="h3" sx={{ fontWeight: 900, color: "info.main" }}>
             {team.name}
           </Typography>
           {team.websiteUrl ? (
@@ -521,7 +536,7 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
             <TableContainer>
               <Table>
                 <TableHead>
-                  <TableRow sx={{ bgcolor: "grey.100" }}>
+                  <TableRow sx={{ bgcolor: "background.default" }}>
                     <TableCell sx={{ fontWeight: "bold" }}>Imię i Nazwisko</TableCell>
                     <TableCell sx={{ fontWeight: "bold" }}>Klasyfikacja</TableCell>
                     <TableCell sx={{ fontWeight: "bold" }}>Numer</TableCell>

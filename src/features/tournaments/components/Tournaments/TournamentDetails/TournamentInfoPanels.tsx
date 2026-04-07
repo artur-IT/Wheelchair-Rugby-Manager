@@ -66,10 +66,10 @@ export default function TournamentInfoPanels({ tournament }: TournamentInfoPanel
           >
             <Box
               sx={{
-                bgcolor: "#dbeafe",
+                bgcolor: "info.light",
                 p: 1,
                 borderRadius: 2,
-                color: "#2563eb",
+                color: "info.dark",
               }}
             >
               <MapPin size={20} />
@@ -108,10 +108,10 @@ export default function TournamentInfoPanels({ tournament }: TournamentInfoPanel
           >
             <Box
               sx={{
-                bgcolor: "#d1fae5",
+                bgcolor: "secondary.light",
                 p: 1,
                 borderRadius: 2,
-                color: "#059669",
+                color: "secondary.dark",
               }}
             >
               <MapPin size={20} />
@@ -154,10 +154,10 @@ export default function TournamentInfoPanels({ tournament }: TournamentInfoPanel
         >
           <Box
             sx={{
-              bgcolor: "#fff7ed",
+              bgcolor: "warning.light",
               p: 1,
               borderRadius: 2,
-              color: "#d97706",
+              color: "warning.dark",
             }}
           >
             <MapPin size={20} />

@@ -67,7 +67,7 @@ export default function TournamentTeamsPanel({
                   p: 0.5,
                   px: 1,
                   borderRadius: 2,
-                  bgcolor: "grey.50",
+                  bgcolor: "background.paper",
                   width: "100%",
                   minWidth: 0,
                   boxSizing: "border-box",
@@ -81,12 +81,12 @@ export default function TournamentTeamsPanel({
                     bgcolor: "white",
                     borderRadius: 1,
                     border: "1px solid",
-                    borderColor: "grey.200",
+                    borderColor: "divider",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     fontWeight: "bold",
-                    color: "primary.main",
+                    color: "info.main",
                   }}
                 >
                   {team.name[0] ?? "?"}
@@ -96,6 +96,7 @@ export default function TournamentTeamsPanel({
                   onClick={() => openEditTeamPlayersDialog(team)}
                   aria-label={`Edytuj zawodników drużyny ${team.name}`}
                   sx={{
+                    color: "info.main",
                     fontWeight: 500,
                     flex: 1,
                     width: "100%",
@@ -105,6 +106,7 @@ export default function TournamentTeamsPanel({
                     whiteSpace: "normal",
                     px: 0,
                     overflowWrap: "anywhere",
+                    "&:hover": { color: "info.dark" },
                   }}
                 >
                   {team.name}

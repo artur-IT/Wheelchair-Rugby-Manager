@@ -201,7 +201,7 @@ export interface CreateTeamDto {
   coachId?: string;
   refereeId?: string;
   staff?: { firstName: string; lastName: string }[];
-  players?: { firstName: string; lastName: string; classification?: number; number?: number }[];
+  players?: { id?: string; firstName: string; lastName: string; classification?: number; number?: number }[];
 }
 
 /** Same shape as create; seasonId can be omitted (server keeps existing). */

@@ -26,6 +26,7 @@ const UpdateTeamSchema = z
     // Required on update so we never accidentally wipe players when key is missing
     players: z.array(
       z.object({
+        id: z.string().optional(),
         firstName: z.string().min(1, "Imię jest wymagane"),
         lastName: z.string().min(1, "Nazwisko jest wymagane"),
         classification: z
@@ -56,6 +57,7 @@ const UpdateTeamSchema = z
     })),
     // Normalise players so updateTeam always receives a defined array
     players: o.players.map((p) => ({
+      id: p.id?.trim() || undefined,
       firstName: toTitleCase(p.firstName),
       lastName: toTitleCase(p.lastName),
       classification:
@@ -91,6 +93,10 @@ export const PUT: APIRoute = async ({ params, request }) => {
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       if (error.code === "P2002") {
+        const target = Array.isArray(error.meta?.target) ? error.meta.target.join(",") : String(error.meta?.target ?? "");
+        if (target.includes("teamId") && target.includes("number")) {
+          return json({ error: "Numer zawodnika musi być unikalny w drużynie" }, 409);
+        }
         return json({ error: "Drużyna o tej nazwie już istnieje w tym sezonie" }, 409);
       }
     }

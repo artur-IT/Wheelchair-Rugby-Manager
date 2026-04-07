@@ -107,9 +107,7 @@ export default function TournamentClassifierPlanPanel({
         py: 4,
         px: 2,
         borderRadius: 3,
-        bgcolor: "#eef2ff",
-        border: "1px solid",
-        borderColor: "grey.200",
+        bgcolor: "background.default",
         alignSelf: { xs: "stretch", lg: "flex-start" },
         width: { xs: "100%", lg: "fit-content" },
         maxWidth: "100%",
@@ -117,7 +115,7 @@ export default function TournamentClassifierPlanPanel({
       }}
     >
       <Box className="wr-print-duplicate-title" sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
-        <Box sx={{ bgcolor: "#c7d2fe", p: 1, borderRadius: 2, color: "#3730a3" }}>
+        <Box sx={{ bgcolor: "info.light", p: 1, borderRadius: 2, color: "info.dark" }}>
           <Typography component="div" sx={{ fontWeight: 900 }}>
             KL
           </Typography>
@@ -141,7 +139,7 @@ export default function TournamentClassifierPlanPanel({
             textAlign: "center",
             py: 5,
             border: "2px dashed",
-            borderColor: "grey.200",
+            borderColor: "divider",
             borderRadius: 2,
             display: "flex",
             flexDirection: "column",
@@ -174,7 +172,7 @@ export default function TournamentClassifierPlanPanel({
             )}
           </Box>
 
-          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "stretch", gap: 4, width: "100%" }}>
+          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "stretch", gap: 5, width: "100%" }}>
             {scheduleTableDayTimestamps.map((dayTimestamp) => {
               const dayRows = rowsByDay.get(dayTimestamp) ?? [];
               const dayLabel = getScheduleDayLabel(dayTimestamp);
@@ -189,11 +187,12 @@ export default function TournamentClassifierPlanPanel({
                     maxWidth: "100%",
                     width: { xs: "100%", lg: "fit-content" },
                     boxSizing: "border-box",
-                    bgcolor: "rgba(255, 255, 255, 0.55)",
+                    bgcolor: "background.paper",
                     border: "1px solid",
-                    borderColor: "rgba(0, 0, 0, 0.06)",
-                    borderRadius: 2,
-                    p: 2,
+                    borderColor: "rgba(212, 212, 212, 0.7)",
+                    borderRadius: 3,
+                    boxShadow: "0 2px 10px rgba(144, 161, 185, 0.12)",
+                    p: 2.5,
                   }}
                 >
                   <Typography
@@ -223,7 +222,7 @@ export default function TournamentClassifierPlanPanel({
                         textAlign: "center",
                         py: 4,
                         border: "2px dashed",
-                        borderColor: "grey.200",
+                        borderColor: "divider",
                         borderRadius: 2,
                         width: "fit-content",
                         maxWidth: "100%",
@@ -239,8 +238,15 @@ export default function TournamentClassifierPlanPanel({
                   ) : (
                     <TableContainer
                       component={Paper}
-                      variant="outlined"
-                      sx={{ borderRadius: 3, width: "fit-content", maxWidth: "100%", overflowX: "auto" }}
+                      sx={{
+                        borderRadius: 2,
+                        width: "fit-content",
+                        maxWidth: "100%",
+                        overflowX: "auto",
+                        boxShadow: "none",
+                        border: "1px solid",
+                        borderColor: "rgba(212, 212, 212, 0.55)",
+                      }}
                     >
                       <Table
                         size="small"
@@ -250,10 +256,20 @@ export default function TournamentClassifierPlanPanel({
                           width: "max-content",
                           "& .MuiTableCell-root": {
                             px: 1,
+                            borderBottom: "none",
                           },
                         }}
                       >
-                        <TableHead sx={{ bgcolor: "#e0e7ff", "& .MuiTableCell-root": { fontWeight: 700 } }}>
+                        <TableHead
+                          sx={{
+                            bgcolor: "rgba(75, 168, 222, 0.22)",
+                            "& .MuiTableCell-root": {
+                              fontWeight: 700,
+                              color: "text.primary",
+                              py: 1.25,
+                            },
+                          }}
+                        >
                           <TableRow>
                             <TableCell align="center">Zawodnik</TableCell>
                             <TableCell align="center">Start badania</TableCell>
@@ -270,7 +286,15 @@ export default function TournamentClassifierPlanPanel({
                             const startDate = new Date(row.scheduledAt);
                             const endDate = new Date(row.endsAt);
                             return (
-                              <TableRow key={row.examId}>
+                              <TableRow
+                                key={row.examId}
+                                sx={{
+                                  "&:not(:last-of-type) .MuiTableCell-root": {
+                                    borderBottom: "1px solid",
+                                    borderBottomColor: "rgba(212, 212, 212, 0.65)",
+                                  },
+                                }}
+                              >
                                 <TableCell align="center" sx={{ fontWeight: 600 }}>
                                   {player ? `${player.firstName} ${player.lastName}` : "—"}
                                 </TableCell>

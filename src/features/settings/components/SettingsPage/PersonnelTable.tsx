@@ -25,7 +25,7 @@ export default function PersonnelTable({ title, data, onAddClick, onEdit, onDele
       <TableContainer>
         <Table>
           <TableHead>
-            <TableRow sx={{ bgcolor: "grey.100" }}>
+            <TableRow sx={{ bgcolor: "background.default" }}>
               <TableCell sx={{ fontWeight: "bold" }}>Imię i Nazwisko</TableCell>
               <TableCell sx={{ fontWeight: "bold", textAlign: "center" }}>Email</TableCell>
               <TableCell sx={{ fontWeight: "bold", textAlign: "center" }}>Telefon</TableCell>

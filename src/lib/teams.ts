@@ -79,16 +79,41 @@ export async function updateTeam(id: string, data: UpdateTeamDto) {
       }
     }
     if (players !== undefined) {
-      await tx.player.deleteMany({ where: { teamId: id } });
-      if (players.length) {
-        await tx.player.createMany({
-          data: players.map((p) => ({
-            firstName: p.firstName.trim(),
-            lastName: p.lastName.trim(),
-            classification: p.classification ?? null,
-            number: p.number ?? null,
+      const existingPlayers = await tx.player.findMany({
+        where: { teamId: id },
+        select: { id: true },
+      });
+      const existingPlayerIds = new Set(existingPlayers.map((player) => player.id));
+      const incomingExistingIds = players
+        .map((player) => player.id)
+        .filter((playerId): playerId is string => Boolean(playerId && existingPlayerIds.has(playerId)));
+
+      await tx.player.deleteMany({
+        where: {
+          teamId: id,
+          ...(incomingExistingIds.length > 0 ? { id: { notIn: incomingExistingIds } } : {}),
+        },
+      });
+
+      for (const player of players) {
+        const playerData = {
+          firstName: player.firstName.trim(),
+          lastName: player.lastName.trim(),
+          classification: player.classification ?? null,
+          number: player.number ?? null,
+        };
+        if (player.id && existingPlayerIds.has(player.id)) {
+          await tx.player.update({
+            where: { id: player.id },
+            data: playerData,
+          });
+          continue;
+        }
+        await tx.player.create({
+          data: {
+            ...playerData,
             teamId: id,
-          })),
+          },
         });
       }
     }

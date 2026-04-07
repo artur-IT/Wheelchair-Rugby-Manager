@@ -91,10 +91,10 @@ export type TeamFormValues = z.infer<typeof teamSchema>;
 
 const requiredFieldSx = {
   "& .MuiOutlinedInput-notchedOutline": {
-    borderColor: "rgba(237, 108, 2, 0.45)",
+    borderColor: "warning.light",
   },
   "&:hover .MuiOutlinedInput-notchedOutline": {
-    borderColor: "rgba(237, 108, 2, 0.65)",
+    borderColor: "warning.main",
   },
   "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
     borderColor: "primary.main",

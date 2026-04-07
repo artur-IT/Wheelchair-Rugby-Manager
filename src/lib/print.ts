@@ -77,33 +77,33 @@ export function printElementAsPdf(title: string, element: HTMLElement, options?:
       gap: 8px;
       font-family: system-ui, -apple-system, Segoe UI, sans-serif;
       font-size: 14px;
-      color: #111827;
-      background: #f3f4f6;
-      border-bottom: 1px solid #d1d5db;
+      color: #4D4D4D;
+      background: #FAFAFA;
+      border-bottom: 1px solid #D4D4D4;
     }
     .wr-print-window-toolbar button {
       font: inherit;
       padding: 6px 12px;
       border-radius: 6px;
-      border: 1px solid #9ca3af;
-      background: #fff;
+      border: 1px solid #D4D4D4;
+      background: #FFFFFF;
       cursor: pointer;
     }
     .wr-print-window-toolbar button:hover {
-      background: #e5e7eb;
+      background: #EBEBEB;
     }
     .wr-print-window-toolbar button.wr-print-orient-active {
-      border-color: #2563eb;
-      background: #dbeafe;
+      border-color: #4BA8DE;
+      background: #A5D3EF;
       font-weight: 600;
     }
     .wr-print-window-toolbar .wr-print-toolbar-primary {
-      background: #2563eb;
-      color: #fff;
-      border-color: #1d4ed8;
+      background: #4BA8DE;
+      color: #FFFFFF;
+      border-color: #90A1B9;
     }
     .wr-print-window-toolbar .wr-print-toolbar-primary:hover {
-      background: #1d4ed8;
+      background: #90A1B9;
     }
     * {
       -webkit-print-color-adjust: exact !important;
@@ -111,7 +111,7 @@ export function printElementAsPdf(title: string, element: HTMLElement, options?:
     }
     body {
       font-family: Arial, sans-serif;
-      color: #111827;
+      color: #4D4D4D;
       margin: 0;
     }
     .wr-print-hide {
@@ -128,14 +128,14 @@ export function printElementAsPdf(title: string, element: HTMLElement, options?:
     .wr-print-subtitle {
       font-size: 14px;
       margin: 4px 0 0;
-      color: #374151;
+      color: #717171;
     }
     table {
       width: 100%;
       border-collapse: collapse;
     }
     th, td {
-      border: 1px solid #d1d5db;
+      border: 1px solid #D4D4D4;
       padding: 6px 8px;
       vertical-align: middle;
     }

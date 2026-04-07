@@ -1,6 +1,7 @@
 import type { Player } from "@/types";
 
 export interface TeamPlayerPayload {
+  id?: string;
   firstName: string;
   lastName: string;
   classification?: number;
@@ -8,6 +9,7 @@ export interface TeamPlayerPayload {
 }
 
 interface PlayerLike {
+  id?: string;
   firstName: string;
   lastName: string;
   classification?: number | null;
@@ -15,6 +17,7 @@ interface PlayerLike {
 }
 
 interface PlayerRowLike {
+  id?: string;
   firstName: string;
   lastName: string;
   classification: string;
@@ -31,6 +34,7 @@ export const parseOptionalNumber = (value: string) => {
 };
 
 export const buildPlayerPayload = (player: PlayerLike): TeamPlayerPayload => ({
+  id: normalizeText(player.id) || undefined,
   firstName: player.firstName,
   lastName: player.lastName,
   classification: player.classification ?? undefined,
@@ -38,6 +42,7 @@ export const buildPlayerPayload = (player: PlayerLike): TeamPlayerPayload => ({
 });
 
 export const buildPlayerPayloadFromRow = (row: PlayerRowLike): TeamPlayerPayload => ({
+  id: normalizeText(row.id) || undefined,
   firstName: normalizeText(row.firstName),
   lastName: normalizeText(row.lastName),
   classification: parseOptionalNumber(row.classification),

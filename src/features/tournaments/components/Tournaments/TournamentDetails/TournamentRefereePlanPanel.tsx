@@ -165,9 +165,7 @@ export default function TournamentRefereePlanPanel({
         py: 4,
         px: 2,
         borderRadius: 3,
-        bgcolor: "#fff7ed",
-        border: "1px solid",
-        borderColor: "grey.200",
+        bgcolor: "background.default",
         alignSelf: "stretch",
         width: "100%",
         maxWidth: "100%",
@@ -177,10 +175,10 @@ export default function TournamentRefereePlanPanel({
       <Box className="wr-print-duplicate-title" sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
         <Box
           sx={{
-            bgcolor: "#fde68a",
+            bgcolor: "warning.main",
             p: 1,
             borderRadius: 2,
-            color: "#b45309",
+            color: "warning.contrastText",
           }}
         >
           <Typography component="div" sx={{ fontWeight: 900 }}>
@@ -206,7 +204,7 @@ export default function TournamentRefereePlanPanel({
             textAlign: "center",
             py: 5,
             border: "2px dashed",
-            borderColor: "grey.200",
+            borderColor: "divider",
             borderRadius: 2,
             display: "flex",
             flexDirection: "column",
@@ -243,7 +241,7 @@ export default function TournamentRefereePlanPanel({
             </Alert>
           ) : null}
 
-          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "stretch", gap: 4, width: "100%" }}>
+          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "stretch", gap: 5, width: "100%" }}>
             {scheduleTableDayTimestamps.map((dayTimestamp) => {
               const dayMatches = matches.filter((m) => getMatchDayTimestamp(m.scheduledAt) === dayTimestamp);
               const dayLabel = getScheduleDayLabel(dayTimestamp);
@@ -259,11 +257,12 @@ export default function TournamentRefereePlanPanel({
                     maxWidth: "100%",
                     width: "100%",
                     boxSizing: "border-box",
-                    bgcolor: "rgba(255, 255, 255, 0.55)",
+                    bgcolor: "background.paper",
                     border: "1px solid",
-                    borderColor: "rgba(0, 0, 0, 0.06)",
-                    borderRadius: 2,
-                    p: 2,
+                    borderColor: "rgba(212, 212, 212, 0.7)",
+                    borderRadius: 3,
+                    boxShadow: "0 2px 10px rgba(144, 161, 185, 0.12)",
+                    p: 2.5,
                   }}
                 >
                   <Typography
@@ -294,7 +293,7 @@ export default function TournamentRefereePlanPanel({
                         textAlign: "center",
                         py: 4,
                         border: "2px dashed",
-                        borderColor: "grey.200",
+                        borderColor: "divider",
                         borderRadius: 2,
                         display: "flex",
                         flexDirection: "column",
@@ -318,8 +317,15 @@ export default function TournamentRefereePlanPanel({
                   ) : (
                     <TableContainer
                       component={Paper}
-                      variant="outlined"
-                      sx={{ borderRadius: 3, width: "100%", maxWidth: "100%", overflowX: "auto" }}
+                      sx={{
+                        borderRadius: 2,
+                        width: "100%",
+                        maxWidth: "100%",
+                        overflowX: "auto",
+                        boxShadow: "none",
+                        border: "1px solid",
+                        borderColor: "rgba(212, 212, 212, 0.55)",
+                      }}
                     >
                       <Table
                         size="small"
@@ -329,14 +335,17 @@ export default function TournamentRefereePlanPanel({
                           width: "100%",
                           "& .MuiTableCell-root": {
                             px: 1,
+                            borderBottom: "none",
                           },
                         }}
                       >
                         <TableHead
                           sx={{
-                            bgcolor: "#ffedd5",
+                            bgcolor: "rgba(225, 113, 0, 0.18)",
                             "& .MuiTableCell-root": {
                               fontWeight: 700,
+                              color: "text.primary",
+                              py: 1.25,
                             },
                           }}
                         >
@@ -414,16 +423,20 @@ export default function TournamentRefereePlanPanel({
                             ) => candidateId !== currentValue && conflicts.includes(candidateId);
 
                             return (
-                              <TableRow key={m.id}>
+                              <TableRow
+                                key={m.id}
+                                sx={{
+                                  "&:not(:last-of-type) .MuiTableCell-root": {
+                                    borderBottom: "1px solid",
+                                    borderBottomColor: "rgba(212, 212, 212, 0.65)",
+                                  },
+                                }}
+                              >
                                 <TableCell align="center" sx={{ fontWeight: 600 }}>
                                   {teamAName}
                                 </TableCell>
-                                <TableCell align="center">
-                                  {startTime}
-                                </TableCell>
-                                <TableCell align="center">
-                                  {endTime}
-                                </TableCell>
+                                <TableCell align="center">{startTime}</TableCell>
+                                <TableCell align="center">{endTime}</TableCell>
                                 <TableCell align="center" sx={{ fontWeight: 600 }}>
                                   {teamBName}
                                 </TableCell>

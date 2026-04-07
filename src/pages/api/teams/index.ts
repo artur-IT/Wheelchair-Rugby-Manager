@@ -26,6 +26,7 @@ const CreateTeamSchema = z
     players: z
       .array(
         z.object({
+          id: z.string().optional(),
           firstName: z.string().min(1, "Imię jest wymagane"),
           lastName: z.string().min(1, "Nazwisko jest wymagane"),
           classification: z
@@ -53,6 +54,7 @@ const CreateTeamSchema = z
       lastName: toTitleCase(s.lastName),
     })),
     players: o.players?.map((p) => ({
+      id: p.id?.trim() || undefined,
       firstName: toTitleCase(p.firstName),
       lastName: toTitleCase(p.lastName),
       classification:

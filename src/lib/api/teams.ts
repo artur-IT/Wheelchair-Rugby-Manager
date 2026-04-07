@@ -2,6 +2,7 @@ import { getErrorMessageFromResponse } from "@/lib/apiHttp";
 import type { Team } from "@/types";
 
 interface TeamPlayerPayload {
+  id?: string;
   firstName: string;
   lastName: string;
   classification?: number;

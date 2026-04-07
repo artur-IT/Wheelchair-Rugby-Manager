@@ -94,9 +94,9 @@ export default function TeamsTab({ seasonId }: TeamsTabProps) {
               }}
             >
               <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                <Avatar sx={{ bgcolor: "primary.main" }}>{team.name[0] ?? "?"}</Avatar>
+                <Avatar sx={{ bgcolor: "info.main" }}>{team.name[0] ?? "?"}</Avatar>
                 <Box>
-                  <Typography sx={{ fontWeight: "bold" }}>{team.name}</Typography>
+                  <Typography sx={{ fontWeight: "bold", color: "info.main" }}>{team.name}</Typography>
                   <Typography variant="caption" color="textSecondary">
                     {team.players?.length ?? 0} zawodników
                   </Typography>
