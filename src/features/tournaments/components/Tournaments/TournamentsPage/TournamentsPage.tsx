@@ -17,9 +17,11 @@ import {
 import AppShell from "@/components/AppShell/AppShell";
 import QueryProvider from "@/components/QueryProvider/QueryProvider";
 import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
+import { useDefaultSeason } from "@/components/hooks/useDefaultSeason";
 import ConfirmationDialog from "@/components/ui/ConfirmationDialog";
 import DataLoadAlert from "@/components/ui/DataLoadAlert";
 import { deleteTournamentById, fetchTournamentsList } from "@/lib/api/tournaments";
+import { fetchSeasonsList } from "@/lib/api/seasons";
 import { formatAddressForDisplay } from "@/lib/addressDisplay";
 import { formatDateRangePl } from "@/lib/dateFormat";
 import { queryKeys } from "@/lib/queryKeys";
@@ -38,6 +40,7 @@ export default function TournamentsPage() {
 }
 
 function TournamentsContent() {
+  const { defaultSeasonId } = useDefaultSeason();
   const queryClient = useQueryClient();
   const [tournamentToDelete, setTournamentToDelete] = useState<Tournament | null>(null);
 
@@ -51,6 +54,10 @@ function TournamentsContent() {
     queryKey: queryKeys.tournaments.list(),
     queryFn: ({ signal }) => fetchTournamentsList(signal),
   });
+  const { data: seasons = [] } = useQuery({
+    queryKey: queryKeys.seasons.list(),
+    queryFn: ({ signal }) => fetchSeasonsList(signal),
+  });
 
   const deleteMutation = useMutation({
     mutationFn: deleteTournamentById,
@@ -61,6 +68,9 @@ function TournamentsContent() {
   });
 
   const listError = isError && error instanceof Error ? error.message : null;
+  const selectedSeason = defaultSeasonId ? seasons.find((season) => season.id === defaultSeasonId) : null;
+  const selectedSeasonLabel = selectedSeason ? `${selectedSeason.name} (${selectedSeason.year})` : "nie wybrano";
+  const visibleTournaments = defaultSeasonId ? tournaments.filter((tournament) => tournament.seasonId === defaultSeasonId) : [];
 
   function openDeleteDialog(tournament: Tournament) {
     if (deleteMutation.isPending) return;
@@ -108,7 +118,7 @@ function TournamentsContent() {
           <Typography variant="h4" sx={{ fontWeight: "bold", mb: 0.5 }}>
             Turnieje
           </Typography>
-          <Typography color="textSecondary">Zarządzaj wydarzeniami w tym sezonie.</Typography>
+          <Typography color="textSecondary">Zarządzaj wydarzeniami w sezonie: {selectedSeasonLabel}.</Typography>
         </Box>
         <Button component="a" href="/tournaments/new" variant="contained" startIcon={<Plus size={20} />}>
           Nowy Turniej
@@ -121,7 +131,7 @@ function TournamentsContent() {
         <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
           <CircularProgress />
         </Box>
-      ) : isError ? null : tournaments.length === 0 ? (
+      ) : isError ? null : visibleTournaments.length === 0 ? (
         <Box
           sx={{
             py: 6,
@@ -132,11 +142,15 @@ function TournamentsContent() {
           }}
         >
           <Typography sx={{ fontWeight: "bold", mb: 1 }}>Brak turniejów</Typography>
-          <Typography color="textSecondary">Dodaj pierwszy turniej, aby zacząć planowanie sezonu.</Typography>
+          <Typography color="textSecondary">
+            {defaultSeasonId
+              ? "Dodaj pierwszy turniej, aby zacząć planowanie sezonu."
+              : "Ustaw domyślny sezon w Ustawieniach, aby zobaczyć turnieje."}
+          </Typography>
         </Box>
       ) : (
         <Grid container spacing={3}>
-          {tournaments.map((t) => (
+          {visibleTournaments.map((t) => (
             <Grid size={{ xs: 12, md: 6, lg: 4 }} key={t.id}>
               <motion.div whileHover={{ y: -5 }}>
                 <Card
