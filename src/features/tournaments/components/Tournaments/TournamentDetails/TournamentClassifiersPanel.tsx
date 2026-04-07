@@ -1,40 +1,42 @@
 import { Box, Button, IconButton, Paper, Tooltip, Typography } from "@mui/material";
 import { Trash2 } from "lucide-react";
-import type { Team, Tournament } from "@/types";
+import type { Person, Tournament } from "@/types";
 
-interface TournamentTeamsPanelProps {
+interface TournamentClassifiersPanelProps {
   tournament: Tournament;
-  openAddTeamsDialog: () => void;
-  openRemoveTeamDialog: (team: Team) => void;
-  removeTeamLoading: boolean;
-  teamToRemove: Team | null;
+  personDisplayName: (p: Person) => string;
+  openAddClassifiersDialog: () => void;
+  openRemoveClassifierDialog: (p: Person) => void;
+  removeClassifierLoading: boolean;
+  classifierToRemove: Person | null;
 }
 
-export default function TournamentTeamsPanel({
+export default function TournamentClassifiersPanel({
   tournament,
-  openAddTeamsDialog,
-  openRemoveTeamDialog,
-  removeTeamLoading,
-  teamToRemove,
-}: TournamentTeamsPanelProps) {
+  personDisplayName,
+  openAddClassifiersDialog,
+  openRemoveClassifierDialog,
+  removeClassifierLoading,
+  classifierToRemove,
+}: TournamentClassifiersPanelProps) {
   return (
     <Paper sx={{ p: 3, borderRadius: 3, maxWidth: "100%", minWidth: 0, boxSizing: "border-box", height: "100%" }}>
       <Typography variant="h6" sx={{ fontWeight: "bold", mb: 0.5 }}>
-        Drużyny
+        Klasyfikatorzy
         <Box
           component="span"
           aria-hidden="true"
           sx={{ fontSize: "0.875rem", fontWeight: 400, color: "text.secondary", ml: 1 }}
         >
-          ({tournament.teams.length})
+          ({tournament.classifiers.length})
         </Box>
       </Typography>
-      {tournament.teams.length === 0 ? (
+      {tournament.classifiers.length === 0 ? (
         <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
           <Typography variant="body2" color="textSecondary">
-            Brak przypisanych drużyn.
+            Brak przypisanych klasyfikatorów.
           </Typography>
-          <Button variant="contained" onClick={openAddTeamsDialog} sx={{ alignSelf: "flex-start" }}>
+          <Button variant="contained" onClick={openAddClassifiersDialog} sx={{ alignSelf: "flex-start" }}>
             Dodaj
           </Button>
         </Box>
@@ -50,9 +52,9 @@ export default function TournamentTeamsPanel({
               alignItems: "stretch",
             }}
           >
-            {tournament.teams.map((team) => (
+            {tournament.classifiers.map((c) => (
               <Box
-                key={team.id}
+                key={c.id}
                 sx={{
                   display: "flex",
                   alignItems: "center",
@@ -82,19 +84,19 @@ export default function TournamentTeamsPanel({
                     color: "primary.main",
                   }}
                 >
-                  {team.name[0] ?? "?"}
+                  {c.firstName?.[0] ?? "?"}
                 </Box>
                 <Typography sx={{ fontWeight: 500, flex: 1, minWidth: 0, overflowWrap: "anywhere" }}>
-                  {team.name}
+                  {personDisplayName(c)}
                 </Typography>
-                <Tooltip title="Usuń drużynę z turnieju">
+                <Tooltip title="Usuń klasyfikatora z turnieju">
                   <span>
                     <IconButton
-                      aria-label={`Usuń drużynę ${team.name} z turnieju`}
+                      aria-label={`Usuń klasyfikatora ${personDisplayName(c)} z turnieju`}
                       color="error"
-                      onClick={() => openRemoveTeamDialog(team)}
+                      onClick={() => openRemoveClassifierDialog(c)}
                       size="small"
-                      disabled={removeTeamLoading && teamToRemove?.id === team.id}
+                      disabled={removeClassifierLoading && classifierToRemove?.id === c.id}
                       sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2, p: 0 }}
                     >
                       <Trash2 size={18} />
@@ -104,7 +106,7 @@ export default function TournamentTeamsPanel({
               </Box>
             ))}
           </Box>
-          <Button variant="outlined" onClick={openAddTeamsDialog} sx={{ alignSelf: "flex-start" }}>
+          <Button variant="outlined" onClick={openAddClassifiersDialog} sx={{ alignSelf: "flex-start" }}>
             Dodaj
           </Button>
         </Box>

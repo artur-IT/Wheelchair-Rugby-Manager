@@ -162,11 +162,16 @@ export default function TournamentRefereePlanPanel({
     <Paper
       ref={panelRef}
       sx={{
-        p: 4,
+        py: 4,
+        px: 2,
         borderRadius: 3,
         bgcolor: "#fff7ed",
         border: "1px solid",
         borderColor: "grey.200",
+        alignSelf: "stretch",
+        width: "100%",
+        maxWidth: "100%",
+        boxSizing: "border-box",
       }}
     >
       <Box className="wr-print-duplicate-title" sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
@@ -238,14 +243,29 @@ export default function TournamentRefereePlanPanel({
             </Alert>
           ) : null}
 
-          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 4 }}>
+          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "stretch", gap: 4, width: "100%" }}>
             {scheduleTableDayTimestamps.map((dayTimestamp) => {
               const dayMatches = matches.filter((m) => getMatchDayTimestamp(m.scheduledAt) === dayTimestamp);
               const dayLabel = getScheduleDayLabel(dayTimestamp);
               const dayHighlight = isDayOutOfRange?.(dayTimestamp) ?? false;
 
               return (
-                <Box key={dayTimestamp} sx={{ display: "inline-flex", flexDirection: "column", maxWidth: "100%" }}>
+                <Box
+                  key={dayTimestamp}
+                  sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignSelf: "stretch",
+                    maxWidth: "100%",
+                    width: "100%",
+                    boxSizing: "border-box",
+                    bgcolor: "rgba(255, 255, 255, 0.55)",
+                    border: "1px solid",
+                    borderColor: "rgba(0, 0, 0, 0.06)",
+                    borderRadius: 2,
+                    p: 2,
+                  }}
+                >
                   <Typography
                     variant="h6"
                     sx={{
@@ -280,6 +300,10 @@ export default function TournamentRefereePlanPanel({
                         flexDirection: "column",
                         alignItems: "center",
                         gap: 2,
+                        width: "fit-content",
+                        maxWidth: "100%",
+                        alignSelf: "center",
+                        minWidth: { xs: "min(100%, 280px)", sm: 320 },
                       }}
                     >
                       <Typography>Brak zaplanowanych meczów w tym dniu.</Typography>
@@ -295,14 +319,14 @@ export default function TournamentRefereePlanPanel({
                     <TableContainer
                       component={Paper}
                       variant="outlined"
-                      sx={{ borderRadius: 3, width: "fit-content", maxWidth: "100%", overflowX: "auto" }}
+                      sx={{ borderRadius: 3, width: "100%", maxWidth: "100%", overflowX: "auto" }}
                     >
                       <Table
                         size="small"
                         aria-label={`Tabela planu sędziów: ${dayLabel}`}
                         sx={{
                           tableLayout: "auto",
-                          width: "max-content",
+                          width: "100%",
                           "& .MuiTableCell-root": {
                             px: 1,
                           },

@@ -23,6 +23,16 @@ describe("TournamentsPage", () => {
       name: "Turniej B",
       startDate: "2026-02-10T00:00:00.000Z",
       endDate: null,
+      seasonId: "s2",
+      teams: [],
+      referees: [],
+      classifiers: [],
+    };
+    const tournamentC = {
+      id: "t3",
+      name: "Turniej C",
+      startDate: "2026-03-10T00:00:00.000Z",
+      endDate: null,
       seasonId: "s1",
       teams: [],
       referees: [],
@@ -32,12 +42,21 @@ describe("TournamentsPage", () => {
     let listCalls = 0;
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = typeof input === "string" ? input : input.toString();
+      if (url === "/api/seasons" && (!init || init.method == null)) {
+        return new Response(
+          JSON.stringify([
+            { id: "s2", name: "Sezon 2026/2027", year: 2026 },
+            { id: "s1", name: "Sezon 2025/2026", year: 2025 },
+          ]),
+          { status: 200 }
+        );
+      }
       if (url === "/api/tournaments" && (!init || init.method == null)) {
         listCalls += 1;
         if (listCalls === 1) {
-          return new Response(JSON.stringify([tournamentA, tournamentB]), { status: 200 });
+          return new Response(JSON.stringify([tournamentA, tournamentB, tournamentC]), { status: 200 });
         }
-        return new Response(JSON.stringify([tournamentB]), { status: 200 });
+        return new Response(JSON.stringify([tournamentB, tournamentC]), { status: 200 });
       }
       if (url === "/api/tournaments/t1" && init?.method === "DELETE") {
         return new Response(JSON.stringify({ ok: true }), { status: 200 });
@@ -46,11 +65,14 @@ describe("TournamentsPage", () => {
     });
 
     vi.stubGlobal("fetch", fetchMock);
+    localStorage.setItem("defaultSeasonId", "s1");
 
     render(<TournamentsPage />);
 
+    expect(await screen.findByText("Zarządzaj wydarzeniami w sezonie: Sezon 2025/2026 (2025).")).toBeInTheDocument();
     expect(await screen.findByText("Turniej A")).toBeInTheDocument();
-    expect(screen.getByText("Turniej B")).toBeInTheDocument();
+    expect(screen.getByText("Turniej C")).toBeInTheDocument();
+    expect(screen.queryByText("Turniej B")).not.toBeInTheDocument();
 
     const cardTitle = screen.getByText("Turniej A");
     const card = cardTitle.closest(".MuiCard-root");
@@ -69,12 +91,14 @@ describe("TournamentsPage", () => {
       expect(screen.queryByText("Turniej A")).not.toBeInTheDocument();
     });
 
-    expect(screen.getByText("Turniej B")).toBeInTheDocument();
+    expect(screen.getByText("Turniej C")).toBeInTheDocument();
+    expect(screen.queryByText("Turniej B")).not.toBeInTheDocument();
 
     await waitFor(() => {
       expect(fetchMock).toHaveBeenCalledWith("/api/tournaments/t1", { method: "DELETE" });
     });
 
     vi.unstubAllGlobals();
+    localStorage.removeItem("defaultSeasonId");
   });
 });

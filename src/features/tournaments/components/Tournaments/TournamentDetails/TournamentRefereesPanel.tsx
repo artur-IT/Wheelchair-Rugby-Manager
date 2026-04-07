@@ -1,40 +1,42 @@
 import { Box, Button, IconButton, Paper, Tooltip, Typography } from "@mui/material";
 import { Trash2 } from "lucide-react";
-import type { Team, Tournament } from "@/types";
+import type { Person, Tournament } from "@/types";
 
-interface TournamentTeamsPanelProps {
+interface TournamentRefereesPanelProps {
   tournament: Tournament;
-  openAddTeamsDialog: () => void;
-  openRemoveTeamDialog: (team: Team) => void;
-  removeTeamLoading: boolean;
-  teamToRemove: Team | null;
+  personDisplayName: (p: Person) => string;
+  openAddRefereesDialog: () => void;
+  openRemoveRefereeDialog: (p: Person) => void;
+  removeRefereeLoading: boolean;
+  refereeToRemove: Person | null;
 }
 
-export default function TournamentTeamsPanel({
+export default function TournamentRefereesPanel({
   tournament,
-  openAddTeamsDialog,
-  openRemoveTeamDialog,
-  removeTeamLoading,
-  teamToRemove,
-}: TournamentTeamsPanelProps) {
+  personDisplayName,
+  openAddRefereesDialog,
+  openRemoveRefereeDialog,
+  removeRefereeLoading,
+  refereeToRemove,
+}: TournamentRefereesPanelProps) {
   return (
     <Paper sx={{ p: 3, borderRadius: 3, maxWidth: "100%", minWidth: 0, boxSizing: "border-box", height: "100%" }}>
       <Typography variant="h6" sx={{ fontWeight: "bold", mb: 0.5 }}>
-        Drużyny
+        Sędziowie
         <Box
           component="span"
           aria-hidden="true"
           sx={{ fontSize: "0.875rem", fontWeight: 400, color: "text.secondary", ml: 1 }}
         >
-          ({tournament.teams.length})
+          ({tournament.referees.length})
         </Box>
       </Typography>
-      {tournament.teams.length === 0 ? (
+      {tournament.referees.length === 0 ? (
         <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
           <Typography variant="body2" color="textSecondary">
-            Brak przypisanych drużyn.
+            Brak przypisanych sędziów.
           </Typography>
-          <Button variant="contained" onClick={openAddTeamsDialog} sx={{ alignSelf: "flex-start" }}>
+          <Button variant="contained" onClick={openAddRefereesDialog} sx={{ alignSelf: "flex-start" }}>
             Dodaj
           </Button>
         </Box>
@@ -50,9 +52,9 @@ export default function TournamentTeamsPanel({
               alignItems: "stretch",
             }}
           >
-            {tournament.teams.map((team) => (
+            {tournament.referees.map((r) => (
               <Box
-                key={team.id}
+                key={r.id}
                 sx={{
                   display: "flex",
                   alignItems: "center",
@@ -82,19 +84,19 @@ export default function TournamentTeamsPanel({
                     color: "primary.main",
                   }}
                 >
-                  {team.name[0] ?? "?"}
+                  {r.firstName?.[0] ?? "?"}
                 </Box>
                 <Typography sx={{ fontWeight: 500, flex: 1, minWidth: 0, overflowWrap: "anywhere" }}>
-                  {team.name}
+                  {personDisplayName(r)}
                 </Typography>
-                <Tooltip title="Usuń drużynę z turnieju">
+                <Tooltip title="Usuń sędziego z turnieju">
                   <span>
                     <IconButton
-                      aria-label={`Usuń drużynę ${team.name} z turnieju`}
+                      aria-label={`Usuń sędziego ${personDisplayName(r)} z turnieju`}
                       color="error"
-                      onClick={() => openRemoveTeamDialog(team)}
+                      onClick={() => openRemoveRefereeDialog(r)}
                       size="small"
-                      disabled={removeTeamLoading && teamToRemove?.id === team.id}
+                      disabled={removeRefereeLoading && refereeToRemove?.id === r.id}
                       sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2, p: 0 }}
                     >
                       <Trash2 size={18} />
@@ -104,7 +106,7 @@ export default function TournamentTeamsPanel({
               </Box>
             ))}
           </Box>
-          <Button variant="outlined" onClick={openAddTeamsDialog} sx={{ alignSelf: "flex-start" }}>
+          <Button variant="outlined" onClick={openAddRefereesDialog} sx={{ alignSelf: "flex-start" }}>
             Dodaj
           </Button>
         </Box>

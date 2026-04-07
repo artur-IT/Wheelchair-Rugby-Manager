@@ -30,21 +30,28 @@ export default function TournamentInfoPanels({ tournament }: TournamentInfoPanel
     bgcolor: "background.paper",
     border: 1,
     borderColor: "divider",
-    width: 400,
-    minWidth: 400,
-    maxWidth: 400,
-    flex: "0 0 400px",
+    width: 350,
+    minWidth: 350,
+    maxWidth: 350,
     boxSizing: "border-box",
   } as const;
 
   return (
     <Box
       sx={{
-        display: "flex",
-        flexWrap: "wrap",
+        display: "grid",
+        gridTemplateColumns: {
+          xs: "repeat(auto-fit, 350px)",
+          sm: "repeat(auto-fit, 350px)",
+          md: "repeat(auto-fit, 350px)",
+          lg: "repeat(3, 350px)",
+          xl: "repeat(3, 350px)",
+        },
         gap: 3,
         alignItems: "stretch",
-        overflowX: "auto",
+        justifyContent: "center",
+        // Narrow viewports: 350px columns may overflow; lg+ uses full Container width from parent layout.
+        overflowX: { xs: "auto", lg: "visible" },
       }}
     >
       {venue ? (
