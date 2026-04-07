@@ -6,6 +6,7 @@ interface TournamentTeamsPanelProps {
   tournament: Tournament;
   openAddTeamsDialog: () => void;
   openRemoveTeamDialog: (team: Team) => void;
+  openEditTeamPlayersDialog: (team: Team) => void;
   removeTeamLoading: boolean;
   teamToRemove: Team | null;
 }
@@ -14,6 +15,7 @@ export default function TournamentTeamsPanel({
   tournament,
   openAddTeamsDialog,
   openRemoveTeamDialog,
+  openEditTeamPlayersDialog,
   removeTeamLoading,
   teamToRemove,
 }: TournamentTeamsPanelProps) {
@@ -34,7 +36,12 @@ export default function TournamentTeamsPanel({
           <Typography variant="body2" color="textSecondary">
             Brak przypisanych drużyn.
           </Typography>
-          <Button variant="contained" onClick={openAddTeamsDialog} sx={{ alignSelf: "flex-start" }}>
+          <Button
+            variant="contained"
+            onClick={openAddTeamsDialog}
+            aria-label="Dodaj drużyny do turnieju"
+            sx={{ alignSelf: "flex-start" }}
+          >
             Dodaj
           </Button>
         </Box>
@@ -84,8 +91,25 @@ export default function TournamentTeamsPanel({
                 >
                   {team.name[0] ?? "?"}
                 </Box>
-                <Typography sx={{ fontWeight: 500, flex: 1, minWidth: 0, overflowWrap: "anywhere" }}>
+                <Button
+                  variant="text"
+                  onClick={() => openEditTeamPlayersDialog(team)}
+                  sx={{
+                    fontWeight: 500,
+                    flex: 1,
+                    width: "100%",
+                    minWidth: 0,
+                    justifyContent: "flex-start",
+                    textAlign: "left",
+                    whiteSpace: "normal",
+                    px: 0,
+                    overflowWrap: "anywhere",
+                  }}
+                >
                   {team.name}
+                </Button>
+                <Typography variant="body2" color="text.secondary">
+                  ({team.players?.length ?? 0})
                 </Typography>
                 <Tooltip title="Usuń drużynę z turnieju">
                   <span>
@@ -104,7 +128,12 @@ export default function TournamentTeamsPanel({
               </Box>
             ))}
           </Box>
-          <Button variant="outlined" onClick={openAddTeamsDialog} sx={{ alignSelf: "flex-start" }}>
+          <Button
+            variant="outlined"
+            onClick={openAddTeamsDialog}
+            aria-label="Dodaj drużyny do turnieju"
+            sx={{ alignSelf: "flex-start" }}
+          >
             Dodaj
           </Button>
         </Box>

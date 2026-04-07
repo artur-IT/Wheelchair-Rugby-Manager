@@ -69,6 +69,23 @@ beforeEach(() => {
       },
     ],
   };
+  const tournamentWithEditedTeamPlayers = {
+    ...tournamentFixture,
+    teams: [
+      {
+        id: "team-1",
+        name: "Warsaw Raptors",
+        seasonId: "s1",
+        players: [],
+      },
+      {
+        id: "team-2",
+        name: "Krakow Eagles",
+        seasonId: "s1",
+        players: [{ id: "player-2", firstName: "Olek", lastName: "Kowal", teamId: "team-2", classification: 2 }],
+      },
+    ],
+  };
   const tournamentWithReferees = { ...tournamentFixture, referees: refereeList };
   const tournamentAfterRefereeRemove = { ...tournamentFixture, referees: [refereeList[1]] };
   const tournamentWithClassifiers = { ...tournamentFixture, classifiers: classifierList };
@@ -80,6 +97,7 @@ beforeEach(() => {
   let refereeRemoved = false;
   let classifiersAdded = false;
   let classifierRemoved = false;
+  let teamPlayersEdited = false;
 
   interface MatchStub {
     id: string;
@@ -123,6 +141,9 @@ beforeEach(() => {
         if (classifierRemoved && classifiersAdded) {
           return new Response(JSON.stringify(tournamentAfterClassifierRemove), { status: 200 });
         }
+        if (teamPlayersEdited && teamsAdded) {
+          return new Response(JSON.stringify(tournamentWithEditedTeamPlayers), { status: 200 });
+        }
         if (refereesAdded) {
           return new Response(JSON.stringify(tournamentWithReferees), { status: 200 });
         }
@@ -143,6 +164,21 @@ beforeEach(() => {
         );
       }
 
+      if (url === "/api/teams/team-1") {
+        return new Response(
+          JSON.stringify({
+            id: "team-1",
+            name: "Warsaw Raptors",
+            seasonId: "s1",
+            players: [
+              { id: "player-1", firstName: "Ala", lastName: "Nowak", teamId: "team-1", classification: 1.5 },
+              { id: "player-3", firstName: "Jan", lastName: "Lis", teamId: "team-1", classification: 2.5 },
+            ],
+          }),
+          { status: 200 }
+        );
+      }
+
       if (url === "/api/tournaments/t1/teams" && init?.method === "POST") {
         teamsAdded = true;
         return new Response(JSON.stringify({ ok: true }), { status: 200 });
@@ -150,6 +186,11 @@ beforeEach(() => {
 
       if (url === "/api/tournaments/t1/teams/team-1" && init?.method === "DELETE") {
         teamRemoved = true;
+        return new Response(JSON.stringify({ ok: true }), { status: 200 });
+      }
+
+      if (url === "/api/tournaments/t1/teams/team-1" && init?.method === "PUT") {
+        teamPlayersEdited = true;
         return new Response(JSON.stringify({ ok: true }), { status: 200 });
       }
 
@@ -279,7 +320,7 @@ describe("TournamentDetails", () => {
     expect(await screen.findByText("Hotel + Catering na hali")).toBeInTheDocument();
     expect(await screen.findByText("Brak przypisanych drużyn.")).toBeInTheDocument();
     const teamsSection = screen.getByRole("heading", { name: "Drużyny" }).closest("div");
-    expect(within(teamsSection as HTMLElement).getByRole("button", { name: "Dodaj" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Dodaj drużyny do turnieju" })).toBeInTheDocument();
   });
 
   it("adds multiple teams via dialog and shows them", async () => {
@@ -288,7 +329,7 @@ describe("TournamentDetails", () => {
 
     await screen.findByRole("heading", { name: "Turniej Otwarcia Sezonu" });
     const teamsSection = screen.getByRole("heading", { name: "Drużyny" }).closest("div");
-    await user.click(within(teamsSection as HTMLElement).getByRole("button", { name: "Dodaj" }));
+    await user.click(screen.getByRole("button", { name: "Dodaj drużyny do turnieju" }));
 
     const dialog = await screen.findByRole("dialog");
     expect(within(dialog).getByText("Dodaj drużyny")).toBeInTheDocument();
@@ -297,6 +338,7 @@ describe("TournamentDetails", () => {
     await user.click(within(dialog).getByText("Krakow Eagles"));
 
     await user.click(within(dialog).getByRole("button", { name: "Dodaj" }));
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Dodaj drużyny" })).not.toBeInTheDocument());
 
     expect(await screen.findByText("Warsaw Raptors")).toBeInTheDocument();
     expect(screen.getByText("Krakow Eagles")).toBeInTheDocument();
@@ -310,17 +352,18 @@ describe("TournamentDetails", () => {
     const teamsSection = screen.getByRole("heading", { name: "Drużyny" }).closest("div") as HTMLElement;
 
     // First add two teams
-    await user.click(within(teamsSection).getByRole("button", { name: "Dodaj" }));
+    await user.click(screen.getByRole("button", { name: "Dodaj drużyny do turnieju" }));
     const addDialog1 = await screen.findByRole("dialog");
     await user.click(within(addDialog1).getByText("Warsaw Raptors"));
     await user.click(within(addDialog1).getByText("Krakow Eagles"));
     await user.click(within(addDialog1).getByRole("button", { name: "Dodaj" }));
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Dodaj drużyny" })).not.toBeInTheDocument());
 
     expect(await screen.findByText("Warsaw Raptors")).toBeInTheDocument();
     expect(screen.getByText("Krakow Eagles")).toBeInTheDocument();
 
     // Open dialog again and verify checkboxes are pre-selected
-    await user.click(within(teamsSection).getByRole("button", { name: "Dodaj" }));
+    await user.click(screen.getByRole("button", { name: "Dodaj drużyny do turnieju" }));
     const addDialog2 = await screen.findByRole("dialog");
 
     // Available teams are rendered in the order from the mocked /api/teams response.
@@ -338,12 +381,13 @@ describe("TournamentDetails", () => {
 
     await screen.findByRole("heading", { name: "Turniej Otwarcia Sezonu" });
     const teamsSection = screen.getByRole("heading", { name: "Drużyny" }).closest("div");
-    await user.click(within(teamsSection as HTMLElement).getByRole("button", { name: "Dodaj" }));
+    await user.click(screen.getByRole("button", { name: "Dodaj drużyny do turnieju" }));
 
     const addDialog = await screen.findByRole("dialog");
     await user.click(within(addDialog).getByText("Warsaw Raptors"));
     await user.click(within(addDialog).getByText("Krakow Eagles"));
     await user.click(within(addDialog).getByRole("button", { name: "Dodaj" }));
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Dodaj drużyny" })).not.toBeInTheDocument());
 
     expect(await screen.findByText("Warsaw Raptors")).toBeInTheDocument();
     expect(screen.getByText("Krakow Eagles")).toBeInTheDocument();
@@ -358,6 +402,34 @@ describe("TournamentDetails", () => {
     expect(screen.queryByText("Warsaw Raptors")).not.toBeInTheDocument();
   });
 
+  it("edits tournament team players in team roster dialog", async () => {
+    const user = userEvent.setup();
+    render(<TournamentDetails id="t1" />);
+
+    await screen.findByRole("heading", { name: "Turniej Otwarcia Sezonu" });
+    const teamsSection = screen.getByRole("heading", { name: "Drużyny" }).closest("div") as HTMLElement;
+    await user.click(screen.getByRole("button", { name: "Dodaj drużyny do turnieju" }));
+
+    const addDialog = await screen.findByRole("dialog");
+    await user.click(within(addDialog).getByText("Warsaw Raptors"));
+    await user.click(within(addDialog).getByText("Krakow Eagles"));
+    await user.click(within(addDialog).getByRole("button", { name: "Dodaj" }));
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Dodaj drużyny" })).not.toBeInTheDocument());
+
+    expect(await screen.findByText("Warsaw Raptors")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /^Warsaw Raptors$/i }));
+    const rosterDialog = await screen.findByRole("dialog");
+    expect(within(rosterDialog).getByText(/Skład drużyny: Warsaw Raptors/i)).toBeInTheDocument();
+
+    await user.click(within(rosterDialog).getByText("Ala Nowak"));
+    await user.click(within(rosterDialog).getByRole("button", { name: "Zapisz" }));
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /^Warsaw Raptors$/i })).toBeInTheDocument();
+    });
+  });
+
   it("adds first match when plan is empty", async () => {
     const user = userEvent.setup();
     render(<TournamentDetails id="t1" />);
@@ -366,12 +438,13 @@ describe("TournamentDetails", () => {
 
     // Add teams so dialog has valid options.
     const teamsSection = screen.getByRole("heading", { name: "Drużyny" }).closest("div") as HTMLElement;
-    await user.click(within(teamsSection).getByRole("button", { name: "Dodaj" }));
+    await user.click(screen.getByRole("button", { name: "Dodaj drużyny do turnieju" }));
 
     const addTeamsDialog = await screen.findByRole("dialog");
     await user.click(within(addTeamsDialog).getByText("Warsaw Raptors"));
     await user.click(within(addTeamsDialog).getByText("Krakow Eagles"));
     await user.click(within(addTeamsDialog).getByRole("button", { name: "Dodaj" }));
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Dodaj drużyny" })).not.toBeInTheDocument());
 
     // Wait for teams list to update (and teams dialog to close).
     expect(await screen.findByText("Warsaw Raptors")).toBeInTheDocument();
@@ -406,11 +479,12 @@ describe("TournamentDetails", () => {
 
     // Add teams (fixture includes players only after teamsAdded).
     const teamsSection = screen.getByRole("heading", { name: "Drużyny" }).closest("div") as HTMLElement;
-    await user.click(within(teamsSection).getByRole("button", { name: "Dodaj" }));
+    await user.click(screen.getByRole("button", { name: "Dodaj drużyny do turnieju" }));
     const addTeamsDialog = await screen.findByRole("dialog");
     await user.click(within(addTeamsDialog).getByText("Warsaw Raptors"));
     await user.click(within(addTeamsDialog).getByText("Krakow Eagles"));
     await user.click(within(addTeamsDialog).getByRole("button", { name: "Dodaj" }));
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Dodaj drużyny" })).not.toBeInTheDocument());
     expect(await screen.findByText("Warsaw Raptors")).toBeInTheDocument();
 
     const classifierPlanPanel = screen
@@ -434,12 +508,13 @@ describe("TournamentDetails", () => {
 
     // Add teams so dialog has valid options.
     const teamsSection = screen.getByRole("heading", { name: "Drużyny" }).closest("div") as HTMLElement;
-    await user.click(within(teamsSection).getByRole("button", { name: "Dodaj" }));
+    await user.click(screen.getByRole("button", { name: "Dodaj drużyny do turnieju" }));
 
     const addTeamsDialog = await screen.findByRole("dialog");
     await user.click(within(addTeamsDialog).getByText("Warsaw Raptors"));
     await user.click(within(addTeamsDialog).getByText("Krakow Eagles"));
     await user.click(within(addTeamsDialog).getByRole("button", { name: "Dodaj" }));
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Dodaj drużyny" })).not.toBeInTheDocument());
     expect(await screen.findByText("Warsaw Raptors")).toBeInTheDocument();
 
     // Add first match.
@@ -475,12 +550,13 @@ describe("TournamentDetails", () => {
 
     // Add teams so dialog has valid options.
     const teamsSection = screen.getByRole("heading", { name: "Drużyny" }).closest("div") as HTMLElement;
-    await user.click(within(teamsSection).getByRole("button", { name: "Dodaj" }));
+    await user.click(screen.getByRole("button", { name: "Dodaj drużyny do turnieju" }));
 
     const addTeamsDialog = await screen.findByRole("dialog");
     await user.click(within(addTeamsDialog).getByText("Warsaw Raptors"));
     await user.click(within(addTeamsDialog).getByText("Krakow Eagles"));
     await user.click(within(addTeamsDialog).getByRole("button", { name: "Dodaj" }));
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Dodaj drużyny" })).not.toBeInTheDocument());
     expect(await screen.findByText("Warsaw Raptors")).toBeInTheDocument();
 
     // Add first match.
@@ -513,12 +589,13 @@ describe("TournamentDetails", () => {
 
     // Add teams so dialog has valid options.
     const teamsSection = screen.getByRole("heading", { name: "Drużyny" }).closest("div") as HTMLElement;
-    await user.click(within(teamsSection).getByRole("button", { name: "Dodaj" }));
+    await user.click(screen.getByRole("button", { name: "Dodaj drużyny do turnieju" }));
 
     const addTeamsDialog = await screen.findByRole("dialog");
     await user.click(within(addTeamsDialog).getByText("Warsaw Raptors"));
     await user.click(within(addTeamsDialog).getByText("Krakow Eagles"));
     await user.click(within(addTeamsDialog).getByRole("button", { name: "Dodaj" }));
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Dodaj drużyny" })).not.toBeInTheDocument());
     expect(await screen.findByText("Warsaw Raptors")).toBeInTheDocument();
 
     // Add first match.

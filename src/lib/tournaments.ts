@@ -81,6 +81,9 @@ export async function listTournamentsWithDetails(): Promise<Tournament[]> {
           },
         },
       },
+      players: {
+        include: { player: true },
+      },
       referees: { include: { referee: true } },
       classifiers: { include: { classifier: true } },
     },
@@ -89,6 +92,7 @@ export async function listTournamentsWithDetails(): Promise<Tournament[]> {
   return tournaments.map((t) => {
     const primaryVenue = t.venues[0] ?? null;
     const primaryAccommodation = t.accommodations[0] ?? null;
+    const hasTournamentPlayerRoster = t.players.length > 0;
     return {
       id: t.id,
       name: t.name,
@@ -131,29 +135,42 @@ export async function listTournamentsWithDetails(): Promise<Tournament[]> {
       dinnerLocation: t.dinnerLocation ?? undefined,
       cateringNotes: t.cateringNotes ?? undefined,
       parking: primaryAccommodation?.notes ?? undefined,
-      teams: t.teams.map((tt) => ({
-        id: tt.team.id,
-        name: tt.team.name,
-        websiteUrl: tt.team.websiteUrl ?? undefined,
-        address: tt.team.address ?? undefined,
-        city: tt.team.city ?? undefined,
-        postalCode: tt.team.postalCode ?? undefined,
-        contactFirstName: tt.team.contactFirstName ?? undefined,
-        contactLastName: tt.team.contactLastName ?? undefined,
-        contactEmail: tt.team.contactEmail ?? undefined,
-        contactPhone: tt.team.contactPhone ?? undefined,
-        seasonId: tt.team.seasonId,
-        coachId: tt.team.coachId ?? undefined,
-        refereeId: tt.team.refereeId ?? undefined,
-        players: tt.team.players.map((player) => ({
-          id: player.id,
-          firstName: player.firstName,
-          lastName: player.lastName,
-          number: player.number ?? undefined,
-          classification: player.classification ?? undefined,
-          teamId: player.teamId,
-        })),
-      })),
+      teams: t.teams.map((tt) => {
+        const teamPlayers = hasTournamentPlayerRoster
+          ? t.players
+              .filter((tp) => tp.player.teamId === tt.team.id)
+              .map((tp) => tp.player)
+              .sort((a, b) => {
+                const byLastName = a.lastName.localeCompare(b.lastName, "pl");
+                if (byLastName !== 0) return byLastName;
+                return a.firstName.localeCompare(b.firstName, "pl");
+              })
+          : tt.team.players;
+
+        return {
+          id: tt.team.id,
+          name: tt.team.name,
+          websiteUrl: tt.team.websiteUrl ?? undefined,
+          address: tt.team.address ?? undefined,
+          city: tt.team.city ?? undefined,
+          postalCode: tt.team.postalCode ?? undefined,
+          contactFirstName: tt.team.contactFirstName ?? undefined,
+          contactLastName: tt.team.contactLastName ?? undefined,
+          contactEmail: tt.team.contactEmail ?? undefined,
+          contactPhone: tt.team.contactPhone ?? undefined,
+          seasonId: tt.team.seasonId,
+          coachId: tt.team.coachId ?? undefined,
+          refereeId: tt.team.refereeId ?? undefined,
+          players: teamPlayers.map((player) => ({
+            id: player.id,
+            firstName: player.firstName,
+            lastName: player.lastName,
+            number: player.number ?? undefined,
+            classification: player.classification ?? undefined,
+            teamId: player.teamId,
+          })),
+        };
+      }),
       referees: t.referees.map((tr) => ({
         id: tr.referee.id,
         firstName: tr.referee.firstName,
@@ -278,19 +295,90 @@ export async function addTeamsToTournament(tournamentId: string, teamIds: string
     throw new Error("TEAM_WRONG_SEASON");
   }
 
-  await prisma.tournamentTeam.createMany({
-    data: teamIds.map((teamId) => ({ tournamentId, teamId })),
-    skipDuplicates: true,
+  await prisma.$transaction(async (tx) => {
+    await tx.tournamentTeam.createMany({
+      data: teamIds.map((teamId) => ({ tournamentId, teamId })),
+      skipDuplicates: true,
+    });
+
+    const teamPlayers = await tx.player.findMany({
+      where: { teamId: { in: teamIds } },
+      select: { id: true },
+    });
+
+    if (teamPlayers.length > 0) {
+      await tx.tournamentPlayer.createMany({
+        data: teamPlayers.map((player) => ({ tournamentId, playerId: player.id })),
+        skipDuplicates: true,
+      });
+    }
   });
 
   return tournamentId;
 }
 
 export async function removeTeamFromTournament(tournamentId: string, teamId: string) {
-  await prisma.tournamentTeam.deleteMany({
-    where: { tournamentId, teamId },
+  await prisma.$transaction(async (tx) => {
+    await tx.tournamentTeam.deleteMany({
+      where: { tournamentId, teamId },
+    });
+
+    await tx.tournamentPlayer.deleteMany({
+      where: {
+        tournamentId,
+        player: { teamId },
+      },
+    });
   });
+
   return tournamentId;
+}
+
+export async function setTournamentTeamPlayers(tournamentId: string, teamId: string, playerIds: string[]) {
+  const tournament = await prisma.tournament.findUnique({
+    where: { id: tournamentId },
+    select: { id: true },
+  });
+
+  if (!tournament) {
+    throw new Error("TOURNAMENT_NOT_FOUND");
+  }
+
+  const tournamentTeam = await prisma.tournamentTeam.findUnique({
+    where: { tournamentId_teamId: { tournamentId, teamId } },
+    select: { teamId: true },
+  });
+
+  if (!tournamentTeam) {
+    throw new Error("TEAM_NOT_IN_TOURNAMENT");
+  }
+
+  const teamPlayers = await prisma.player.findMany({
+    where: { teamId },
+    select: { id: true },
+  });
+  const teamPlayerIdSet = new Set(teamPlayers.map((player) => player.id));
+
+  const hasOutsidePlayer = playerIds.some((playerId) => !teamPlayerIdSet.has(playerId));
+  if (hasOutsidePlayer) {
+    throw new Error("PLAYER_NOT_IN_TEAM");
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.tournamentPlayer.deleteMany({
+      where: {
+        tournamentId,
+        player: { teamId },
+      },
+    });
+
+    if (playerIds.length > 0) {
+      await tx.tournamentPlayer.createMany({
+        data: playerIds.map((playerId) => ({ tournamentId, playerId })),
+        skipDuplicates: true,
+      });
+    }
+  });
 }
 
 export async function addRefereesToTournament(tournamentId: string, refereeIds: string[]) {

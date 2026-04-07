@@ -176,6 +176,23 @@ export async function removeTeamFromTournament(tournamentId: string, teamId: str
   }
 }
 
+/** PUT /api/tournaments/:tournamentId/teams/:teamId */
+export async function setTournamentTeamPlayers(
+  tournamentId: string,
+  teamId: string,
+  playerIds: string[]
+): Promise<void> {
+  const res = await fetch(`/api/tournaments/${tournamentId}/teams/${teamId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ playerIds }),
+  });
+  if (!res.ok) {
+    const msg = await getErrorMessageFromResponse(res, "Nie udało się zapisać składu drużyny na turniej");
+    throw new Error(msg);
+  }
+}
+
 /** POST /api/tournaments/:tournamentId/referees */
 export async function setTournamentReferees(tournamentId: string, refereeIds: string[]): Promise<void> {
   const res = await fetch(`/api/tournaments/${tournamentId}/referees`, {

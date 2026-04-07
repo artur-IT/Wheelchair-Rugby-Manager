@@ -359,6 +359,7 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
                   tournament={tournament}
                   openAddTeamsDialog={teams.openAddTeamsDialog}
                   openRemoveTeamDialog={teams.openRemoveTeamDialog}
+                  openEditTeamPlayersDialog={teams.openEditTeamPlayersDialog}
                   removeTeamLoading={teams.removeTeamLoading}
                   teamToRemove={teams.teamToRemove}
                 />

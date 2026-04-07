@@ -4,11 +4,12 @@ import {
   removeClassifierFromTournament,
   removeRefereeFromTournament,
   removeTeamFromTournament,
+  setTournamentTeamPlayers as saveTournamentTeamPlayers,
   setTournamentClassifiers,
   setTournamentReferees,
   setTournamentTeams,
 } from "@/lib/api/tournaments";
-import { fetchTeamsBySeason } from "@/lib/api/teams";
+import { fetchTeamById, fetchTeamsBySeason } from "@/lib/api/teams";
 import { fetchPersonnelBySeason } from "@/lib/api/personnel";
 import { queryKeys } from "@/lib/queryKeys";
 import type { Person, Team, Tournament } from "@/types";
@@ -28,6 +29,14 @@ interface TeamsSection {
   teamToRemove: Team | null;
   removeTeamLoading: boolean;
   removeTeamError: string | null;
+  selectedTeamForPlayers: Team | null;
+  editTeamPlayersOpen: boolean;
+  availableTeamPlayers: { id: string; label: string }[];
+  availableTeamPlayersLoading: boolean;
+  availableTeamPlayersError: string | null;
+  selectedTeamPlayerIds: string[];
+  saveTeamPlayersLoading: boolean;
+  saveTeamPlayersError: string | null;
   openAddTeamsDialog: () => void;
   closeAddTeamsDialog: () => void;
   toggleSelectedTeam: (teamId: string) => void;
@@ -35,6 +44,10 @@ interface TeamsSection {
   openRemoveTeamDialog: (team: Team) => void;
   closeRemoveTeamDialog: () => void;
   confirmRemoveTeam: () => Promise<void>;
+  openEditTeamPlayersDialog: (team: Team) => void;
+  closeEditTeamPlayersDialog: () => void;
+  toggleSelectedTeamPlayer: (playerId: string) => void;
+  saveSelectedTeamPlayers: () => Promise<void>;
 }
 
 interface RefereesSection {
@@ -86,6 +99,9 @@ export default function useTournamentPersonnelManager({ tournament }: UseTournam
   const [saveTeamsError, setSaveTeamsError] = useState<string | null>(null);
   const [teamToRemove, setTeamToRemove] = useState<Team | null>(null);
   const [removeTeamError, setRemoveTeamError] = useState<string | null>(null);
+  const [selectedTeamForPlayers, setSelectedTeamForPlayers] = useState<Team | null>(null);
+  const [selectedTeamPlayerIds, setSelectedTeamPlayerIds] = useState<string[]>([]);
+  const [saveTeamPlayersError, setSaveTeamPlayersError] = useState<string | null>(null);
 
   const {
     data: availableTeams = [],
@@ -114,6 +130,36 @@ export default function useTournamentPersonnelManager({ tournament }: UseTournam
   const removeTeamMutation = useMutation({
     mutationFn: ({ tournamentId, teamId }: { tournamentId: string; teamId: string }) =>
       removeTeamFromTournament(tournamentId, teamId),
+    onSuccess: (_, { tournamentId }) => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.tournaments.detail(tournamentId) });
+    },
+  });
+
+  const {
+    data: selectedTeamPlayers = [],
+    isPending: selectedTeamPlayersLoading,
+    isError: selectedTeamPlayersQueryError,
+    error: selectedTeamPlayersErr,
+  } = useQuery({
+    queryKey: queryKeys.teams.detail(selectedTeamForPlayers?.id ?? "__none__"),
+    queryFn: async ({ signal }) => {
+      if (!selectedTeamForPlayers) return [];
+      const team = await fetchTeamById(selectedTeamForPlayers.id, signal);
+      if (!team) return [];
+      return (team.players ?? []).map((player) => ({
+        id: player.id,
+        label: `${player.firstName} ${player.lastName}`.trim(),
+      }));
+    },
+    enabled: Boolean(selectedTeamForPlayers),
+  });
+
+  const availableTeamPlayersError =
+    selectedTeamPlayersQueryError && selectedTeamPlayersErr instanceof Error ? selectedTeamPlayersErr.message : null;
+
+  const saveTeamPlayersMutation = useMutation({
+    mutationFn: ({ tournamentId, teamId, playerIds }: { tournamentId: string; teamId: string; playerIds: string[] }) =>
+      saveTournamentTeamPlayers(tournamentId, teamId, playerIds),
     onSuccess: (_, { tournamentId }) => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.tournaments.detail(tournamentId) });
     },
@@ -254,6 +300,43 @@ export default function useTournamentPersonnelManager({ tournament }: UseTournam
     }
   }
 
+  function openEditTeamPlayersDialog(team: Team) {
+    setSelectedTeamForPlayers(team);
+    setSelectedTeamPlayerIds((team.players ?? []).map((player) => player.id));
+    setSaveTeamPlayersError(null);
+  }
+
+  function closeEditTeamPlayersDialog() {
+    if (saveTeamPlayersMutation.isPending) return;
+    setSelectedTeamForPlayers(null);
+    setSelectedTeamPlayerIds([]);
+    setSaveTeamPlayersError(null);
+  }
+
+  function toggleSelectedTeamPlayer(playerId: string) {
+    setSelectedTeamPlayerIds((prev) =>
+      prev.includes(playerId) ? prev.filter((currentId) => currentId !== playerId) : [...prev, playerId]
+    );
+  }
+
+  async function saveSelectedTeamPlayers() {
+    if (!tournament || !selectedTeamForPlayers) return;
+    setSaveTeamPlayersError(null);
+
+    try {
+      await saveTeamPlayersMutation.mutateAsync({
+        tournamentId: tournament.id,
+        teamId: selectedTeamForPlayers.id,
+        playerIds: selectedTeamPlayerIds,
+      });
+      setSelectedTeamForPlayers(null);
+      setSelectedTeamPlayerIds([]);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Nie udało się zapisać składu drużyny";
+      setSaveTeamPlayersError(message);
+    }
+  }
+
   function openAddRefereesDialog() {
     if (!tournament) return;
     setAddRefereesOpen(true);
@@ -389,6 +472,14 @@ export default function useTournamentPersonnelManager({ tournament }: UseTournam
     teamToRemove,
     removeTeamLoading: removeTeamMutation.isPending,
     removeTeamError,
+    selectedTeamForPlayers,
+    editTeamPlayersOpen: Boolean(selectedTeamForPlayers),
+    availableTeamPlayers: selectedTeamPlayers,
+    availableTeamPlayersLoading: selectedTeamPlayersLoading,
+    availableTeamPlayersError,
+    selectedTeamPlayerIds,
+    saveTeamPlayersLoading: saveTeamPlayersMutation.isPending,
+    saveTeamPlayersError,
     openAddTeamsDialog,
     closeAddTeamsDialog,
     toggleSelectedTeam,
@@ -396,6 +487,10 @@ export default function useTournamentPersonnelManager({ tournament }: UseTournam
     openRemoveTeamDialog,
     closeRemoveTeamDialog,
     confirmRemoveTeam,
+    openEditTeamPlayersDialog,
+    closeEditTeamPlayersDialog,
+    toggleSelectedTeamPlayer,
+    saveSelectedTeamPlayers,
   };
 
   const referees: RefereesSection = {

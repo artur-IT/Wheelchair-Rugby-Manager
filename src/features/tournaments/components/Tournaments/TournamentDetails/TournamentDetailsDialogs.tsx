@@ -144,6 +144,28 @@ export default function TournamentDetailsDialogs({
       />
 
       <SelectionDialog
+        open={teams.editTeamPlayersOpen}
+        title={`Skład drużyny${teams.selectedTeamForPlayers ? `: ${teams.selectedTeamForPlayers.name}` : ""}`}
+        items={teams.availableTeamPlayers}
+        selectedIds={teams.selectedTeamPlayerIds}
+        toggleSelected={teams.toggleSelectedTeamPlayer}
+        onClose={teams.closeEditTeamPlayersDialog}
+        onSave={teams.saveSelectedTeamPlayers}
+        loading={teams.saveTeamPlayersLoading}
+        availableLoading={teams.availableTeamPlayersLoading}
+        availableError={teams.availableTeamPlayersError}
+        saveError={teams.saveTeamPlayersError}
+        confirmLabel="Zapisz"
+        emptyState={
+          teams.availableTeamPlayers.length === 0 && !teams.availableTeamPlayersError ? (
+            <Typography color="textSecondary" sx={{ py: 1 }}>
+              Brak zawodników w drużynie.
+            </Typography>
+          ) : undefined
+        }
+      />
+
+      <SelectionDialog
         open={referees.addRefereesOpen}
         title="Dodaj sędziów"
         items={referees.availableReferees.map((referee) => ({
