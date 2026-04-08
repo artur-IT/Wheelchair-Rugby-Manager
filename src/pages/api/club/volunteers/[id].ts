@@ -1,0 +1,63 @@
+import type { APIRoute } from "astro";
+import { json } from "@/lib/api";
+import { prisma } from "@/lib/prisma";
+import { ClubPersonSchema } from "@/lib/clubSchemas";
+import { ensureEntityAccess, parseRequestJson, parseWithSchema, requiredId } from "@/lib/clubApiHelpers";
+
+export const GET: APIRoute = async ({ params, request, cookies }) => {
+  const idResult = requiredId(params.id, "Brak id wolontariusza");
+  if (!idResult.ok) return idResult.response;
+  const id = idResult.data;
+
+  const guard = await ensureEntityAccess(
+    request,
+    cookies,
+    await prisma.clubVolunteer.findUnique({ where: { id } }),
+    (item) => item.clubId,
+    "Nie znaleziono wolontariusza"
+  );
+  if (!guard.ok) return guard.response;
+
+  return json(guard.data);
+};
+
+export const PUT: APIRoute = async ({ params, request, cookies }) => {
+  const id = params.id;
+  if (!id) return json({ error: "Brak id wolontariusza" }, 400);
+
+  const guard = await ensureEntityAccess(
+    request,
+    cookies,
+    await prisma.clubVolunteer.findUnique({ where: { id } }),
+    (item) => item.clubId,
+    "Nie znaleziono wolontariusza"
+  );
+  if (!guard.ok) return guard.response;
+  const existing = guard.data;
+
+  const bodyResult = await parseRequestJson(request);
+  if (!bodyResult.ok) return bodyResult.response;
+  const parsed = parseWithSchema(ClubPersonSchema, { ...bodyResult.data, clubId: existing.clubId });
+  if (!parsed.ok) return parsed.response;
+
+  const updated = await prisma.clubVolunteer.update({ where: { id }, data: parsed.data });
+  return json(updated);
+};
+
+export const DELETE: APIRoute = async ({ params, request, cookies }) => {
+  const idResult = requiredId(params.id, "Brak id wolontariusza");
+  if (!idResult.ok) return idResult.response;
+  const id = idResult.data;
+
+  const guard = await ensureEntityAccess(
+    request,
+    cookies,
+    await prisma.clubVolunteer.findUnique({ where: { id } }),
+    (item) => item.clubId,
+    "Nie znaleziono wolontariusza"
+  );
+  if (!guard.ok) return guard.response;
+
+  await prisma.clubVolunteer.delete({ where: { id } });
+  return json({ success: true });
+};

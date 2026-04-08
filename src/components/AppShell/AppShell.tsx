@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { ReactNode } from "react";
-import { LayoutDashboard, Trophy, Settings, LogOut, Menu, X, UserCircle } from "lucide-react";
+import { LayoutDashboard, Trophy, Settings, Building2, LogOut, Menu, X, UserCircle } from "lucide-react";
 import {
   Box,
   AppBar,
@@ -29,6 +29,7 @@ interface AppShellProps {
 const MENU_ITEMS = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/tournaments", icon: Trophy, label: "Turnieje" },
+  { href: "/club", icon: Building2, label: "Mój Klub Sportowy" },
   { href: "/settings", icon: Settings, label: "Ustawienia Sezonu" },
 ];
 

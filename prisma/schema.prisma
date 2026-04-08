@@ -16,11 +16,34 @@ model User {
   role        UserRole
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
+  clubs       Club[]
 }
 
 enum UserRole {
   COACH
   ORGANIZER
+}
+
+enum ClubTeamFormula {
+  WR4
+  WR5
+}
+
+enum ClubPersonRole {
+  VOLUNTEER
+  REFEREE
+  OTHER
+}
+
+enum ClubPlayerStatus {
+  ACTIVE
+  INACTIVE
+  GUEST
+}
+
+enum ClubPlayerFunction {
+  DEFENSE
+  ATTACK
 }
 
 model Season {
@@ -333,4 +356,143 @@ model Volunteer {
   updatedAt    DateTime   @updatedAt
   tournamentId String
   tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+}
+
+// ─── Phase 3: My Sports Club (independent from tournament data) ──────────────
+
+model Club {
+  id                 String        @id @default(cuid())
+  name               String
+  contactAddress     String?
+  contactCity        String?
+  contactPostalCode  String?
+  contactEmail       String?
+  contactPhone       String?
+  websiteUrl         String?
+  logoUrl            String?
+  contactFirstName   String?
+  contactLastName    String?
+  hallName           String?
+  hallAddress        String?
+  hallCity           String?
+  hallPostalCode     String?
+  hallMapUrl         String?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  ownerUserId        String
+  ownerUser          User          @relation(fields: [ownerUserId], references: [id], onDelete: Cascade)
+  teams              ClubTeam[]
+  players            ClubPlayer[]
+  coaches            ClubCoach[]
+  volunteers         ClubVolunteer[]
+  referees           ClubReferee[]
+  staffMembers       ClubStaff[]
+
+  @@unique([ownerUserId, name])
+}
+
+model ClubTeam {
+  id          String          @id @default(cuid())
+  name        String
+  formula     ClubTeamFormula
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  clubId      String
+  club        Club            @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  coachId     String?
+  coach       ClubCoach?      @relation(fields: [coachId], references: [id], onDelete: SetNull)
+  players     ClubTeamPlayer[]
+
+  @@unique([clubId, name])
+}
+
+model ClubPlayer {
+  id                  String             @id @default(cuid())
+  firstName           String
+  lastName            String
+  classification      Float?
+  number              Int?
+  status              ClubPlayerStatus   @default(ACTIVE)
+  birthDate           DateTime?
+  contactEmail        String?
+  contactPhone        String?
+  contactAddress      String?
+  contactCity         String?
+  contactPostalCode   String?
+  contactMapUrl       String?
+  playerFunction      ClubPlayerFunction?
+  speed               Int?
+  strength            Int?
+  endurance           Int?
+  technique           Int?
+  mentality           Int?
+  height              Int?
+  tactics             Int?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+  clubId              String
+  club                Club               @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  teams               ClubTeamPlayer[]
+
+  @@unique([clubId, number])
+}
+
+model ClubCoach {
+  id          String      @id @default(cuid())
+  firstName   String
+  lastName    String
+  email       String?
+  phone       String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  clubId      String
+  club        Club        @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  teams       ClubTeam[]
+}
+
+model ClubVolunteer {
+  id          String      @id @default(cuid())
+  firstName   String
+  lastName    String
+  email       String?
+  phone       String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  clubId      String
+  club        Club        @relation(fields: [clubId], references: [id], onDelete: Cascade)
+}
+
+model ClubReferee {
+  id          String      @id @default(cuid())
+  firstName   String
+  lastName    String
+  email       String?
+  phone       String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  clubId      String
+  club        Club        @relation(fields: [clubId], references: [id], onDelete: Cascade)
+}
+
+model ClubStaff {
+  id          String         @id @default(cuid())
+  firstName   String
+  lastName    String
+  role        ClubPersonRole @default(OTHER)
+  email       String?
+  phone       String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  clubId      String
+  club        Club           @relation(fields: [clubId], references: [id], onDelete: Cascade)
+}
+
+model ClubTeamPlayer {
+  teamId      String
+  playerId    String
+  createdAt   DateTime    @default(now())
+  team        ClubTeam    @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  player      ClubPlayer  @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@id([teamId, playerId])
 }
