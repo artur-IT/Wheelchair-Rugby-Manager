@@ -1,31 +1,53 @@
 import type { APIRoute } from "astro";
-import { Prisma } from "generated/prisma/client";
 import { json } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
 import { ClubTeamSchema } from "@/lib/clubSchemas";
+import {
+  ensureEntityAccess,
+  mapPrismaError,
+  parseRequestJson,
+  parseWithSchema,
+  requiredId,
+} from "@/lib/clubApiHelpers";
 
-export const GET: APIRoute = async ({ params }) => {
-  const id = params.id;
-  if (!id) return json({ error: "Brak id drużyny" }, 400);
+export const GET: APIRoute = async ({ params, request, cookies }) => {
+  const idResult = requiredId(params.id, "Brak id drużyny");
+  if (!idResult.ok) return idResult.response;
+  const id = idResult.data;
 
-  const team = await prisma.clubTeam.findUnique({
-    where: { id },
-    include: { coach: true, players: { include: { player: true } } },
-  });
-  if (!team) return json({ error: "Nie znaleziono drużyny" }, 404);
-  return json(team);
+  const guard = await ensureEntityAccess(
+    request,
+    cookies,
+    await prisma.clubTeam.findUnique({
+      where: { id },
+      include: { coach: true, players: { include: { player: true } } },
+    }),
+    (item) => item.clubId,
+    "Nie znaleziono drużyny"
+  );
+  if (!guard.ok) return guard.response;
+
+  return json(guard.data);
 };
 
-export const PUT: APIRoute = async ({ params, request }) => {
+export const PUT: APIRoute = async ({ params, request, cookies }) => {
   const id = params.id;
   if (!id) return json({ error: "Brak id drużyny" }, 400);
 
-  const existing = await prisma.clubTeam.findUnique({ where: { id } });
-  if (!existing) return json({ error: "Nie znaleziono drużyny" }, 404);
+  const guard = await ensureEntityAccess(
+    request,
+    cookies,
+    await prisma.clubTeam.findUnique({ where: { id } }),
+    (item) => item.clubId,
+    "Nie znaleziono drużyny"
+  );
+  if (!guard.ok) return guard.response;
+  const existing = guard.data;
 
-  const body = await request.json().catch(() => null);
-  const parsed = ClubTeamSchema.safeParse({ ...body, clubId: existing.clubId });
-  if (!parsed.success) return json({ error: parsed.error.flatten() }, 400);
+  const bodyResult = await parseRequestJson(request);
+  if (!bodyResult.ok) return bodyResult.response;
+  const parsed = parseWithSchema(ClubTeamSchema, { ...bodyResult.data, clubId: existing.clubId });
+  if (!parsed.ok) return parsed.response;
 
   try {
     const { playerIds, ...teamData } = parsed.data;
@@ -45,20 +67,28 @@ export const PUT: APIRoute = async ({ params, request }) => {
     });
     return json(updated);
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === "P2002") return json({ error: "Drużyna o tej nazwie już istnieje w klubie" }, 409);
-      if (error.code === "P2003") return json({ error: "Nieprawidłowy trener lub zawodnik" }, 400);
-    }
+    const mapped = mapPrismaError(error, {
+      P2002: { message: "Drużyna o tej nazwie już istnieje w klubie", status: 409 },
+      P2003: { message: "Nieprawidłowy trener lub zawodnik", status: 400 },
+    });
+    if (mapped) return mapped;
     return json({ error: "Nie udało się zaktualizować drużyny klubu" }, 500);
   }
 };
 
-export const DELETE: APIRoute = async ({ params }) => {
-  const id = params.id;
-  if (!id) return json({ error: "Brak id drużyny" }, 400);
+export const DELETE: APIRoute = async ({ params, request, cookies }) => {
+  const idResult = requiredId(params.id, "Brak id drużyny");
+  if (!idResult.ok) return idResult.response;
+  const id = idResult.data;
 
-  const existing = await prisma.clubTeam.findUnique({ where: { id } });
-  if (!existing) return json({ error: "Nie znaleziono drużyny" }, 404);
+  const guard = await ensureEntityAccess(
+    request,
+    cookies,
+    await prisma.clubTeam.findUnique({ where: { id } }),
+    (item) => item.clubId,
+    "Nie znaleziono drużyny"
+  );
+  if (!guard.ok) return guard.response;
 
   try {
     await prisma.clubTeam.delete({ where: { id } });

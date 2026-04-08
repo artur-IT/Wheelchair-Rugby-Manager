@@ -1,13 +1,14 @@
 import type { APIRoute } from "astro";
-import { Prisma } from "generated/prisma/client";
 import { json } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
 import { ClubUpsertSchema } from "@/lib/clubSchemas";
 import { clubInclude } from "@/lib/club";
+import { mapPrismaError, parseRequestJson, parseWithSchema, requiredText } from "@/lib/clubApiHelpers";
 
 export const GET: APIRoute = async ({ url }) => {
-  const ownerUserId = url.searchParams.get("ownerUserId");
-  if (!ownerUserId) return json({ error: "Brak ownerUserId" }, 400);
+  const ownerUserIdResult = requiredText(url.searchParams.get("ownerUserId"), "Brak ownerUserId");
+  if (!ownerUserIdResult.ok) return ownerUserIdResult.response;
+  const ownerUserId = ownerUserIdResult.data;
 
   const clubs = await prisma.club.findMany({
     where: { ownerUserId },
@@ -18,9 +19,10 @@ export const GET: APIRoute = async ({ url }) => {
 };
 
 export const POST: APIRoute = async ({ request }) => {
-  const body = await request.json().catch(() => null);
-  const parsed = ClubUpsertSchema.safeParse(body);
-  if (!parsed.success) return json({ error: parsed.error.flatten() }, 400);
+  const bodyResult = await parseRequestJson(request);
+  if (!bodyResult.ok) return bodyResult.response;
+  const parsed = parseWithSchema(ClubUpsertSchema, bodyResult.data);
+  if (!parsed.ok) return parsed.response;
 
   try {
     const created = await prisma.club.create({
@@ -29,9 +31,10 @@ export const POST: APIRoute = async ({ request }) => {
     });
     return json(created, 201);
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
-      return json({ error: "Klub o tej nazwie już istnieje dla tego użytkownika" }, 409);
-    }
+    const mapped = mapPrismaError(error, {
+      P2002: { message: "Klub o tej nazwie już istnieje dla tego użytkownika", status: 409 },
+    });
+    if (mapped) return mapped;
     return json({ error: "Nie udało się utworzyć klubu" }, 500);
   }
 };

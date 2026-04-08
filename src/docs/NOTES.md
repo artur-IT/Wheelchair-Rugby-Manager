@@ -245,7 +245,6 @@ Nasz Personel:
     - mentalność: 1-5
     - wzrost: 1-5
     - taktyka: 1-5
-  - dane kontaktowe (email, telefon, adres, miasto, kod pocztowy, link do mapy)
 - dodawanie zawodnika
 - edytowanie zawodnika
 - usuwanie zawodnika

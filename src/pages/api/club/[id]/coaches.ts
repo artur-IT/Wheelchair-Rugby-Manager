@@ -2,14 +2,15 @@ import type { APIRoute } from "astro";
 import { json } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
 import { ClubPersonSchema } from "@/lib/clubSchemas";
-import { getClubById } from "@/lib/club";
+import { ensureClubExists, parseRequestJson, parseWithSchema, requiredId } from "@/lib/clubApiHelpers";
 
 export const GET: APIRoute = async ({ params }) => {
-  const clubId = params.id;
-  if (!clubId) return json({ error: "Brak id klubu" }, 400);
+  const clubIdResult = requiredId(params.id, "Brak id klubu");
+  if (!clubIdResult.ok) return clubIdResult.response;
+  const clubId = clubIdResult.data;
 
-  const club = await getClubById(clubId);
-  if (!club) return json({ error: "Nie znaleziono klubu" }, 404);
+  const clubGuard = await ensureClubExists(clubId);
+  if (!clubGuard.ok) return clubGuard.response;
 
   const coaches = await prisma.clubCoach.findMany({
     where: { clubId },
@@ -19,15 +20,17 @@ export const GET: APIRoute = async ({ params }) => {
 };
 
 export const POST: APIRoute = async ({ params, request }) => {
-  const clubId = params.id;
-  if (!clubId) return json({ error: "Brak id klubu" }, 400);
+  const clubIdResult = requiredId(params.id, "Brak id klubu");
+  if (!clubIdResult.ok) return clubIdResult.response;
+  const clubId = clubIdResult.data;
 
-  const club = await getClubById(clubId);
-  if (!club) return json({ error: "Nie znaleziono klubu" }, 404);
+  const clubGuard = await ensureClubExists(clubId);
+  if (!clubGuard.ok) return clubGuard.response;
 
-  const body = await request.json().catch(() => null);
-  const parsed = ClubPersonSchema.safeParse({ ...body, clubId });
-  if (!parsed.success) return json({ error: parsed.error.flatten() }, 400);
+  const bodyResult = await parseRequestJson(request);
+  if (!bodyResult.ok) return bodyResult.response;
+  const parsed = parseWithSchema(ClubPersonSchema, { ...bodyResult.data, clubId });
+  if (!parsed.ok) return parsed.response;
 
   const created = await prisma.clubCoach.create({ data: parsed.data });
   return json(created, 201);

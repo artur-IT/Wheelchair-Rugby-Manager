@@ -1,31 +1,53 @@
 import type { APIRoute } from "astro";
-import { Prisma } from "generated/prisma/client";
 import { json } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
 import { ClubPlayerSchema } from "@/lib/clubSchemas";
+import {
+  ensureEntityAccess,
+  mapPrismaError,
+  parseRequestJson,
+  parseWithSchema,
+  requiredId,
+} from "@/lib/clubApiHelpers";
 
-export const GET: APIRoute = async ({ params }) => {
-  const id = params.id;
-  if (!id) return json({ error: "Brak id zawodnika" }, 400);
+export const GET: APIRoute = async ({ params, request, cookies }) => {
+  const idResult = requiredId(params.id, "Brak id zawodnika");
+  if (!idResult.ok) return idResult.response;
+  const id = idResult.data;
 
-  const player = await prisma.clubPlayer.findUnique({
-    where: { id },
-    include: { teams: { include: { team: true } } },
-  });
-  if (!player) return json({ error: "Nie znaleziono zawodnika" }, 404);
-  return json(player);
+  const guard = await ensureEntityAccess(
+    request,
+    cookies,
+    await prisma.clubPlayer.findUnique({
+      where: { id },
+      include: { teams: { include: { team: true } } },
+    }),
+    (item) => item.clubId,
+    "Nie znaleziono zawodnika"
+  );
+  if (!guard.ok) return guard.response;
+
+  return json(guard.data);
 };
 
-export const PUT: APIRoute = async ({ params, request }) => {
+export const PUT: APIRoute = async ({ params, request, cookies }) => {
   const id = params.id;
   if (!id) return json({ error: "Brak id zawodnika" }, 400);
 
-  const existing = await prisma.clubPlayer.findUnique({ where: { id } });
-  if (!existing) return json({ error: "Nie znaleziono zawodnika" }, 404);
+  const guard = await ensureEntityAccess(
+    request,
+    cookies,
+    await prisma.clubPlayer.findUnique({ where: { id } }),
+    (item) => item.clubId,
+    "Nie znaleziono zawodnika"
+  );
+  if (!guard.ok) return guard.response;
+  const existing = guard.data;
 
-  const body = await request.json().catch(() => null);
-  const parsed = ClubPlayerSchema.safeParse({ ...body, clubId: existing.clubId });
-  if (!parsed.success) return json({ error: parsed.error.flatten() }, 400);
+  const bodyResult = await parseRequestJson(request);
+  if (!bodyResult.ok) return bodyResult.response;
+  const parsed = parseWithSchema(ClubPlayerSchema, { ...bodyResult.data, clubId: existing.clubId });
+  if (!parsed.ok) return parsed.response;
 
   try {
     const updated = await prisma.clubPlayer.update({
@@ -35,19 +57,27 @@ export const PUT: APIRoute = async ({ params, request }) => {
     });
     return json(updated);
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
-      return json({ error: "Numer zawodnika musi być unikalny w klubie" }, 409);
-    }
+    const mapped = mapPrismaError(error, {
+      P2002: { message: "Numer zawodnika musi być unikalny w klubie", status: 409 },
+    });
+    if (mapped) return mapped;
     return json({ error: "Nie udało się zaktualizować zawodnika" }, 500);
   }
 };
 
-export const DELETE: APIRoute = async ({ params }) => {
-  const id = params.id;
-  if (!id) return json({ error: "Brak id zawodnika" }, 400);
+export const DELETE: APIRoute = async ({ params, request, cookies }) => {
+  const idResult = requiredId(params.id, "Brak id zawodnika");
+  if (!idResult.ok) return idResult.response;
+  const id = idResult.data;
 
-  const existing = await prisma.clubPlayer.findUnique({ where: { id } });
-  if (!existing) return json({ error: "Nie znaleziono zawodnika" }, 404);
+  const guard = await ensureEntityAccess(
+    request,
+    cookies,
+    await prisma.clubPlayer.findUnique({ where: { id } }),
+    (item) => item.clubId,
+    "Nie znaleziono zawodnika"
+  );
+  if (!guard.ok) return guard.response;
 
   try {
     await prisma.clubPlayer.delete({ where: { id } });

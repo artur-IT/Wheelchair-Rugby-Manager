@@ -3,41 +3,73 @@ import { json } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
 import { z } from "@/lib/zodPl";
 import { ClubPersonSchema } from "@/lib/clubSchemas";
+import { ensureEntityAccess, parseRequestJson, parseWithSchema, requiredId } from "@/lib/clubApiHelpers";
 
-const ClubStaffSchema = ClubPersonSchema.extend({
+const ClubStaffRoleSchema = z.object({
   role: z.enum(["VOLUNTEER", "REFEREE", "OTHER"]).default("OTHER"),
 });
 
-export const GET: APIRoute = async ({ params }) => {
-  const id = params.id;
-  if (!id) return json({ error: "Brak id personelu" }, 400);
+export const GET: APIRoute = async ({ params, request, cookies }) => {
+  const idResult = requiredId(params.id, "Brak id personelu");
+  if (!idResult.ok) return idResult.response;
+  const id = idResult.data;
 
-  const staff = await prisma.clubStaff.findUnique({ where: { id } });
-  if (!staff) return json({ error: "Nie znaleziono osoby" }, 404);
-  return json(staff);
+  const guard = await ensureEntityAccess(
+    request,
+    cookies,
+    await prisma.clubStaff.findUnique({ where: { id } }),
+    (item) => item.clubId,
+    "Nie znaleziono osoby"
+  );
+  if (!guard.ok) return guard.response;
+
+  return json(guard.data);
 };
 
-export const PUT: APIRoute = async ({ params, request }) => {
-  const id = params.id;
-  if (!id) return json({ error: "Brak id personelu" }, 400);
+export const PUT: APIRoute = async ({ params, request, cookies }) => {
+  const idResult = requiredId(params.id, "Brak id personelu");
+  if (!idResult.ok) return idResult.response;
+  const id = idResult.data;
 
-  const existing = await prisma.clubStaff.findUnique({ where: { id } });
-  if (!existing) return json({ error: "Nie znaleziono osoby" }, 404);
+  const guard = await ensureEntityAccess(
+    request,
+    cookies,
+    await prisma.clubStaff.findUnique({ where: { id } }),
+    (item) => item.clubId,
+    "Nie znaleziono osoby"
+  );
+  if (!guard.ok) return guard.response;
+  const existing = guard.data;
 
-  const body = await request.json().catch(() => null);
-  const parsed = ClubStaffSchema.safeParse({ ...body, clubId: existing.clubId });
-  if (!parsed.success) return json({ error: parsed.error.flatten() }, 400);
+  const bodyResult = await parseRequestJson(request);
+  if (!bodyResult.ok) return bodyResult.response;
 
-  const updated = await prisma.clubStaff.update({ where: { id }, data: parsed.data });
+  const personParsed = parseWithSchema(ClubPersonSchema, { ...bodyResult.data, clubId: existing.clubId });
+  if (!personParsed.ok) return personParsed.response;
+
+  const roleParsed = parseWithSchema(ClubStaffRoleSchema, bodyResult.data);
+  if (!roleParsed.ok) return roleParsed.response;
+
+  const updated = await prisma.clubStaff.update({
+    where: { id },
+    data: { ...personParsed.data, role: roleParsed.data.role },
+  });
   return json(updated);
 };
 
-export const DELETE: APIRoute = async ({ params }) => {
-  const id = params.id;
-  if (!id) return json({ error: "Brak id personelu" }, 400);
+export const DELETE: APIRoute = async ({ params, request, cookies }) => {
+  const idResult = requiredId(params.id, "Brak id personelu");
+  if (!idResult.ok) return idResult.response;
+  const id = idResult.data;
 
-  const existing = await prisma.clubStaff.findUnique({ where: { id } });
-  if (!existing) return json({ error: "Nie znaleziono osoby" }, 404);
+  const guard = await ensureEntityAccess(
+    request,
+    cookies,
+    await prisma.clubStaff.findUnique({ where: { id } }),
+    (item) => item.clubId,
+    "Nie znaleziono osoby"
+  );
+  if (!guard.ok) return guard.response;
 
   await prisma.clubStaff.delete({ where: { id } });
   return json({ success: true });

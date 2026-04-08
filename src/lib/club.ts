@@ -9,9 +9,7 @@ export const clubInclude = {
   staffMembers: true,
 } as const;
 
-export async function getClubById(id: string) {
-  return prisma.club.findUnique({ where: { id }, include: clubInclude });
-}
+export const getClubById = async (id: string) => prisma.club.findUnique({ where: { id }, include: clubInclude });
 
 export async function getClubPersonById(kind: "coach" | "volunteer" | "referee" | "staff", id: string) {
   if (kind === "coach") return prisma.clubCoach.findUnique({ where: { id } });

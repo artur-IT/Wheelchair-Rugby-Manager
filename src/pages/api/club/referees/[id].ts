@@ -2,37 +2,61 @@ import type { APIRoute } from "astro";
 import { json } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
 import { ClubPersonSchema } from "@/lib/clubSchemas";
+import { ensureEntityAccess, parseRequestJson, parseWithSchema, requiredId } from "@/lib/clubApiHelpers";
 
-export const GET: APIRoute = async ({ params }) => {
-  const id = params.id;
-  if (!id) return json({ error: "Brak id sędziego" }, 400);
+export const GET: APIRoute = async ({ params, request, cookies }) => {
+  const idResult = requiredId(params.id, "Brak id sędziego");
+  if (!idResult.ok) return idResult.response;
+  const id = idResult.data;
 
-  const referee = await prisma.clubReferee.findUnique({ where: { id } });
-  if (!referee) return json({ error: "Nie znaleziono sędziego" }, 404);
-  return json(referee);
+  const guard = await ensureEntityAccess(
+    request,
+    cookies,
+    await prisma.clubReferee.findUnique({ where: { id } }),
+    (item) => item.clubId,
+    "Nie znaleziono sędziego"
+  );
+  if (!guard.ok) return guard.response;
+
+  return json(guard.data);
 };
 
-export const PUT: APIRoute = async ({ params, request }) => {
+export const PUT: APIRoute = async ({ params, request, cookies }) => {
   const id = params.id;
   if (!id) return json({ error: "Brak id sędziego" }, 400);
 
-  const existing = await prisma.clubReferee.findUnique({ where: { id } });
-  if (!existing) return json({ error: "Nie znaleziono sędziego" }, 404);
+  const guard = await ensureEntityAccess(
+    request,
+    cookies,
+    await prisma.clubReferee.findUnique({ where: { id } }),
+    (item) => item.clubId,
+    "Nie znaleziono sędziego"
+  );
+  if (!guard.ok) return guard.response;
+  const existing = guard.data;
 
-  const body = await request.json().catch(() => null);
-  const parsed = ClubPersonSchema.safeParse({ ...body, clubId: existing.clubId });
-  if (!parsed.success) return json({ error: parsed.error.flatten() }, 400);
+  const bodyResult = await parseRequestJson(request);
+  if (!bodyResult.ok) return bodyResult.response;
+  const parsed = parseWithSchema(ClubPersonSchema, { ...bodyResult.data, clubId: existing.clubId });
+  if (!parsed.ok) return parsed.response;
 
   const updated = await prisma.clubReferee.update({ where: { id }, data: parsed.data });
   return json(updated);
 };
 
-export const DELETE: APIRoute = async ({ params }) => {
-  const id = params.id;
-  if (!id) return json({ error: "Brak id sędziego" }, 400);
+export const DELETE: APIRoute = async ({ params, request, cookies }) => {
+  const idResult = requiredId(params.id, "Brak id sędziego");
+  if (!idResult.ok) return idResult.response;
+  const id = idResult.data;
 
-  const existing = await prisma.clubReferee.findUnique({ where: { id } });
-  if (!existing) return json({ error: "Nie znaleziono sędziego" }, 404);
+  const guard = await ensureEntityAccess(
+    request,
+    cookies,
+    await prisma.clubReferee.findUnique({ where: { id } }),
+    (item) => item.clubId,
+    "Nie znaleziono sędziego"
+  );
+  if (!guard.ok) return guard.response;
 
   await prisma.clubReferee.delete({ where: { id } });
   return json({ success: true });

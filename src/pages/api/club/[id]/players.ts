@@ -1,16 +1,16 @@
 import type { APIRoute } from "astro";
-import { Prisma } from "generated/prisma/client";
 import { json } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
 import { ClubPlayerSchema } from "@/lib/clubSchemas";
-import { getClubById } from "@/lib/club";
+import { ensureClubExists, mapPrismaError, parseRequestJson, parseWithSchema, requiredId } from "@/lib/clubApiHelpers";
 
 export const GET: APIRoute = async ({ params }) => {
-  const clubId = params.id;
-  if (!clubId) return json({ error: "Brak id klubu" }, 400);
+  const clubIdResult = requiredId(params.id, "Brak id klubu");
+  if (!clubIdResult.ok) return clubIdResult.response;
+  const clubId = clubIdResult.data;
 
-  const club = await getClubById(clubId);
-  if (!club) return json({ error: "Nie znaleziono klubu" }, 404);
+  const clubGuard = await ensureClubExists(clubId);
+  if (!clubGuard.ok) return clubGuard.response;
 
   const players = await prisma.clubPlayer.findMany({
     where: { clubId },
@@ -21,15 +21,17 @@ export const GET: APIRoute = async ({ params }) => {
 };
 
 export const POST: APIRoute = async ({ params, request }) => {
-  const clubId = params.id;
-  if (!clubId) return json({ error: "Brak id klubu" }, 400);
+  const clubIdResult = requiredId(params.id, "Brak id klubu");
+  if (!clubIdResult.ok) return clubIdResult.response;
+  const clubId = clubIdResult.data;
 
-  const club = await getClubById(clubId);
-  if (!club) return json({ error: "Nie znaleziono klubu" }, 404);
+  const clubGuard = await ensureClubExists(clubId);
+  if (!clubGuard.ok) return clubGuard.response;
 
-  const body = await request.json().catch(() => null);
-  const parsed = ClubPlayerSchema.safeParse({ ...body, clubId });
-  if (!parsed.success) return json({ error: parsed.error.flatten() }, 400);
+  const bodyResult = await parseRequestJson(request);
+  if (!bodyResult.ok) return bodyResult.response;
+  const parsed = parseWithSchema(ClubPlayerSchema, { ...bodyResult.data, clubId });
+  if (!parsed.ok) return parsed.response;
 
   try {
     const created = await prisma.clubPlayer.create({
@@ -38,9 +40,10 @@ export const POST: APIRoute = async ({ params, request }) => {
     });
     return json(created, 201);
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
-      return json({ error: "Numer zawodnika musi być unikalny w klubie" }, 409);
-    }
+    const mapped = mapPrismaError(error, {
+      P2002: { message: "Numer zawodnika musi być unikalny w klubie", status: 409 },
+    });
+    if (mapped) return mapped;
     return json({ error: "Nie udało się utworzyć zawodnika" }, 500);
   }
 };
