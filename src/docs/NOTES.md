@@ -105,7 +105,7 @@ Code Rabbit do code review po commitach, ALE przed zatwierdzeniem PR.
 
 ---
 
-REFEREE MATCH PLAN prompt:
+REFEREE MATCH PLAN <span style="color: orange;">PROMPT</span>:
 
 _Poniżej planu rozgrywek i na podstawie planu rozgrywek stwórz podobny plan dla sędziów.
 Kolumny jakie ma zawierać formularz dokładnie w tej kolejności to:_
@@ -153,7 +153,7 @@ Dobrze przemyślany i zaplanowany prompt to wielka siła i ma świetny potencja�
 
 ---
 
-Classificators Plan prompt:
+Classificators Plan <span style="color: orange;">PROMPT</span>:
 
 w szczegółach turnieju, Poniżej planu dla sędziów i na podstawie planu sędziów stwórz podobny plan dla klasyfikatorów.
 Kolumny jakie ma zawierać formularz dokładnie w tej kolejności to:
@@ -191,6 +191,92 @@ DO POPRAWKI:
 - jeśli wszystkie dni są już dodane to przycisk 'nowy dzień' musi byhć nie aktywny
 - po różnych operacjach na planie klasyfikatorów np. utworzeniu nowego dnia, dodaniu zawodników i odswieżeniu strony zostaje tylko piątek
 - po usunięciu planu sędziów zostaje też usunięty cały plan rozgrywek i klasyfikatorów. Każdy Plan ma działać niezależnie od siebie bez wpływu na pozostałe plany .
+
+---
+
+Mój Klub Sportowy <span style="color: orange;">PROMPT</span>:
+
+W bocznym panelu zarządzania (nad 'Mój Profil') trzeba dodać nowy moduł 'Mój Klub Sportowy' do systemu. 'Mój Klub Sportowy' służy do zarządzania swoimi drużynami, w ramach własnego klubu sportowego.
+Inna baza danych niż baza danych turniejów.
+Mój Klub Sportowy ma następujące sekcje i widoki:
+
+Header ma zawierać:
+
+- Klub sportowy:
+  - Nazwa
+  - Dane teleadresowe
+  - Logo
+  - Osoba do kontaktu (imię, nazwisko, email, telefon)
+  - Hala sportowa (nazwa, adres, miasto, kod pocztowy, link do mapy)
+  - Strona internetowa (opcjonalnie)
+
+Drużyny:
+
+- lista drużyn
+- nowa drużyna
+  - nazwa
+  - formuła drużyny WR'4 lub WR'5
+  - lista zawodników
+    - dodaj zawodnika
+    - usuń zawodnika
+  - trener
+    - dodaj trenera
+    - usuń trenera
+
+Nasz Personel:
+
+1. Zawodnicy:
+
+- lista zawodników
+  - imię
+  - nazwisko
+  - klasyfikacja
+  - numer
+  - status (aktywny, nieaktywny, gość)
+  - data urodzenia
+  - wiek (obliczany automatycznie na podstawie daty urodzenia)
+  - dane kontaktowe (email, telefon, adres, miasto, kod pocztowy, link do mapy)
+  - cechy
+    - funkcja: obrona, atak
+    - szybkość: 1-5
+    - siła: 1-5
+    - wytrzymałość: 1-5
+    - technika: 1-5
+    - mentalność: 1-5
+    - wzrost: 1-5
+    - taktyka: 1-5
+  - dane kontaktowe (email, telefon, adres, miasto, kod pocztowy, link do mapy)
+- dodawanie zawodnika
+- edytowanie zawodnika
+- usuwanie zawodnika
+
+2. Wolontariusze:
+
+- lista wolontariuszy
+- dodaj wolontariusza
+- edytowanie wolontariusza
+- usuwanie wolontariusza
+
+3. Trenerzy:
+
+- lista trenerów
+- dodaj trenera
+- edytowanie trenera
+- usuwanie trenera
+
+4. Sędziowie:
+
+- lista sędziów
+- dodaj sędziego
+- edytowanie sędziego
+- usuwanie sędziego
+
+5. Pozostali:
+
+- lista pozostałych osób
+- dodaj pozostałą osobę
+- edytowanie pozostałej osoby
+- usuwanie pozostałej osoby
 
 ---
 
