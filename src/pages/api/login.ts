@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { prisma } from "@/lib/prisma";
 
 const json = (body: object, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -8,13 +9,16 @@ const json = (body: object, status = 200) =>
 
 export const POST: APIRoute = async ({ request, cookies, redirect, url }) => {
   const form = await request.formData();
-  const pin = String(form.get("pin") ?? "");
+  const email = String(form.get("email") ?? "").trim().toLowerCase();
+  const password = String(form.get("password") ?? "");
   const wantsJson = request.headers.get("Accept") === "application/json";
+  if (!email || !password) return wantsJson ? json({ ok: false }, 401) : redirect("/?login=1&error=1");
 
-  // MVP: hardcoded PIN (later: move to .env)
-  const APP_PIN = "1";
-
-  if (pin !== APP_PIN) {
+  const user = await prisma.user.findUnique({
+    where: { email },
+    select: { id: true, role: true, password: true },
+  });
+  if (!user || user.password !== password) {
     return wantsJson ? json({ ok: false }, 401) : redirect("/?login=1&error=1");
   }
 
@@ -28,6 +32,20 @@ export const POST: APIRoute = async ({ request, cookies, redirect, url }) => {
     sameSite: "lax",
     secure: isSecure,
     maxAge: 60 * 60 * 24 * 7, // 7 days
+  });
+  cookies.set("sessionUserId", user.id, {
+    path: "/",
+    httpOnly: true,
+    sameSite: "lax",
+    secure: isSecure,
+    maxAge: 60 * 60 * 24 * 7,
+  });
+  cookies.set("sessionUserRole", user.role, {
+    path: "/",
+    httpOnly: true,
+    sameSite: "lax",
+    secure: isSecure,
+    maxAge: 60 * 60 * 24 * 7,
   });
 
   return wantsJson ? json({ ok: true }) : redirect("/dashboard");

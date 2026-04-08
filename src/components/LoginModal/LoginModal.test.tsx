@@ -22,10 +22,11 @@ describe("LoginModal", () => {
 
     render(<LoginModal open onClose={vi.fn()} />);
 
-    await user.type(screen.getByLabelText(/PIN/i), "0000");
+    await user.type(screen.getByLabelText(/Email/i), "admin@example.com");
+    await user.type(screen.getByLabelText(/Hasło/i), "wrong-password");
     await user.click(screen.getByRole("button", { name: "Zaloguj" }));
 
-    expect(await screen.findByText("Błędny PIN / hasło. Spróbuj ponownie.")).toBeInTheDocument();
+    expect(await screen.findByText("Błędny email lub hasło. Spróbuj ponownie.")).toBeInTheDocument();
   });
 
   it("disables submit button while login request is pending", async () => {
@@ -43,7 +44,8 @@ describe("LoginModal", () => {
 
     render(<LoginModal open onClose={vi.fn()} />);
 
-    await user.type(screen.getByLabelText(/PIN/i), "1234");
+    await user.type(screen.getByLabelText(/Email/i), "admin@example.com");
+    await user.type(screen.getByLabelText(/Hasło/i), "demo-password");
     await user.click(screen.getByRole("button", { name: "Zaloguj" }));
 
     expect(screen.getByRole("button", { name: "Logowanie…" })).toBeDisabled();
@@ -59,7 +61,8 @@ describe("LoginModal", () => {
 
     render(<LoginModal open onClose={vi.fn()} onLoginSuccess={onLoginSuccess} />);
 
-    await user.type(screen.getByLabelText(/PIN/i), "1234");
+    await user.type(screen.getByLabelText(/Email/i), "admin@example.com");
+    await user.type(screen.getByLabelText(/Hasło/i), "demo-password");
     await user.click(screen.getByRole("button", { name: "Zaloguj" }));
 
     expect(fetchMock).toHaveBeenCalledWith(
@@ -67,7 +70,7 @@ describe("LoginModal", () => {
       expect.objectContaining({ method: "POST", headers: { Accept: "application/json" } })
     );
     expect(onLoginSuccess).toHaveBeenCalledTimes(1);
-    expect(screen.queryByText("Błędny PIN / hasło. Spróbuj ponownie.")).not.toBeInTheDocument();
+    expect(screen.queryByText("Błędny email lub hasło. Spróbuj ponownie.")).not.toBeInTheDocument();
   });
 
   it("re-enables submit button after successful login with custom callback", async () => {
@@ -76,7 +79,8 @@ describe("LoginModal", () => {
 
     render(<LoginModal open onClose={vi.fn()} onLoginSuccess={vi.fn()} />);
 
-    await user.type(screen.getByLabelText(/PIN/i), "1234");
+    await user.type(screen.getByLabelText(/Email/i), "admin@example.com");
+    await user.type(screen.getByLabelText(/Hasło/i), "demo-password");
     await user.click(screen.getByRole("button", { name: "Zaloguj" }));
 
     expect(await screen.findByRole("button", { name: "Zaloguj" })).not.toBeDisabled();
