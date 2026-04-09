@@ -51,14 +51,23 @@ export default function LoginModal({ open, onClose, onLoginSuccess }: Props) {
       <DialogContent>
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
-            Błędny PIN / hasło. Spróbuj ponownie.
+            Błędny email lub hasło. Spróbuj ponownie.
           </Alert>
         )}
 
         <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
           <TextField
-            name="pin"
-            label="PIN"
+            name="email"
+            label="Email"
+            type="email"
+            autoComplete="email"
+            required
+            fullWidth
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            name="password"
+            label="Hasło"
             type="password"
             autoComplete="current-password"
             required

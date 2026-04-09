@@ -639,20 +639,10 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
           <Grid size={{ xs: 12, sm: 6 }}>
             <TextField
               fullWidth
-              label="Adres"
+              label="Ulica"
               {...register("address")}
               error={Boolean(touchedFields.address && errors.address)}
               helperText={touchedFields.address ? errors.address?.message : undefined}
-              sx={requiredFieldSx}
-            />
-          </Grid>
-          <Grid size={{ xs: 12, sm: 8 }}>
-            <TextField
-              fullWidth
-              label="Miasto"
-              {...register("city")}
-              error={Boolean(touchedFields.city && errors.city)}
-              helperText={touchedFields.city ? errors.city?.message : undefined}
               sx={requiredFieldSx}
             />
           </Grid>
@@ -667,6 +657,17 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
               sx={requiredFieldSx}
             />
           </Grid>
+          <Grid size={{ xs: 12, sm: 8 }}>
+            <TextField
+              fullWidth
+              label="Miasto"
+              {...register("city")}
+              error={Boolean(touchedFields.city && errors.city)}
+              helperText={touchedFields.city ? errors.city?.message : undefined}
+              sx={requiredFieldSx}
+            />
+          </Grid>
+
           <Grid size={{ xs: 12 }}>
             <TextField
               fullWidth

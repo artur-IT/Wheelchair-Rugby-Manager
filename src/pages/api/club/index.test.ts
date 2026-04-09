@@ -19,12 +19,25 @@ beforeAll(async () => {
 });
 
 describe("club API /api/club", () => {
-  it("GET returns 400 when ownerUserId query is missing", async () => {
+  it("GET returns 401 without session user id", async () => {
     const response = await GET({
-      url: new URL("http://localhost/api/club"),
+      cookies: { get: vi.fn().mockReturnValue(undefined) },
     } as never);
 
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(401);
+  });
+
+  it("GET returns 200 for logged in user", async () => {
+    const { prisma } = await import("@/lib/prisma");
+    vi.mocked(prisma.club.findMany).mockResolvedValueOnce([]);
+
+    const response = await GET({
+      cookies: {
+        get: vi.fn((name: string) => (name === "sessionUserId" ? { value: "owner-1" } : undefined)),
+      },
+    } as never);
+
+    expect(response.status).toBe(200);
   });
 
   it("POST returns 400 for invalid JSON body", async () => {
@@ -34,7 +47,12 @@ describe("club API /api/club", () => {
       headers: { "Content-Type": "application/json" },
     });
 
-    const response = await POST({ request } as never);
+    const response = await POST({
+      request,
+      cookies: {
+        get: vi.fn((name: string) => (name === "sessionUserId" ? { value: "owner-1" } : undefined)),
+      },
+    } as never);
     expect(response.status).toBe(400);
   });
 });

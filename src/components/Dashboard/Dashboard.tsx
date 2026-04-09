@@ -188,9 +188,7 @@ function DashboardContent() {
                 ) : upcoming.length === 0 ? (
                   <DashboardEmptyState message="Brak nadchodzących turniejów w tym sezonie." />
                 ) : (
-                  upcoming.map((t) => (
-                    <DashboardTournamentRow key={t.id} tournament={t} calendarIconColor="#FE9A00" />
-                  ))
+                  upcoming.map((t) => <DashboardTournamentRow key={t.id} tournament={t} calendarIconColor="#FE9A00" />)
                 )}
               </Box>
             </CardContent>
@@ -238,9 +236,7 @@ function DashboardContent() {
                 ) : completed.length === 0 ? (
                   <DashboardEmptyState message="Brak zakończonych turniejów w tym sezonie." />
                 ) : (
-                  completed.map((t) => (
-                    <DashboardTournamentRow key={t.id} tournament={t} calendarIconColor="#717171" />
-                  ))
+                  completed.map((t) => <DashboardTournamentRow key={t.id} tournament={t} calendarIconColor="#717171" />)
                 )}
               </Box>
             </CardContent>

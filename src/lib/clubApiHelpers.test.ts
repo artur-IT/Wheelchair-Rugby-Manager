@@ -68,7 +68,6 @@ describe("clubApiHelpers", () => {
     });
 
     const result = await ensureEntityAccess(
-      new Request("http://localhost/api"),
       { get: vi.fn(() => ({ value: "ok" })) } as never,
       { id: "x", clubId: "club-1" },
       (item) => item.clubId,

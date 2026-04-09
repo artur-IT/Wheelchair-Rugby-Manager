@@ -204,11 +204,8 @@ Header ma zawierać:
 
 - Klub sportowy:
   - Nazwa
-  - Dane teleadresowe
-  - Logo
-  - Osoba do kontaktu (imię, nazwisko, email, telefon)
-  - Hala sportowa (nazwa, adres, miasto, kod pocztowy, link do mapy)
-  - Strona internetowa (opcjonalnie)
+  - Logo (opcjonalnie)
+  - Trenujemy: Hala sportowa (nazwa, adres, miasto, kod pocztowy, link do mapy)
 
 Drużyny:
 

@@ -53,11 +53,10 @@ export const ensureClubExists = async (clubId: string): Promise<GuardResult<true
 };
 
 export const ensureClubAccess = async (
-  request: Request,
   cookies: AstroCookies,
   clubId: string
 ): Promise<GuardResult<true>> => {
-  const authz = await authorizeClubAccess(request, cookies.get("session")?.value, clubId);
+  const authz = await authorizeClubAccess(cookies, clubId);
   if (authz.ok === false) {
     return { ok: false, response: authz.response };
   }
@@ -66,7 +65,6 @@ export const ensureClubAccess = async (
 };
 
 export const ensureEntityAccess = async <TEntity>(
-  request: Request,
   cookies: AstroCookies,
   entity: TEntity | null,
   getClubId: (item: TEntity) => string,
@@ -74,7 +72,7 @@ export const ensureEntityAccess = async <TEntity>(
 ): Promise<GuardResult<TEntity>> => {
   if (!entity) return { ok: false, response: json({ error: notFoundMessage }, 404) };
 
-  const authz = await ensureClubAccess(request, cookies, getClubId(entity));
+  const authz = await ensureClubAccess(cookies, getClubId(entity));
   if (!authz.ok) return { ok: false, response: authz.response };
 
   return { ok: true, data: entity };
