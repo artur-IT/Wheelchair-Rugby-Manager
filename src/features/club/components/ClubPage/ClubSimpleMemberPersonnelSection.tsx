@@ -107,6 +107,19 @@ export default function ClubSimpleMemberPersonnelSection({
 
   const saveMutation = useMutation({
     mutationFn: async (values: ClubSimplePersonFormValues) => {
+      const parseJsonSafely = async (res: Response): Promise<Record<string, unknown> | null> => {
+        if (res.status === 204) return null;
+        const contentType = res.headers.get("content-type")?.toLowerCase() ?? "";
+        const contentLength = res.headers.get("content-length");
+        if (!contentType.includes("application/json")) return null;
+        if (contentLength === "0") return null;
+        try {
+          return (await res.json()) as Record<string, unknown>;
+        } catch {
+          return null;
+        }
+      };
+
       const body = {
         firstName: values.firstName,
         lastName: values.lastName,
@@ -119,7 +132,7 @@ export default function ClubSimpleMemberPersonnelSection({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body),
         });
-        const data = await res.json();
+        const data = await parseJsonSafely(res);
         if (!res.ok) throw new Error(extractClubApiErrorMessage(data, "Nie udało się zapisać zmian"));
         return data;
       }
@@ -128,7 +141,7 @@ export default function ClubSimpleMemberPersonnelSection({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...body, ...config.createExtras }),
       });
-      const data = await res.json();
+      const data = await parseJsonSafely(res);
       if (!res.ok) throw new Error(extractClubApiErrorMessage(data, "Nie udało się dodać osoby"));
       return data;
     },
@@ -142,9 +155,13 @@ export default function ClubSimpleMemberPersonnelSection({
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       const res = await fetch(config.deleteUrl(id), { method: "DELETE" });
-      const data = await res.json();
-      if (!res.ok) throw new Error(extractClubApiErrorMessage(data, "Nie udało się usunąć"));
-      return data;
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(extractClubApiErrorMessage(data, "Nie udało się usunąć"));
+      }
+      // Handle 204 No Content or empty body gracefully
+      const text = await res.text();
+      return text ? JSON.parse(text) : null;
     },
     onSuccess: async () => {
       setDeleteTarget(null);

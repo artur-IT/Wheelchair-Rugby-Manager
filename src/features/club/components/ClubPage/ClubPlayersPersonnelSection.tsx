@@ -171,9 +171,7 @@ export default function ClubPlayersPersonnelSection({
       postalCode: watchedPostal,
       city: watchedCity,
     });
-    if (url) {
-      form.setValue("contactMapUrl", url, { shouldValidate: false, shouldDirty: false });
-    }
+    form.setValue("contactMapUrl", url ?? "", { shouldValidate: false, shouldDirty: false });
   }, [dialogOpen, watchedAddress, watchedPostal, watchedCity, form]);
 
   useEffect(() => {
@@ -199,8 +197,11 @@ export default function ClubPlayersPersonnelSection({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(json),
         });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(extractClubApiErrorMessage(data, "Nie udało się zapisać zawodnika"));
+        }
         const data = await res.json();
-        if (!res.ok) throw new Error(extractClubApiErrorMessage(data, "Nie udało się zapisać zawodnika"));
         return data;
       }
       const res = await fetch(`/api/club/${clubId}/players`, {
@@ -208,8 +209,11 @@ export default function ClubPlayersPersonnelSection({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(json),
       });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(extractClubApiErrorMessage(data, "Nie udało się dodać zawodnika"));
+      }
       const data = await res.json();
-      if (!res.ok) throw new Error(extractClubApiErrorMessage(data, "Nie udało się dodać zawodnika"));
       return data;
     },
     onSuccess: async () => {
@@ -222,8 +226,11 @@ export default function ClubPlayersPersonnelSection({
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       const res = await fetch(`/api/club/players/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(extractClubApiErrorMessage(data, "Nie udało się usunąć zawodnika"));
+      }
       const data = await res.json();
-      if (!res.ok) throw new Error(extractClubApiErrorMessage(data, "Nie udało się usunąć zawodnika"));
       return data;
     },
     onSuccess: async () => {
@@ -285,8 +292,7 @@ export default function ClubPlayersPersonnelSection({
       <Stack component="ul" spacing={2} sx={{ listStyle: "none", m: 0, p: 0 }}>
         {players.map((p) => {
           const fullName = `${p.firstName} ${p.lastName}`.trim();
-          const shirt =
-            p.number === null || p.number === undefined ? "—" : String(p.number);
+          const shirt = p.number === null || p.number === undefined ? "—" : String(p.number);
           return (
             <Paper key={p.id} component="li" variant="outlined" sx={{ p: 2, listStyle: "none" }}>
               <Stack

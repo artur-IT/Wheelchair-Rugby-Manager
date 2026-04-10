@@ -132,7 +132,12 @@ const optionalBirthDateSchema = z
     },
     z.union([z.null(), z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data urodzenia musi być w formacie RRRR-MM-DD")])
   )
-  .transform((v) => (v === null ? null : new Date(`${v}T12:00:00.000Z`)));
+  .transform((v) => {
+    if (v === null) return null;
+    const d = new Date(`${v}T12:00:00.000Z`);
+    if (Number.isNaN(d.getTime())) throw new Error("Nieprawidłowa data");
+    return d;
+  });
 
 /** Polish mobile: empty or exactly 9 digits (stored without country prefix). */
 const optionalClubNineDigitPhone = z

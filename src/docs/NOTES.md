@@ -226,8 +226,8 @@ Nasz Personel:
 
 - lista zawodników
 - nowy zawodnik
-  - imię
-  - nazwisko
+  - imię (wymagane)
+  - nazwisko (wymagane)
   - klasyfikacja (wymagane, zakres 0.5 - 3.5, skok co 0.5)
   - numer (wymagane, zakres 1 - 99 lub znak '-')
   - status (aktywny, nieaktywny, gość)
