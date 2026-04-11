@@ -27,6 +27,7 @@ interface TeamCreateFormProps {
   onTeamCoachChange: (value: string) => void;
   onTeamPlayersChange: (value: string[]) => void;
   onCreateTeam: () => void;
+  onCancelTeamForm: () => void;
 }
 
 export default function TeamCreateForm({
@@ -44,6 +45,7 @@ export default function TeamCreateForm({
   onTeamCoachChange,
   onTeamPlayersChange,
   onCreateTeam,
+  onCancelTeamForm,
 }: TeamCreateFormProps) {
   const formulaField = (
     <TextField
@@ -52,7 +54,7 @@ export default function TeamCreateForm({
       value={teamFormula}
       onChange={(e) => onTeamFormulaChange(e.target.value as "WR4" | "WR5")}
       fullWidth
-      sx={isEditing ? { flex: { md: "0 0 160px" }, minWidth: 0 } : undefined}
+      sx={{ flex: { md: "0 0 160px" }, minWidth: 0 }}
     >
       <MenuItem value="WR4">WR&apos;4</MenuItem>
       <MenuItem value="WR5">WR&apos;5</MenuItem>
@@ -66,7 +68,7 @@ export default function TeamCreateForm({
       value={teamCoachId}
       onChange={(e) => onTeamCoachChange(e.target.value)}
       fullWidth
-      sx={isEditing ? { flex: { md: "1 1 0" }, minWidth: 0 } : undefined}
+      sx={{ flex: { md: "1 1 0" }, minWidth: 0 }}
     >
       <MenuItem value="">Bez trenera</MenuItem>
       {coaches.map((coach) => (
@@ -79,27 +81,17 @@ export default function TeamCreateForm({
 
   return (
     <Stack gap={2} sx={{ mb: 3 }}>
-      {isEditing ? (
-        <Stack direction={{ xs: "column", md: "row" }} gap={2} sx={{ alignItems: { md: "flex-start" } }}>
-          <TextField
-            label="Nazwa drużyny"
-            value={teamName}
-            onChange={(e) => onTeamNameChange(e.target.value)}
-            fullWidth
-            sx={{ flex: { md: "1 1 0" }, minWidth: 0 }}
-          />
-          {formulaField}
-          {coachField}
-        </Stack>
-      ) : (
-        <>
-          <TextField label="Nazwa drużyny" value={teamName} onChange={(e) => onTeamNameChange(e.target.value)} />
-          <Stack direction={{ xs: "column", md: "row" }} gap={2}>
-            {formulaField}
-            {coachField}
-          </Stack>
-        </>
-      )}
+      <Stack direction={{ xs: "column", md: "row" }} gap={2} sx={{ alignItems: { md: "flex-start" } }}>
+        <TextField
+          label="Nazwa drużyny"
+          value={teamName}
+          onChange={(e) => onTeamNameChange(e.target.value)}
+          fullWidth
+          sx={{ flex: { md: "1 1 0" }, minWidth: 0 }}
+        />
+        {formulaField}
+        {coachField}
+      </Stack>
       <Box>
         <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
           Zawodnicy w drużynie
@@ -149,9 +141,14 @@ export default function TeamCreateForm({
           </FormGroup>
         )}
       </Box>
-      <Button variant="contained" disabled={!teamName.trim() || isPending} onClick={onCreateTeam}>
-        {isEditing ? "Zapisz zmiany" : "Zapisz drużynę"}
-      </Button>
+      <Stack direction="row" gap={1.5} flexWrap="wrap">
+        <Button variant="outlined" disabled={isPending} onClick={onCancelTeamForm}>
+          Anuluj
+        </Button>
+        <Button variant="contained" disabled={!teamName.trim() || isPending} onClick={onCreateTeam}>
+          {isEditing ? "Zapisz zmiany" : "Zapisz drużynę"}
+        </Button>
+      </Stack>
       {errorMessage ? <Typography color="error.main">{errorMessage}</Typography> : null}
     </Stack>
   );

@@ -3,9 +3,6 @@ import { Accordion, AccordionDetails, AccordionSummary, Box, Button, Chip, Stack
 
 import type { ClubTeamDto } from "./types";
 
-const TEAM_TILE_WIDTH_PX = 400;
-const TEAM_TILE_WIDTH_MOBILE_PORTRAIT_PX = 310;
-
 /** One decimal place for roster rows (same idea as player list). */
 function formatClassificationForList(c: number | null | undefined): string {
   if (c === null || c === undefined) return "—";
@@ -16,18 +13,32 @@ function formatClassificationForList(c: number | null | undefined): string {
 
 interface TeamTileProps {
   team: ClubTeamDto;
+  /** Controlled expansion so only one team roster is open at a time (same idea as a single “active” row). */
+  expanded: boolean;
+  onExpandChange: (expanded: boolean) => void;
   onEditTeam: (team: ClubTeamDto) => void;
   onRequestDeleteTeam: (team: ClubTeamDto) => void;
   isDeletePending?: boolean;
 }
 
-export default function TeamTile({ team, onEditTeam, onRequestDeleteTeam, isDeletePending = false }: TeamTileProps) {
+export default function TeamTile({
+  team,
+  expanded,
+  onExpandChange,
+  onEditTeam,
+  onRequestDeleteTeam,
+  isDeletePending = false,
+}: TeamTileProps) {
   return (
     <Accordion
+      expanded={expanded}
+      onChange={(_event, nextExpanded) => onExpandChange(nextExpanded)}
       disableGutters
       elevation={0}
-      sx={(theme) => ({
-        width: TEAM_TILE_WIDTH_PX,
+      sx={{
+        // Fill grid column (desktop: half row per tile; mobile: single full-width column).
+        width: "100%",
+        minWidth: 0,
         maxWidth: "100%",
         boxSizing: "border-box",
         border: 1,
@@ -37,12 +48,7 @@ export default function TeamTile({ team, onEditTeam, onRequestDeleteTeam, isDele
         bgcolor: "background.paper",
         boxShadow: 1,
         "&:before": { display: "none" },
-        [theme.breakpoints.down("md")]: {
-          "@media (orientation: portrait)": {
-            width: TEAM_TILE_WIDTH_MOBILE_PORTRAIT_PX,
-          },
-        },
-      })}
+      }}
     >
       <AccordionSummary
         component="div"
@@ -66,11 +72,21 @@ export default function TeamTile({ team, onEditTeam, onRequestDeleteTeam, isDele
           <Typography sx={{ fontWeight: 700 }}>{team.name}</Typography>
           <Chip label={team.formula === "WR4" ? "WR'4" : "WR'5"} size="small" />
         </Stack>
-        <Typography color="text.secondary" variant="body2">
-          Zawodników: {team.players.length}
+        <Typography color="text.secondary" variant="body2" component="div">
+          Zawodników:{" "}
+          <Typography component="span" color="text.secondary" variant="body2" sx={{ fontWeight: 700 }}>
+            {team.players.length}
+          </Typography>
         </Typography>
-        <Typography color="text.secondary" variant="body2">
-          Trener: {team.coach ? `${team.coach.firstName} ${team.coach.lastName}` : "brak"}
+        <Typography color="text.secondary" variant="body2" component="div">
+          Trener:{" "}
+          {team.coach ? (
+            <Typography component="span" color="text.secondary" variant="body2" sx={{ fontWeight: 700 }}>
+              {team.coach.firstName} {team.coach.lastName}
+            </Typography>
+          ) : (
+            "brak"
+          )}
         </Typography>
         <Stack direction="row" flexWrap="wrap" gap={1} useFlexGap sx={{ pt: 0.25 }}>
           <Button

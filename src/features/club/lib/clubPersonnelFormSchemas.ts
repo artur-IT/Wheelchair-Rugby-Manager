@@ -7,19 +7,25 @@ import {
 import { z } from "@/lib/zodPl";
 
 /** Optional 1–5 rating in the form; empty string means not set (stored as null in DB). */
-const optionalSkillRatingForm = z.union([
-  z.literal(""),
-  z.number().int().min(1, "Ocena od 1 do 5").max(5, "Ocena od 1 do 5"),
-]);
+const skillRatingFromForm = z.preprocess(
+  (v) => (v === null || v === undefined ? "" : v),
+  z.union([
+    z.literal(""),
+    z.number().int().min(1, "Ocena od 1 do 5").max(5, "Ocena od 1 do 5"),
+  ])
+);
 
-/** Form validation matches API `ClubPlayerFieldsSchema` without `clubId` (added on submit). */
-export const clubPlayerFormSchema = ClubPlayerFieldsSchema.omit({ clubId: true }).extend({
-  speed: optionalSkillRatingForm.optional(),
-  strength: optionalSkillRatingForm.optional(),
-  endurance: optionalSkillRatingForm.optional(),
-  technique: optionalSkillRatingForm.optional(),
-  mentality: optionalSkillRatingForm.optional(),
-  tactics: optionalSkillRatingForm.optional(),
+/**
+ * Form validation aligned with API `ClubPlayerFieldsSchema` without `clubId` (added on submit).
+ * Skills are always optional; `height` is omitted here because the player dialog does not collect it.
+ */
+export const clubPlayerFormSchema = ClubPlayerFieldsSchema.omit({ clubId: true, height: true }).extend({
+  speed: skillRatingFromForm,
+  strength: skillRatingFromForm,
+  endurance: skillRatingFromForm,
+  technique: skillRatingFromForm,
+  mentality: skillRatingFromForm,
+  tactics: skillRatingFromForm,
 });
 
 export const clubCoachFormSchema = ClubCoachRefereeFieldsSchema.omit({ clubId: true });

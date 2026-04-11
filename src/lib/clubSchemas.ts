@@ -176,13 +176,14 @@ export const ClubPlayerFieldsSchema = z.object({
   contactPostalCode: z.preprocess((v) => (v === null || v === undefined ? undefined : v), optionalPostalCodeSchema),
   contactMapUrl: z.preprocess((v) => (v === null ? undefined : v), optionalUrlSchema),
   playerFunction: z.enum(["DEFENSE", "ATTACK"]).optional(),
-  speed: z.number().int().min(1).max(5).optional(),
-  strength: z.number().int().min(1).max(5).optional(),
-  endurance: z.number().int().min(1).max(5).optional(),
-  technique: z.number().int().min(1).max(5).optional(),
-  mentality: z.number().int().min(1).max(5).optional(),
-  height: z.number().int().min(1).max(5).optional(),
-  tactics: z.number().int().min(1).max(5).optional(),
+  // JSON often sends explicit null for “not set”; plain .optional() rejects null and fails every skill at once.
+  speed: z.number().int().min(1).max(5).nullable().optional(),
+  strength: z.number().int().min(1).max(5).nullable().optional(),
+  endurance: z.number().int().min(1).max(5).nullable().optional(),
+  technique: z.number().int().min(1).max(5).nullable().optional(),
+  mentality: z.number().int().min(1).max(5).nullable().optional(),
+  height: z.number().int().min(1).max(5).nullable().optional(),
+  tactics: z.number().int().min(1).max(5).nullable().optional(),
 });
 
 export const ClubPlayerSchema = ClubPlayerFieldsSchema.transform((o) => ({

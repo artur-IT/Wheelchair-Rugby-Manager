@@ -3,6 +3,8 @@ import {
   buildContactMapSearchUrl,
   computeAgeFromIsoDateString,
   extractClubApiErrorMessage,
+  parseClubPlayerApiFieldMessages,
+  resolveClubPlayerFieldErrorMessage,
 } from "@/features/club/lib/clubPersonnelHelpers";
 
 describe("clubPersonnelHelpers", () => {
@@ -36,6 +38,54 @@ describe("clubPersonnelHelpers", () => {
         "fallback"
       )
     ).toContain("Kod pocztowy:");
+    expect(
+      extractClubApiErrorMessage(
+        {
+          error: {
+            formErrors: [],
+            fieldErrors: { contactPostalCode: ["Nieprawidłowa wartość"] },
+          },
+        },
+        "fallback"
+      )
+    ).toContain("XX-XXX");
+  });
+
+  it("extractClubApiErrorMessage maps vague speed error to skill hint (not postal/phone)", () => {
+    const msg = extractClubApiErrorMessage(
+      {
+        error: {
+          formErrors: [],
+          fieldErrors: { speed: ["Nieprawidłowa wartość"] },
+        },
+      },
+      "fallback"
+    );
+    expect(msg).toContain("Szybkość");
+    expect(msg).toContain("ocenę");
+    expect(msg).not.toContain("kod pocztowy");
+  });
+
+  it("parseClubPlayerApiFieldMessages returns all fields with resolved messages", () => {
+    const map = parseClubPlayerApiFieldMessages({
+      error: {
+        formErrors: [],
+        fieldErrors: {
+          speed: ["Nieprawidłowa wartość"],
+          contactPostalCode: ["Nieprawidłowa wartość"],
+        },
+      },
+    });
+    expect(map).toEqual({
+      speed: resolveClubPlayerFieldErrorMessage("speed", "Nieprawidłowa wartość"),
+      contactPostalCode: resolveClubPlayerFieldErrorMessage("contactPostalCode", "Nieprawidłowa wartość"),
+    });
+  });
+
+  it("resolveClubPlayerFieldErrorMessage leaves explicit API messages unchanged", () => {
+    expect(resolveClubPlayerFieldErrorMessage("contactPhone", "Telefon musi mieć 9 cyfr")).toBe(
+      "Telefon musi mieć 9 cyfr"
+    );
   });
 
   it("buildContactMapSearchUrl returns null when address parts empty", () => {

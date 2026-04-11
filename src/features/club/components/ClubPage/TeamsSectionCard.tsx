@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Box, Button, Card, CardContent, CircularProgress, Typography } from "@mui/material";
 
 import ConfirmationDialog from "@/components/ui/ConfirmationDialog";
@@ -28,6 +29,7 @@ interface TeamsSectionCardProps {
   onTeamCoachChange: (value: string) => void;
   onTeamPlayersChange: (value: string[]) => void;
   onSubmitTeamForm: () => void;
+  onCancelTeamForm: () => void;
   onEditTeam: (team: ClubTeamDto) => void;
   onTeamPendingDeleteChange: (team: ClubTeamDto | null) => void;
   onConfirmDeleteTeam: () => void;
@@ -55,10 +57,13 @@ export default function TeamsSectionCard({
   onTeamCoachChange,
   onTeamPlayersChange,
   onSubmitTeamForm,
+  onCancelTeamForm,
   onEditTeam,
   onTeamPendingDeleteChange,
   onConfirmDeleteTeam,
 }: TeamsSectionCardProps) {
+  const [expandedTeamId, setExpandedTeamId] = useState<string | false>(false);
+
   return (
     <Card>
       <CardContent>
@@ -89,21 +94,27 @@ export default function TeamsSectionCard({
             onTeamCoachChange={onTeamCoachChange}
             onTeamPlayersChange={onTeamPlayersChange}
             onCreateTeam={onSubmitTeamForm}
+            onCancelTeamForm={onCancelTeamForm}
           />
         ) : null}
 
         <Box
           sx={{
             display: "grid",
+            // Desktop: always two equal columns so one team occupies half width; two teams span full row.
             gridTemplateColumns: { xs: "1fr", md: "repeat(2, minmax(0, 1fr))" },
             gap: 1.5,
-            justifyItems: "start",
+            // Stretch tiles horizontally to fill each column; alignItems:start keeps row height per tile.
+            justifyItems: "stretch",
+            alignItems: "start",
           }}
         >
           {teams.map((team) => (
             <TeamTile
               key={team.id}
               team={team}
+              expanded={expandedTeamId === team.id}
+              onExpandChange={(next) => setExpandedTeamId(next ? team.id : false)}
               onEditTeam={onEditTeam}
               onRequestDeleteTeam={(t) => onTeamPendingDeleteChange(t)}
               isDeletePending={isDeleteTeamPending && teamPendingDelete?.id === team.id}

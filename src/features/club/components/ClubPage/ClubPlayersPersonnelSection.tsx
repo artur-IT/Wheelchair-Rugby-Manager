@@ -31,8 +31,10 @@ import type { ClubPlayerFormValues } from "@/features/club/lib/clubPersonnelForm
 import { clubPlayerFormSchema } from "@/features/club/lib/clubPersonnelFormSchemas";
 import {
   buildContactMapSearchUrl,
+  ClubPersonnelValidationError,
   computeAgeFromIsoDateString,
   extractClubApiErrorMessage,
+  parseClubPlayerApiFieldMessages,
   playerNumberToFormValue,
   zodSafeParseResolver,
 } from "@/features/club/lib/clubPersonnelHelpers";
@@ -290,6 +292,8 @@ export default function ClubPlayersPersonnelSection({
         });
         if (!res.ok) {
           const data = await res.json().catch(() => ({}));
+          const fieldMap = parseClubPlayerApiFieldMessages(data);
+          if (fieldMap) throw new ClubPersonnelValidationError(fieldMap);
           throw new Error(extractClubApiErrorMessage(data, "Nie udało się zapisać zawodnika"));
         }
         const data = await res.json();
@@ -302,10 +306,27 @@ export default function ClubPlayersPersonnelSection({
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
+        const fieldMap = parseClubPlayerApiFieldMessages(data);
+        if (fieldMap) throw new ClubPersonnelValidationError(fieldMap);
         throw new Error(extractClubApiErrorMessage(data, "Nie udało się dodać zawodnika"));
       }
       const data = await res.json();
       return data;
+    },
+    onMutate: () => {
+      form.clearErrors();
+    },
+    onError: (error) => {
+      if (error instanceof ClubPersonnelValidationError) {
+        for (const key of Object.keys(error.fieldMessages)) {
+          if (key in emptyPlayerForm()) {
+            const msg = error.fieldMessages[key];
+            if (msg) {
+              form.setError(key as keyof ClubPlayerFormValues, { type: "server", message: msg });
+            }
+          }
+        }
+      }
     },
     onSuccess: async () => {
       setDialogOpen(false);
@@ -580,7 +601,11 @@ export default function ClubPlayersPersonnelSection({
               void form.handleSubmit((v) => saveMutation.mutate(v))();
             }}
           >
-            {saveMutation.error instanceof Error ? <Alert severity="error">{saveMutation.error.message}</Alert> : null}
+            {saveMutation.error instanceof Error && !(saveMutation.error instanceof ClubPersonnelValidationError) ? (
+              <Alert severity="error" sx={{ whiteSpace: "pre-line" }}>
+                {saveMutation.error.message}
+              </Alert>
+            ) : null}
 
             <Grid container spacing={2}>
               <Grid size={{ xs: 12, sm: 6 }}>
@@ -661,6 +686,14 @@ export default function ClubPlayersPersonnelSection({
                       error={Boolean(fieldState.error)}
                       helperText={fieldState.error?.message ?? "Od 1 do 99 albo znak „-”, jeśli nie ma numeru."}
                       inputProps={{ maxLength: 3 }}
+                      onFocus={() => {
+                        if (field.value === "-") field.onChange("");
+                      }}
+                      onBlur={(e) => {
+                        const trimmed = e.target.value.trim();
+                        if (trimmed === "" || trimmed === "–") field.onChange("-");
+                        field.onBlur();
+                      }}
                     />
                   )}
                 />
@@ -680,11 +713,12 @@ export default function ClubPlayersPersonnelSection({
                     name={name}
                     control={form.control}
                     render={({ field, fieldState }) => (
-                      <FormControl fullWidth size="small" error={Boolean(fieldState.error)}>
+                      <FormControl fullWidth size="small" required={false} error={Boolean(fieldState.error)}>
                         <InputLabel id={`${name}-label`}>{label}</InputLabel>
                         <Select
                           labelId={`${name}-label`}
                           label={label}
+                          required={false}
                           value={field.value === "" ? "" : String(field.value)}
                           onChange={(e) => {
                             const v = e.target.value;
