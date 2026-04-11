@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Box, Typography } from "@mui/material";
+import { Box } from "@mui/material";
 import AppShell from "@/components/AppShell/AppShell";
 import QueryProvider from "@/components/QueryProvider/QueryProvider";
 import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
@@ -320,51 +320,12 @@ function ClubPageContent() {
     }
   }, [selectedClubId, sortedClubs]);
 
-  const clubContactItems = useMemo(() => {
-    if (!selectedClub) return [];
-
-    const items = [
-      selectedClub.contactAddress,
-      selectedClub.contactPostalCode || selectedClub.contactCity
-        ? `${selectedClub.contactPostalCode ?? ""} ${selectedClub.contactCity ?? ""}`.trim()
-        : null,
-      selectedClub.contactEmail,
-      selectedClub.contactPhone,
-      selectedClub.websiteUrl,
-    ].filter(Boolean);
-
-    return items as string[];
-  }, [selectedClub]);
-
-  const clubHallItems = useMemo(() => {
-    if (!selectedClub) return [];
-
-    const items = [
-      selectedClub.hallName,
-      selectedClub.hallAddress,
-      selectedClub.hallPostalCode || selectedClub.hallCity
-        ? `${selectedClub.hallPostalCode ?? ""} ${selectedClub.hallCity ?? ""}`.trim()
-        : null,
-    ].filter(Boolean);
-
-    return items as string[];
-  }, [selectedClub]);
-
   return (
     <Box sx={{ maxWidth: 980, mx: "auto", display: "flex", flexDirection: "column", gap: 3 }}>
-      <Box>
-        <Typography variant="h4" sx={{ fontWeight: "bold" }}>
-          Klub Sportowy
-        </Typography>
-        <Typography color="text.secondary">Nasze drużyny.</Typography>
-      </Box>
-
       <ClubHeaderCard
         isLoading={clubsQuery.isPending}
         errorMessage={clubsQuery.error instanceof Error ? clubsQuery.error.message : null}
         selectedClub={selectedClub}
-        clubContactItems={clubContactItems}
-        clubHallItems={clubHallItems}
         showClubForm={showClubForm}
         isEditMode={isClubEditMode}
         clubName={clubName}
@@ -498,6 +459,16 @@ function ClubPageContent() {
               coachId: teamCoachId || undefined,
               playerIds: teamPlayerIds,
             });
+          }}
+          onCancelTeamForm={() => {
+            setTeamName("");
+            setTeamFormula("WR4");
+            setTeamCoachId("");
+            setTeamPlayerIds([]);
+            setEditingTeamId(null);
+            setShowTeamForm(false);
+            createTeamMutation.reset();
+            updateTeamMutation.reset();
           }}
           onEditTeam={(team) => {
             setEditingTeamId(team.id);

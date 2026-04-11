@@ -6,8 +6,6 @@ interface ClubHeaderCardProps {
   isLoading: boolean;
   errorMessage: string | null;
   selectedClub: ClubDto | null;
-  clubContactItems: string[];
-  clubHallItems: string[];
   showClubForm: boolean;
   isEditMode: boolean;
   clubName: string;
@@ -27,8 +25,6 @@ export default function ClubHeaderCard({
   isLoading,
   errorMessage,
   selectedClub,
-  clubContactItems,
-  clubHallItems,
   showClubForm,
   isEditMode,
   clubName,
@@ -50,8 +46,23 @@ export default function ClubHeaderCard({
         {errorMessage ? <Typography color="error.main">{errorMessage}</Typography> : null}
 
         {!isLoading && selectedClub && !showClubForm ? (
-          <Stack gap={1} sx={{ mt: 2 }}>
-            <Stack direction="row" alignItems="center" gap={1}>
+          <Stack
+            direction={{ xs: "column", md: "row" }}
+            alignItems={{ xs: "center", md: "center" }}
+            gap={{ xs: 1.5, md: 1 }}
+            sx={{ mt: 2 }}
+          >
+            <Stack
+              direction="row"
+              alignItems="center"
+              gap={1}
+              sx={{
+                alignSelf: { xs: "stretch", md: "auto" },
+                flex: { md: 1 },
+                minWidth: 0,
+                width: { xs: "100%", md: "auto" },
+              }}
+            >
               {selectedClub.logoUrl ? (
                 <Box
                   component="img"
@@ -60,47 +71,18 @@ export default function ClubHeaderCard({
                   sx={{ width: "4em", height: "4em", objectFit: "contain", flexShrink: 0 }}
                 />
               ) : null}
-              <Typography variant="h5" sx={{ fontWeight: 700 }}>
+              <Typography variant="h5" sx={{ fontWeight: 700, flex: 1, minWidth: 0 }}>
                 {selectedClub.name}
               </Typography>
             </Stack>
-            {clubContactItems.length > 0 ? (
-              <Stack gap={0.5}>
-                {clubContactItems.map((item, index) => (
-                  <Typography key={index} color="text.secondary" variant="body2">
-                    {item}
-                  </Typography>
-                ))}
-              </Stack>
-            ) : null}
-            {clubHallItems.length > 0 ? (
-              <Stack gap={0.5} sx={{ pt: 1 }}>
-                <Typography variant="subtitle2">Trenujemy</Typography>
-                {clubHallItems.map((item) => (
-                  <Typography key={item} color="text.secondary" variant="body2">
-                    {item}
-                  </Typography>
-                ))}
-                {selectedClub.hallMapUrl ? (
-                  <Box sx={{ pt: 0.5 }}>
-                    <Button
-                      variant="text"
-                      component="a"
-                      href={selectedClub.hallMapUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      Otwórz mapę
-                    </Button>
-                  </Box>
-                ) : null}
-              </Stack>
-            ) : null}
-            <Box sx={{ pt: 1 }}>
-              <Button variant="outlined" onClick={onShowClubEditForm}>
-                Edytuj
-              </Button>
-            </Box>
+
+            <Button
+              variant="outlined"
+              onClick={onShowClubEditForm}
+              sx={{ alignSelf: { xs: "center", md: "auto" }, flexShrink: 0 }}
+            >
+              Edytuj
+            </Button>
           </Stack>
         ) : null}
 
