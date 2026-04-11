@@ -5,6 +5,7 @@ import AppShell from "@/components/AppShell/AppShell";
 import QueryProvider from "@/components/QueryProvider/QueryProvider";
 import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
 import ClubHeaderCard from "@/features/club/components/ClubPage/ClubHeaderCard";
+import ClubNextBirthdayStrip from "@/features/club/components/ClubPage/ClubNextBirthdayStrip";
 import ClubPersonnelTabsSection from "@/features/club/components/ClubPage/ClubPersonnelTabsSection";
 import TeamsSectionCard from "@/features/club/components/ClubPage/TeamsSectionCard";
 import type {
@@ -407,6 +408,10 @@ function ClubPageContent() {
           createClubMutation.mutate(payload);
         }}
       />
+
+      {selectedClubId ? (
+        <ClubNextBirthdayStrip players={playersQuery.data ?? []} isLoading={playersQuery.isPending} />
+      ) : null}
 
       {selectedClubId ? (
         <TeamsSectionCard
