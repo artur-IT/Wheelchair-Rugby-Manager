@@ -234,6 +234,13 @@ Nasz Personel:
   - data urodzenia (opcjonalnie)
   - wiek (obliczany automatycznie na podstawie daty urodzenia)
   - dane kontaktowe (email, telefon, adres, miasto, kod pocztowy, link do mapy generowany automatycznie)
+  - umiejętności:
+    - szybkość (zakres 1 - 5)
+    - siła (zakres 1 - 5)
+    - wytrzymałość (zakres 1 - 5)
+    - technika (zakres 1 - 5)
+    - mentalność (zakres 1 - 5)
+    - taktyka (zakres 1 - 5)
 - pełny CRUD zawodnika
 
 2. Wolontariusze:

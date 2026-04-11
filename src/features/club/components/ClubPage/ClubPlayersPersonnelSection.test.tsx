@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import QueryProvider from "@/components/QueryProvider/QueryProvider";
@@ -16,6 +16,8 @@ const samplePlayer: ClubPlayerDto = {
   firstName: "Jan",
   lastName: "Kowalski",
   classification: 1.0,
+  speed: 1,
+  technique: 5,
   number: 7,
   status: "ACTIVE",
   birthDate: "2010-03-15T00:00:00.000Z",
@@ -24,7 +26,7 @@ const samplePlayer: ClubPlayerDto = {
   contactAddress: "Sportowa 1",
   contactPostalCode: "80-001",
   contactCity: "Gdańsk",
-  contactMapUrl: "https://www.openstreetmap.org/search?query=test",
+  contactMapUrl: "https://www.google.com/maps/search/?api=1&query=test",
 };
 
 describe("ClubPlayersPersonnelSection", () => {
@@ -32,7 +34,7 @@ describe("ClubPlayersPersonnelSection", () => {
     vi.useRealTimers();
   });
 
-  it("shows birth date, full address, and map as short link text", () => {
+  it("accordion summary shows name and classification; details after expand", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-06-01T12:00:00.000Z"));
 
@@ -46,11 +48,22 @@ describe("ClubPlayersPersonnelSection", () => {
       />
     );
 
-    expect(screen.getByRole("heading", { level: 3, name: "Jan Kowalski" })).toBeInTheDocument();
-    expect(screen.getByText("2010-03-15 (16 lat)")).toBeInTheDocument();
-    expect(screen.getByText("Sportowa 1, 80-001 Gdańsk")).toBeInTheDocument();
+    const summaryBtn = screen.getByRole("button", { expanded: false });
+    const inSummary = within(summaryBtn);
+    expect(inSummary.getByText("Jan")).toBeInTheDocument();
+    expect(inSummary.getByText("Kowalski")).toBeInTheDocument();
+    expect(inSummary.getByText("1.0")).toBeInTheDocument();
+    expect(inSummary.getByText(/Szybkość/)).toBeInTheDocument();
+    expect(inSummary.getByText(/Technika/)).toBeInTheDocument();
+    expect(inSummary.getAllByText("1", { exact: true })).toHaveLength(1);
+    expect(inSummary.getByText("5")).toBeInTheDocument();
 
-    const mapLink = screen.getByRole("link", { name: "Mapa" });
+    fireEvent.click(summaryBtn);
+
+    expect(screen.getByText("2010-03-15 (16 lat)")).toBeVisible();
+    expect(screen.getByText("Sportowa 1, 80-001 Gdańsk")).toBeVisible();
+
+    const mapLink = screen.getByRole("link", { name: /Mapa\s*->/i });
     expect(mapLink).toHaveAttribute("href", samplePlayer.contactMapUrl);
     expect(mapLink).toHaveAttribute("target", "_blank");
     expect(mapLink).toHaveAttribute("rel", "noopener noreferrer");

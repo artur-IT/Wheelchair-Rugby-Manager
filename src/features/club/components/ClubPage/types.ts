@@ -46,6 +46,12 @@ export interface ClubPlayerDto {
   contactCity?: string | null;
   contactPostalCode?: string | null;
   contactMapUrl?: string | null;
+  speed?: number | null;
+  strength?: number | null;
+  endurance?: number | null;
+  technique?: number | null;
+  mentality?: number | null;
+  tactics?: number | null;
 }
 
 export interface ClubVolunteerDto {

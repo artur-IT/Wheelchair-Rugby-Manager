@@ -10,6 +10,7 @@ import {
   requiredPostalCodeSchema,
   requiredTournamentNameSchema,
   sanitizePhone,
+  normalizeClubPlayerStreetForDb,
   toTitleCase,
   tournamentFormSchema,
 } from "./validateInputs";
@@ -39,6 +40,23 @@ describe("toTitleCase", () => {
     expect(toTitleCase("żory")).toBe("Żory");
     expect(toTitleCase("gdańsk")).toBe("Gdańsk");
     expect(toTitleCase("kraków")).toBe("Kraków");
+  });
+});
+
+describe("normalizeClubPlayerStreetForDb", () => {
+  it("adds ul. prefix and title-cases the rest", () => {
+    expect(normalizeClubPlayerStreetForDb("sportowa 1")).toBe("ul. Sportowa 1");
+  });
+
+  it("does not duplicate ul. prefix", () => {
+    expect(normalizeClubPlayerStreetForDb("ul. marszałkowska 10")).toBe("ul. Marszałkowska 10");
+    expect(normalizeClubPlayerStreetForDb("UL marszałkowska 10")).toBe("ul. Marszałkowska 10");
+  });
+
+  it("returns null for empty or only-prefix input", () => {
+    expect(normalizeClubPlayerStreetForDb("")).toBeNull();
+    expect(normalizeClubPlayerStreetForDb("   ")).toBeNull();
+    expect(normalizeClubPlayerStreetForDb("ul.")).toBeNull();
   });
 });
 

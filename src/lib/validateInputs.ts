@@ -12,6 +12,15 @@ export function toTitleCase(value: string): string {
     .join(" ");
 }
 
+/** Club player street in DB: always `ul. ` + title-cased remainder; strips a duplicate `ul.` prefix from input. */
+export function normalizeClubPlayerStreetForDb(raw: string): string | null {
+  const t = raw.trim();
+  if (!t) return null;
+  const withoutUl = t.replace(/^ul\.?\s*/i, "").trim();
+  if (!withoutUl) return null;
+  return `ul. ${toTitleCase(withoutUl)}`;
+}
+
 // ─── Phone fields ──────────────────────────────────────────────────────────────
 
 /** Strips non-digits and limits to 9 characters as the user types. */

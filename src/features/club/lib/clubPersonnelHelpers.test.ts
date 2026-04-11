@@ -42,14 +42,14 @@ describe("clubPersonnelHelpers", () => {
     expect(buildContactMapSearchUrl({})).toBeNull();
   });
 
-  it("buildContactMapSearchUrl encodes query for OpenStreetMap", () => {
+  it("buildContactMapSearchUrl encodes Google Maps query like tournament venue address", () => {
     const url = buildContactMapSearchUrl({
       address: "Sportowa 1",
       postalCode: "80-001",
       city: "Gdańsk",
     });
-    expect(url).toContain(encodeURIComponent("Sportowa 1"));
-    expect(url).toContain("openstreetmap.org");
+    expect(url).toContain("google.com/maps/search");
+    expect(url).toContain(encodeURIComponent("Sportowa 1, 80-001 Gdańsk"));
   });
 
   it("computeAgeFromIsoDateString returns full years", () => {

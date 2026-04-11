@@ -1,4 +1,5 @@
 import { differenceInYears, parseISO } from "date-fns";
+import { buildGoogleMapsSearchUrl } from "@/lib/addressDisplay";
 import type { FieldError, FieldErrors, FieldValues, Resolver } from "react-hook-form";
 import type { ZodError } from "zod";
 
@@ -16,7 +17,7 @@ const CLUB_PLAYER_FIELD_LABELS: Record<string, string> = {
   birthDate: "Data urodzenia",
   contactEmail: "Email kontaktowy",
   contactPhone: "Telefon kontaktowy",
-  contactAddress: "Adres",
+  contactAddress: "Ulica",
   contactCity: "Miasto",
   contactPostalCode: "Kod pocztowy",
   contactMapUrl: "Link do mapy",
@@ -52,15 +53,18 @@ export function extractClubApiErrorMessage(data: unknown, fallback: string): str
   return fallback;
 }
 
-/** OpenStreetMap search link from address parts (no external API keys). */
+/** Google Maps search URL from street + postal + city (same pattern as tournament hall / hotel). */
 export function buildContactMapSearchUrl(parts: {
   address?: string | null;
   postalCode?: string | null;
   city?: string | null;
 }): string | null {
-  const chunks = [parts.address?.trim(), parts.postalCode?.trim(), parts.city?.trim()].filter(Boolean);
-  if (chunks.length === 0) return null;
-  return `https://www.openstreetmap.org/search?query=${encodeURIComponent(chunks.join(", "))}`;
+  const street = parts.address?.trim() ?? "";
+  const postal = parts.postalCode?.trim() ?? "";
+  const city = parts.city?.trim() ?? "";
+  const cityLine = [postal, city].filter(Boolean).join(" ").trim();
+  const fullAddress = [street, cityLine].filter(Boolean).join(", ");
+  return buildGoogleMapsSearchUrl({ name: "", address: fullAddress || undefined });
 }
 
 /** Age in full years from ISO date string (e.g. API JSON); null if invalid / missing. */

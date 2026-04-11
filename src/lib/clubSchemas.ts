@@ -4,6 +4,7 @@ import {
   MAX_SHORT_TEXT,
   POSTAL_CODE_REGEX,
   requiredFirstNameSchema,
+  normalizeClubPlayerStreetForDb,
   requiredLastNameSchema,
   toTitleCase,
 } from "@/lib/validateInputs";
@@ -188,7 +189,7 @@ export const ClubPlayerSchema = ClubPlayerFieldsSchema.transform((o) => ({
   ...o,
   firstName: toTitleCase(o.firstName.trim()),
   lastName: toTitleCase(o.lastName.trim()),
-  contactAddress: o.contactAddress?.trim() ? toTitleCase(o.contactAddress.trim()) : null,
+  contactAddress: o.contactAddress?.trim() ? normalizeClubPlayerStreetForDb(o.contactAddress.trim()) : null,
   contactCity: o.contactCity?.trim() ? toTitleCase(o.contactCity.trim()) : null,
   contactPostalCode: o.contactPostalCode?.trim() ? o.contactPostalCode.trim() : null,
   contactMapUrl: o.contactMapUrl?.trim() ? o.contactMapUrl.trim() : null,

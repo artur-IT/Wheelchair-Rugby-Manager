@@ -4,9 +4,23 @@ import {
   ClubStaffFieldsSchema,
   ClubVolunteerFieldsSchema,
 } from "@/lib/clubSchemas";
+import { z } from "@/lib/zodPl";
+
+/** Optional 1–5 rating in the form; empty string means not set (stored as null in DB). */
+const optionalSkillRatingForm = z.union([
+  z.literal(""),
+  z.number().int().min(1, "Ocena od 1 do 5").max(5, "Ocena od 1 do 5"),
+]);
 
 /** Form validation matches API `ClubPlayerFieldsSchema` without `clubId` (added on submit). */
-export const clubPlayerFormSchema = ClubPlayerFieldsSchema.omit({ clubId: true });
+export const clubPlayerFormSchema = ClubPlayerFieldsSchema.omit({ clubId: true }).extend({
+  speed: optionalSkillRatingForm.optional(),
+  strength: optionalSkillRatingForm.optional(),
+  endurance: optionalSkillRatingForm.optional(),
+  technique: optionalSkillRatingForm.optional(),
+  mentality: optionalSkillRatingForm.optional(),
+  tactics: optionalSkillRatingForm.optional(),
+});
 
 export const clubCoachFormSchema = ClubCoachRefereeFieldsSchema.omit({ clubId: true });
 
@@ -30,6 +44,13 @@ export interface ClubPlayerFormValues {
   contactCity: string;
   contactPostalCode: string;
   contactMapUrl: string;
+  /** Empty string = not rated (null in API). */
+  speed: number | "";
+  strength: number | "";
+  endurance: number | "";
+  technique: number | "";
+  mentality: number | "";
+  tactics: number | "";
 }
 
 /** Values kept as plain strings in RHF before Zod preprocess on submit. */
