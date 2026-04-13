@@ -83,49 +83,60 @@ function DrawerContent({
   onLogout: () => Promise<void>;
 }) {
   return (
-    <Box sx={{ width: "100%", p: 2 }}>
-      <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
-        <Avatar sx={{ bgcolor: "primary.main", width: 40, height: 40 }}>
-          <Trophy size={24} />
-        </Avatar>
-        <Typography variant="h6" sx={{ fontWeight: "bold", lineHeight: 1.2 }}>
-          {APP_TITLE}
-        </Typography>
-      </Box>
+    <Box sx={{ width: "100%", p: 2, display: "flex", flexDirection: "column", minHeight: "100%" }}>
+      <Box>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
+          <Avatar sx={{ bgcolor: "primary.main", width: 40, height: 40 }}>
+            <Trophy size={24} />
+          </Avatar>
+          <Typography variant="h6" sx={{ fontWeight: "bold", lineHeight: 1.2 }}>
+            {APP_TITLE}
+          </Typography>
+        </Box>
 
-      <List sx={{ mb: 3 }}>
-        {MENU_ITEMS.map(({ href, icon: Icon, label }) => (
+        <List sx={{ mb: 3 }}>
+          {MENU_ITEMS.map(({ href, icon: Icon, label }) => (
+            <NavigationItem
+              key={href}
+              href={href}
+              label={label}
+              icon={<Icon size={20} />}
+              selected={isPathActive(currentPath, href)}
+              onClick={onCloseMobile}
+            />
+          ))}
+        </List>
+
+        <Divider sx={{ my: 2 }} />
+
+        <List>
           <NavigationItem
-            key={href}
-            href={href}
-            label={label}
-            icon={<Icon size={20} />}
-            selected={isPathActive(currentPath, href)}
+            href="/profile"
+            label="Mój Profil"
+            icon={<UserCircle size={20} />}
+            selected={isPathActive(currentPath, "/profile")}
             onClick={onCloseMobile}
           />
-        ))}
-      </List>
 
-      <Divider sx={{ my: 2 }} />
-
-      <List>
-        <NavigationItem
-          href="/profile"
-          label="Mój Profil"
-          icon={<UserCircle size={20} />}
-          selected={isPathActive(currentPath, "/profile")}
-          onClick={onCloseMobile}
-        />
-
-        <ListItem disablePadding>
-          <ListItemButton onClick={() => void onLogout()} sx={{ borderRadius: 1.5, color: "error.main" }}>
-            <ListItemIcon sx={{ minWidth: 40, color: "inherit" }}>
-              <LogOut size={20} />
-            </ListItemIcon>
-            <ListItemText primary="Wyloguj" />
-          </ListItemButton>
-        </ListItem>
-      </List>
+          <ListItem disablePadding>
+            <ListItemButton onClick={() => void onLogout()} sx={{ borderRadius: 1.5, color: "error.main" }}>
+              <ListItemIcon sx={{ minWidth: 40, color: "inherit" }}>
+                <LogOut size={20} />
+              </ListItemIcon>
+              <ListItemText primary="Wyloguj" />
+            </ListItemButton>
+          </ListItem>
+        </List>
+      </Box>
+      <Typography
+        variant="body2"
+        sx={{
+          textAlign: "center",
+          mt: "auto",
+        }}
+      >
+        v.2.0
+      </Typography>
     </Box>
   );
 }
@@ -223,13 +234,13 @@ export default function AppShell({ children, currentPath, containerMaxWidth = "l
             ...clubMobilePortraitCompactHorizontalPaddingSx(theme),
           })}
         >
-          <Container
-            maxWidth={containerMaxWidth}
-            sx={(theme) => clubMobilePortraitCompactHorizontalPaddingSx(theme)}
-          >
+          <Container maxWidth={containerMaxWidth} sx={(theme) => clubMobilePortraitCompactHorizontalPaddingSx(theme)}>
             {children}
           </Container>
         </Box>
+        <Typography variant="body2" sx={{ textAlign: "center", mt: 2 }}>
+          v.2.0
+        </Typography>
       </Box>
     </Box>
   );

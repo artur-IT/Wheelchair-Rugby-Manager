@@ -64,7 +64,7 @@ const PLAYER_SKILL_FIELDS = [
 ];
 
 /** Narrow player card; maxWidth keeps it inside the viewport on small screens. */
-const PLAYER_LIST_TILE_WIDTH_PX = 300;
+const PLAYER_LIST_TILE_WIDTH_PX = 310;
 
 const statusLabel = (s: ClubPlayerDto["status"] | undefined) =>
   STATUS_OPTIONS.find((o) => o.value === (s ?? "ACTIVE"))?.label ?? s ?? "ACTIVE";
@@ -572,7 +572,7 @@ export default function ClubPlayersPersonnelSection({
                   sx={{
                     display: "grid",
                     gridTemplateColumns: { xs: "1fr", sm: "repeat(2, minmax(0, 1fr))" },
-                    gap: 2,
+                    gap: 1.5,
                     pt: 2,
                   }}
                 >
