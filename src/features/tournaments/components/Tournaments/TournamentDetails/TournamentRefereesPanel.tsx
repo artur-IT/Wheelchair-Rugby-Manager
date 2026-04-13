@@ -23,11 +23,7 @@ export default function TournamentRefereesPanel({
     <Paper sx={{ p: 3, borderRadius: 3, maxWidth: "100%", minWidth: 0, boxSizing: "border-box", height: "100%" }}>
       <Typography variant="h6" sx={{ fontWeight: "bold", mb: 0.5 }}>
         Sędziowie
-        <Box
-          component="span"
-          aria-hidden="true"
-          sx={{ fontSize: "0.875rem", fontWeight: 400, color: "text.secondary", ml: 1 }}
-        >
+        <Box component="span" sx={{ fontSize: "0.875rem", fontWeight: 400, color: "text.secondary", ml: 1 }}>
           ({tournament.referees.length})
         </Box>
       </Typography>

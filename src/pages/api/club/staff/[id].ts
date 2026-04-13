@@ -48,9 +48,10 @@ export const PUT: APIRoute = async ({ params, request, cookies }) => {
   const roleParsed = parseWithSchema(ClubStaffRoleSchema, bodyResult.data);
   if (!roleParsed.ok) return roleParsed.response;
 
+  const { clubId: _clubId, ...personFields } = personParsed.data;
   const updated = await prisma.clubStaff.update({
     where: { id },
-    data: { ...personParsed.data, role: roleParsed.data.role },
+    data: { ...personFields, role: roleParsed.data.role },
   });
   return json(updated);
 };

@@ -481,6 +481,7 @@ model ClubStaff {
   role        ClubPersonRole @default(OTHER)
   email       String?
   phone       String?
+  notes       String?
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
   clubId      String

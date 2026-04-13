@@ -40,6 +40,7 @@ import {
 } from "@/features/club/lib/clubPersonnelHelpers";
 import type { ClubPlayerDto } from "@/features/club/components/ClubPage/types";
 import { resolvePlaceMapsHref } from "@/lib/addressDisplay";
+import { blurActiveElement } from "@/lib/a11y/blurActiveElement";
 import { CLUB_PLAYER_CLASSIFICATION_VALUES } from "@/lib/clubSchemas";
 import { MAX_LONG_TEXT, MAX_SHORT_TEXT } from "@/lib/validateInputs";
 import { sanitizePhone } from "@/lib/validateInputs";
@@ -370,7 +371,14 @@ export default function ClubPlayersPersonnelSection({
           severity="info"
           sx={{ mb: 2 }}
           action={
-            <Button color="inherit" size="small" onClick={() => setDialogOpen(true)}>
+            <Button
+              color="inherit"
+              size="small"
+              onClick={() => {
+                blurActiveElement();
+                setDialogOpen(true);
+              }}
+            >
               Dodaj zawodnika
             </Button>
           }
@@ -393,6 +401,7 @@ export default function ClubPlayersPersonnelSection({
           variant="contained"
           size="small"
           onClick={() => {
+            blurActiveElement();
             setEditing(null);
             setDialogOpen(true);
           }}
@@ -442,7 +451,7 @@ export default function ClubPlayersPersonnelSection({
               {/* Root is a div so nested Edytuj/Usuń <button> stays valid HTML (accordion region still toggles on click). */}
               <AccordionSummary
                 component="div"
-                expandIcon={<ExpandMoreIcon aria-hidden />}
+                expandIcon={<ExpandMoreIcon />}
                 sx={{
                   alignItems: "flex-start",
                   px: 2,
@@ -527,6 +536,7 @@ export default function ClubPlayersPersonnelSection({
                     variant="outlined"
                     onClick={(e) => {
                       e.stopPropagation();
+                      blurActiveElement();
                       setEditing(p);
                       setDialogOpen(true);
                     }}
@@ -540,6 +550,7 @@ export default function ClubPlayersPersonnelSection({
                     disabled={deleteMutation.isPending && deleteTarget?.id === p.id}
                     onClick={(e) => {
                       e.stopPropagation();
+                      blurActiveElement();
                       setDeleteTarget(p);
                     }}
                   >
@@ -589,7 +600,17 @@ export default function ClubPlayersPersonnelSection({
         })}
       </Stack>
 
-      <Dialog open={dialogOpen} onClose={() => !saveMutation.isPending && setDialogOpen(false)} fullWidth maxWidth="sm">
+      <Dialog
+        open={dialogOpen}
+        onClose={() => {
+          if (saveMutation.isPending) return;
+          blurActiveElement();
+          setDialogOpen(false);
+        }}
+        fullWidth
+        maxWidth="sm"
+        disableRestoreFocus
+      >
         <DialogTitle>{editing ? "Edytuj zawodnika" : "Nowy zawodnik"}</DialogTitle>
         <DialogContent>
           <Box
@@ -910,7 +931,13 @@ export default function ClubPlayersPersonnelSection({
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDialogOpen(false)} disabled={saveMutation.isPending}>
+          <Button
+            onClick={() => {
+              blurActiveElement();
+              setDialogOpen(false);
+            }}
+            disabled={saveMutation.isPending}
+          >
             Anuluj
           </Button>
           <Button type="submit" form="club-player-form" variant="contained" disabled={saveMutation.isPending}>

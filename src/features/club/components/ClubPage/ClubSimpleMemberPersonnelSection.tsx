@@ -24,6 +24,7 @@ import {
 } from "@/features/club/lib/clubPersonnelHelpers";
 import PersonnelTable from "@/features/settings/components/SettingsPage/PersonnelTable";
 import type { Person } from "@/types";
+import { blurActiveElement } from "@/lib/a11y/blurActiveElement";
 import { MAX_SHORT_TEXT } from "@/lib/validateInputs";
 import { sanitizePhone } from "@/lib/validateInputs";
 
@@ -33,6 +34,7 @@ export interface ClubSimpleMemberRow {
   lastName: string;
   email?: string | null;
   phone?: string | null;
+  notes?: string | null;
 }
 
 export interface ClubSimpleMemberSectionConfig {
@@ -66,6 +68,7 @@ const emptyForm: ClubSimplePersonFormValues = {
   lastName: "",
   email: "",
   phone: "",
+  notes: "",
 };
 
 export default function ClubSimpleMemberPersonnelSection({
@@ -94,6 +97,7 @@ export default function ClubSimpleMemberPersonnelSection({
         lastName: editing.lastName ?? "",
         email: editing.email ?? "",
         phone: editing.phone ?? "",
+        notes: editing.notes ?? "",
       });
       return;
     }
@@ -125,6 +129,7 @@ export default function ClubSimpleMemberPersonnelSection({
         lastName: values.lastName,
         email: values.email || null,
         phone: values.phone || null,
+        notes: (values.notes && values.notes.trim()) ? values.notes.trim() : null,
       };
       if (editing) {
         const res = await fetch(config.putUrl(editing.id), {
@@ -177,6 +182,7 @@ export default function ClubSimpleMemberPersonnelSection({
         lastName: displayOptionalLastName(m.lastName),
         email: m.email ?? undefined,
         phone: m.phone ?? "",
+        notes: m.notes ?? undefined,
       })),
     [members]
   );
@@ -200,7 +206,14 @@ export default function ClubSimpleMemberPersonnelSection({
           severity="info"
           sx={{ mb: 2 }}
           action={
-            <Button color="inherit" size="small" onClick={() => setDialogOpen(true)}>
+            <Button
+              color="inherit"
+              size="small"
+              onClick={() => {
+                blurActiveElement();
+                setDialogOpen(true);
+              }}
+            >
               Dodaj osobę
             </Button>
           }
@@ -219,23 +232,37 @@ export default function ClubSimpleMemberPersonnelSection({
         title={config.listTitle}
         data={tableRows}
         onAddClick={() => {
+          blurActiveElement();
           setEditing(null);
           setDialogOpen(true);
         }}
         onEdit={(person) => {
           const row = members.find((m) => m.id === person.id);
           if (!row) return;
+          blurActiveElement();
           setEditing(row);
           setDialogOpen(true);
         }}
         onDelete={(person) => {
           const row = members.find((m) => m.id === person.id);
-          if (row) setDeleteTarget(row);
+          if (!row) return;
+          blurActiveElement();
+          setDeleteTarget(row);
         }}
         deletingId={deleteMutation.isPending ? (deleteTarget?.id ?? null) : null}
       />
 
-      <Dialog open={dialogOpen} onClose={() => !saveMutation.isPending && setDialogOpen(false)} fullWidth maxWidth="xs">
+      <Dialog
+        open={dialogOpen}
+        onClose={() => {
+          if (saveMutation.isPending) return;
+          blurActiveElement();
+          setDialogOpen(false);
+        }}
+        fullWidth
+        maxWidth="xs"
+        disableRestoreFocus
+      >
         <DialogTitle>{editing ? config.dialogEditTitle : config.dialogAddTitle}</DialogTitle>
         <DialogContent>
           <Box
@@ -310,10 +337,33 @@ export default function ClubSimpleMemberPersonnelSection({
                 />
               )}
             />
+            <Controller
+              name="notes"
+              control={form.control}
+              render={({ field, fieldState }) => (
+                <TextField
+                  {...field}
+                  value={field.value ?? ""}
+                  label="Uwagi"
+                  placeholder="Dodatkowe informacje o osobie"
+                  multiline
+                  rows={3}
+                  error={Boolean(fieldState.error)}
+                  helperText={fieldState.error?.message}
+                  inputProps={{ maxLength: 500 }}
+                />
+              )}
+            />
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDialogOpen(false)} disabled={saveMutation.isPending}>
+          <Button
+            onClick={() => {
+              blurActiveElement();
+              setDialogOpen(false);
+            }}
+            disabled={saveMutation.isPending}
+          >
             Anuluj
           </Button>
           <Button type="submit" form="club-simple-member-form" variant="contained" disabled={saveMutation.isPending}>

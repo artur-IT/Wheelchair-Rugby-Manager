@@ -28,7 +28,7 @@ First use MUI solutions if possible then:
 - Apply appropriate ARIA roles to custom interface elements that lack semantic HTML equivalents
 - Set aria-expanded and aria-controls for expandable content like accordions and dropdowns
 - Use aria-live regions with appropriate politeness settings for dynamic content updates
-- Implement aria-hidden to hide decorative or duplicative content from screen readers
+
 - Apply aria-label or aria-labelledby for elements without visible text labels
 - Use aria-describedby to associate descriptive text with form inputs or complex elements
 - Implement aria-current for indicating the current item in a set, navigation, or process

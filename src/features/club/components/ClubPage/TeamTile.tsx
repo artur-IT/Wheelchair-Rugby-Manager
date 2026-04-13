@@ -52,7 +52,7 @@ export default function TeamTile({
     >
       <AccordionSummary
         component="div"
-        expandIcon={<ExpandMoreIcon aria-hidden />}
+        expandIcon={<ExpandMoreIcon />}
         sx={{
           px: 2,
           py: 1.5,

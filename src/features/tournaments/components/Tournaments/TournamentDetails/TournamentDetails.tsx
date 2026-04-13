@@ -330,7 +330,6 @@ function TournamentDetailsContent({ id }: TournamentDetailsProps) {
             </Typography>
             <ChevronDown
               size={22}
-              aria-hidden
               style={{
                 flexShrink: 0,
                 transition: "transform 0.2s ease",
