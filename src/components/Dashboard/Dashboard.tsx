@@ -94,12 +94,11 @@ function DashboardContent() {
   }, [seasonData]);
 
   const welcomeHeading =
-    userLoadStatus === "ready" && currentUser
+    userLoadStatus === "ready" && currentUser?.name
       ? `Witaj, ${splitDisplayName(currentUser.name).firstName || currentUser.name}!`
       : userLoadStatus === "loading"
         ? "Witaj!"
         : "Witaj, Organizatorze!";
-
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
       <Box>

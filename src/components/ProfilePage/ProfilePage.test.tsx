@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { hydrateRoot } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import { act } from "react-dom/test-utils";
@@ -42,7 +42,10 @@ describe("ProfilePage SSR hydration", () => {
     container.innerHTML = markup;
     document.body.appendChild(container);
 
-    const err = vi.spyOn(console, "error").mockImplementation(() => {});
+    const err = vi.spyOn(console, "error").mockImplementation((...args) => {
+      console.log("console.error", args);
+      return undefined;
+    });
 
     act(() => {
       hydrateRoot(container, <ProfilePage />);

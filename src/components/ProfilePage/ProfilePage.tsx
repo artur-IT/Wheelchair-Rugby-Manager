@@ -25,7 +25,7 @@ function ProfileContent() {
   const [success, setSuccess] = useState<string | null>(null);
 
   // Keep the inputs aligned with the current profile fetched from context.
-  const helperDefault = user ? user.passwordResetEmail ?? user.email ?? "" : "";
+  const helperDefault = user ? (user.passwordResetEmail ?? user.email ?? "") : "";
 
   useEffect(() => {
     if (!user) {
@@ -55,7 +55,7 @@ function ProfileContent() {
 
   const trimmedHelperInput = helperEmail.trim();
   const normalizedHelper = trimmedHelperInput === "" ? "" : trimmedHelperInput.toLowerCase();
-  const helperDirty = normalizedHelper !== helperDefault;
+  const helperDirty = normalizedHelper !== helperDefault.toLowerCase();
   const displayNameDirty = displayName.trim() !== user.name;
   const canSave = (helperDirty || displayNameDirty) && !saving;
 
@@ -126,11 +126,7 @@ function ProfileContent() {
           </Typography>
         </Box>
       </Box>
-      <Box
-        component="form"
-        onSubmit={handleSubmit}
-        sx={{ mt: 3, display: "flex", flexDirection: "column", gap: 2 }}
-      >
+      <Box component="form" onSubmit={handleSubmit} sx={{ mt: 3, display: "flex", flexDirection: "column", gap: 2 }}>
         <TextField
           label="Wyświetlana nazwa"
           value={displayName}

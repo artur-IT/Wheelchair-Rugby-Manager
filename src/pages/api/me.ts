@@ -4,6 +4,8 @@ import { getRequesterIdentity } from "@/lib/clubAuth";
 import { prisma } from "@/lib/prisma";
 import { z } from "@/lib/zodPl";
 
+export const prerender = false;
+
 const UpdateCurrentUserSchema = z.object({
   name: z.string().trim().min(1).max(60),
   passwordResetEmail: z
@@ -16,7 +18,7 @@ const UpdateCurrentUserSchema = z.object({
 
 export const GET: APIRoute = async ({ cookies }) => {
   const auth = await getRequesterIdentity(cookies);
-  if (!auth.ok) {
+  if ("response" in auth) {
     return auth.response;
   }
 
@@ -41,11 +43,16 @@ export const GET: APIRoute = async ({ cookies }) => {
 
 export const PATCH: APIRoute = async ({ cookies, request }) => {
   const auth = await getRequesterIdentity(cookies);
-  if (!auth.ok) {
+  if ("response" in auth) {
     return auth.response;
   }
 
-  const rawBody = await request.json().catch(() => ({}));
+  let rawBody;
+  try {
+    rawBody = await request.json();
+  } catch {
+    return json({ error: "Nieprawidłowy format JSON." }, 400);
+  }
   const parsed = UpdateCurrentUserSchema.safeParse(rawBody);
   if (!parsed.success) {
     const fieldErrors = parsed.error.flatten().fieldErrors;
