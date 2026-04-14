@@ -1,4 +1,8 @@
-import { beforeAll, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+
+vi.mock("@/lib/clubAuth", () => ({
+  getRequesterIdentity: vi.fn(),
+}));
 
 vi.mock("@/lib/prisma", () => ({
   prisma: {
@@ -19,7 +23,18 @@ beforeAll(async () => {
 });
 
 describe("club API /api/club", () => {
+  beforeEach(async () => {
+    const { getRequesterIdentity } = await import("@/lib/clubAuth");
+    vi.mocked(getRequesterIdentity).mockReset();
+  });
+
   it("GET returns 401 without session user id", async () => {
+    const { getRequesterIdentity } = await import("@/lib/clubAuth");
+    vi.mocked(getRequesterIdentity).mockResolvedValueOnce({
+      ok: false,
+      response: new Response(null, { status: 401 }),
+    });
+
     const response = await GET({
       cookies: { get: vi.fn().mockReturnValue(undefined) },
     } as never);
@@ -28,6 +43,12 @@ describe("club API /api/club", () => {
   });
 
   it("GET returns 200 for logged in user", async () => {
+    const { getRequesterIdentity } = await import("@/lib/clubAuth");
+    vi.mocked(getRequesterIdentity).mockResolvedValueOnce({
+      ok: true,
+      identity: { userId: "owner-1", role: "ADMIN" },
+    });
+
     const { prisma } = await import("@/lib/prisma");
     vi.mocked(prisma.club.findMany).mockResolvedValueOnce([]);
 
@@ -41,6 +62,12 @@ describe("club API /api/club", () => {
   });
 
   it("POST returns 400 for invalid JSON body", async () => {
+    const { getRequesterIdentity } = await import("@/lib/clubAuth");
+    vi.mocked(getRequesterIdentity).mockResolvedValueOnce({
+      ok: true,
+      identity: { userId: "owner-1", role: "ADMIN" },
+    });
+
     const request = new Request("http://localhost/api/club", {
       method: "POST",
       body: "{",

@@ -12,6 +12,7 @@ export default defineConfig({
     // mirrors tsconfig paths alias @/* -> src/*
     alias: {
       "@": resolve(__dirname, "./src"),
+      "astro:transitions/client": resolve(__dirname, "./astro-transitions-client.stub.ts"),
     },
   },
 });

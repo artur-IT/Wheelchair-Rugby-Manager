@@ -38,6 +38,7 @@ export const GET: APIRoute = async ({ cookies, redirect, url }) => {
             name: displayName,
             email,
             passwordHash: null,
+            mustResetPassword: false,
             authProvider: "GOOGLE",
             localLogin: null,
             googleSub: sub,

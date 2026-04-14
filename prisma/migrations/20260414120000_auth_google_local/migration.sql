@@ -13,13 +13,15 @@ ALTER TABLE "User" ADD COLUMN "authProvider" "AuthProvider";
 ALTER TABLE "User" ADD COLUMN "localLogin" TEXT;
 ALTER TABLE "User" ADD COLUMN "passwordHash" TEXT;
 ALTER TABLE "User" ADD COLUMN "googleSub" TEXT;
+ALTER TABLE "User" ADD COLUMN "mustResetPassword" BOOLEAN NOT NULL DEFAULT false;
 
--- Backfill existing users as LOCAL demo accounts
+-- Backfill existing users as LOCAL accounts: no shared password; users must set a password once.
 UPDATE "User"
 SET
   "authProvider" = 'LOCAL',
   "localLogin" = lower(left(split_part("email", '@', 1), 6)),
-  "passwordHash" = '$argon2id$v=19$m=65536,t=3,p=4$5LTu0h+P1X0cs1pjXRRFbA$nJeHZYxQRTnw6H/0UsRWepDX+W0XZexN17rLq6Gas1c';
+  "passwordHash" = NULL,
+  "mustResetPassword" = true;
 
 ALTER TABLE "User" ALTER COLUMN "authProvider" SET NOT NULL;
 

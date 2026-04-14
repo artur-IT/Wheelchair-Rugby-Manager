@@ -5,7 +5,7 @@
 export function getPublicSiteUrl(requestUrl: URL): string {
   const fromEnv = import.meta.env.PUBLIC_SITE_URL;
   if (typeof fromEnv === "string" && fromEnv.trim().length > 0) {
-    return fromEnv.replace(/\/$/, "");
+    return fromEnv.trim().replace(/\/$/, "");
   }
   return requestUrl.origin;
 }

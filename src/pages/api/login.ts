@@ -19,11 +19,15 @@ async function parseLoginPayload(request: Request): Promise<unknown> {
       return null;
     }
   }
-  const form = await request.formData();
-  return {
-    localLogin: String(form.get("localLogin") ?? ""),
-    password: String(form.get("password") ?? ""),
-  };
+  try {
+    const form = await request.formData();
+    return {
+      localLogin: String(form.get("localLogin") ?? ""),
+      password: String(form.get("password") ?? ""),
+    };
+  } catch {
+    return null;
+  }
 }
 
 export const POST: APIRoute = async ({ request, cookies, redirect, url }) => {
@@ -41,7 +45,7 @@ export const POST: APIRoute = async ({ request, cookies, redirect, url }) => {
   const { localLogin, password } = parsed.data;
   const user = await prisma.user.findFirst({
     where: { authProvider: "LOCAL", localLogin },
-    select: { id: true, role: true, passwordHash: true },
+    select: { id: true, role: true, passwordHash: true, mustResetPassword: true },
   });
 
   if (!user?.passwordHash) {
@@ -59,5 +63,9 @@ export const POST: APIRoute = async ({ request, cookies, redirect, url }) => {
 
   setAuthSessionCookies(cookies, { userId: user.id, role: user.role, requestUrl: url });
 
-  return wantsJson ? json({ ok: true }) : redirect("/dashboard");
+  if (user.mustResetPassword) {
+    return wantsJson ? json({ ok: true, mustResetPassword: true }) : redirect("/reset-password");
+  }
+
+  return wantsJson ? json({ ok: true, mustResetPassword: false }) : redirect("/dashboard");
 };

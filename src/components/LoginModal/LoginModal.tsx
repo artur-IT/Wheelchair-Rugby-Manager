@@ -14,6 +14,7 @@ import {
   Typography,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
+import { assignLocation } from "@/lib/navigation/assignLocation";
 
 interface Props {
   open: boolean;
@@ -56,9 +57,13 @@ export default function LoginModal({ open, onClose, onLoginSuccess }: Props) {
         headers: { Accept: "application/json", "Content-Type": "application/json" },
         body: JSON.stringify({ localLogin, password }),
       });
-      const data = (await res.json()) as { ok?: boolean };
+      const data = (await res.json()) as { ok?: boolean; mustResetPassword?: boolean };
 
       if (data.ok) {
+        if (data.mustResetPassword) {
+          assignLocation("/reset-password");
+          return;
+        }
         handleLoginSuccess();
         return;
       }

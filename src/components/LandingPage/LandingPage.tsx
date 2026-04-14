@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Trophy } from "lucide-react";
 import { motion } from "motion/react";
 import { Button, Grid, Card, CardContent, Box, Typography, Stack } from "@mui/material";
+import { navigate } from "astro:transitions/client";
 import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
 import LoginModal from "@/components/LoginModal/LoginModal";
 
@@ -76,6 +77,10 @@ export default function LandingPage() {
   const [loginOpen, setLoginOpen] = useState(false);
   const openLogin = () => setLoginOpen(true);
   const closeLogin = () => setLoginOpen(false);
+  // Client-side route swap (needs <ClientRouter /> in layout); avoids full document reload.
+  const goRegister = () => {
+    void navigate("/register");
+  };
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -94,7 +99,7 @@ export default function LandingPage() {
             </Typography>
           </Box>
           <Stack direction="row" spacing={1} alignItems="center">
-            <Button component="a" href="/register" variant="outlined" color="inherit">
+            <Button type="button" variant="outlined" color="inherit" onClick={goRegister}>
               Załóż konto
             </Button>
             <Button variant="contained" onClick={openLogin}>

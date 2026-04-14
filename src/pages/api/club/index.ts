@@ -1,15 +1,15 @@
 import type { APIRoute } from "astro";
 import { json } from "@/lib/api";
+import { getRequesterIdentity } from "@/lib/clubAuth";
 import { prisma } from "@/lib/prisma";
 import { ClubUpsertSchema } from "@/lib/clubSchemas";
 import { clubInclude } from "@/lib/club";
 import { mapPrismaError, parseRequestJson, parseWithSchema } from "@/lib/clubApiHelpers";
 
-const getSessionOwnerUserId = (cookieValue: string | undefined) => cookieValue?.trim() || null;
-
 export const GET: APIRoute = async ({ cookies }) => {
-  const ownerUserId = getSessionOwnerUserId(cookies.get("sessionUserId")?.value);
-  if (!ownerUserId) return json({ error: "Brak aktywnej sesji użytkownika" }, 401);
+  const auth = await getRequesterIdentity(cookies);
+  if (!auth.ok) return auth.response;
+  const ownerUserId = auth.identity.userId;
 
   const clubs = await prisma.club.findMany({
     where: { ownerUserId },
@@ -20,8 +20,9 @@ export const GET: APIRoute = async ({ cookies }) => {
 };
 
 export const POST: APIRoute = async ({ request, cookies }) => {
-  const ownerUserId = getSessionOwnerUserId(cookies.get("sessionUserId")?.value);
-  if (!ownerUserId) return json({ error: "Brak aktywnej sesji użytkownika" }, 401);
+  const auth = await getRequesterIdentity(cookies);
+  if (!auth.ok) return auth.response;
+  const ownerUserId = auth.identity.userId;
 
   const bodyResult = await parseRequestJson(request);
   if (!bodyResult.ok) return bodyResult.response;

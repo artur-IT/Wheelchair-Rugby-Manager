@@ -12,7 +12,8 @@ export const GET: APIRoute = async ({ cookies, redirect, url }) => {
     cookies.set("google_oauth_state", state, cookieBase);
     cookies.set("google_oauth_verifier", codeVerifier, cookieBase);
     return redirect(redirectTo.toString());
-  } catch {
-    return redirect("/?login=1&oauth=unconfigured");
+  } catch (error) {
+    console.error("[Google OAuth] Failed to start authorization flow:", error);
+    return redirect("/?login=1&oauth=error");
   }
 };

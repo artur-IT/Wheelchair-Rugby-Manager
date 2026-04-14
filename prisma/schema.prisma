@@ -14,6 +14,8 @@ model User {
   /// Null allowed for GOOGLE when email scope missing; required for LOCAL (enforced in app).
   email        String?       @unique
   passwordHash String?
+  /// When true, the user must set a new password before normal app access (middleware + APIs enforce).
+  mustResetPassword Boolean @default(false)
   authProvider AuthProvider
   /// Canonical lowercase nick for LOCAL login (1–6 chars); null for GOOGLE-only accounts.
   localLogin   String?       @unique

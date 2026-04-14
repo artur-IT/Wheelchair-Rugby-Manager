@@ -22,7 +22,7 @@ type AuthResult = AuthSuccess | AuthFailure;
 const unauthorized = () => ({ ok: false as const, response: json({ error: "Brak autoryzacji" }, 401) });
 const forbidden = () => ({ ok: false as const, response: json({ error: "Brak uprawnień" }, 403) });
 
-async function getRequesterIdentity(cookies: AstroCookies): Promise<AuthResult> {
+export async function getRequesterIdentity(cookies: AstroCookies): Promise<AuthResult> {
   const sessionValue = cookies.get("session")?.value;
   if (sessionValue !== "ok") {
     return unauthorized();
@@ -35,10 +35,17 @@ async function getRequesterIdentity(cookies: AstroCookies): Promise<AuthResult> 
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { id: true, role: true },
+    select: { id: true, role: true, mustResetPassword: true },
   });
   if (!user) {
     return unauthorized();
+  }
+
+  if (user.mustResetPassword) {
+    return {
+      ok: false as const,
+      response: json({ error: "Wymagana zmiana hasła.", code: "PASSWORD_RESET_REQUIRED" }, 403),
+    };
   }
 
   const role = user.role;

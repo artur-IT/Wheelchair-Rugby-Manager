@@ -32,22 +32,26 @@ export default function RegisterPage() {
 
   const onSubmit = handleSubmit(async (values) => {
     setSubmitError(null);
-    const res = await fetch("/api/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        localLogin: values.localLogin,
-        password: values.password,
-        email: values.email,
-        ...(values.name?.trim() ? { name: values.name.trim() } : {}),
-      }),
-    });
-    const data = (await res.json().catch(() => ({}))) as { error?: string };
-    if (!res.ok) {
-      setSubmitError(data.error ?? "Nie udało się utworzyć konta.");
-      return;
+    try {
+      const res = await fetch("/api/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          localLogin: values.localLogin,
+          password: values.password,
+          email: values.email,
+          ...(values.name?.trim() ? { name: values.name.trim() } : {}),
+        }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) {
+        setSubmitError(data.error ?? "Nie udało się utworzyć konta.");
+        return;
+      }
+      setPostRegisterRedirect("/?login=1&registered=1");
+    } catch {
+      setSubmitError("Błąd sieci. Sprawdź połączenie i spróbuj ponownie.");
     }
-    setPostRegisterRedirect("/?login=1&registered=1");
   });
 
   return (

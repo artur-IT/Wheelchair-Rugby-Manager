@@ -24,7 +24,12 @@ function requireGoogleEnv(): { clientId: string; clientSecret: string } {
 
 export async function getGoogleOidcConfiguration(): Promise<client.Configuration> {
   const { clientId, clientSecret } = requireGoogleEnv();
-  discoveryPromise ??= client.discovery(googleIssuer, clientId, clientSecret);
+  if (!discoveryPromise) {
+    discoveryPromise = client.discovery(googleIssuer, clientId, clientSecret).catch((err) => {
+      discoveryPromise = null; // Allow retry on transient failures
+      throw err;
+    });
+  }
   return discoveryPromise;
 }
 

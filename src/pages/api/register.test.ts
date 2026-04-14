@@ -46,6 +46,7 @@ describe("POST /api/register", () => {
 
   it("returns 201 when user is created", async () => {
     const { prisma } = await import("@/lib/prisma");
+    const { hashPassword } = await import("@/lib/auth/password");
     vi.mocked(prisma.user.create).mockResolvedValueOnce({} as never);
 
     const request = new Request("http://localhost/api/register", {
@@ -60,6 +61,7 @@ describe("POST /api/register", () => {
     });
     const res = await POST({ request } as never);
     expect(res.status).toBe(201);
+    expect(vi.mocked(hashPassword)).toHaveBeenCalledWith("password1");
     expect(vi.mocked(prisma.user.create)).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
@@ -67,6 +69,8 @@ describe("POST /api/register", () => {
           email: "abc@example.com",
           authProvider: "LOCAL",
           role: "ADMIN",
+          passwordHash: "argon2-hash",
+          mustResetPassword: false,
         }),
       })
     );

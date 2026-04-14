@@ -31,6 +31,7 @@ export const POST: APIRoute = async ({ request }) => {
         name: displayName,
         email,
         passwordHash,
+        mustResetPassword: false,
         authProvider: "LOCAL",
         localLogin,
         googleSub: null,

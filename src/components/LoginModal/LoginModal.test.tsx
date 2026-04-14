@@ -1,7 +1,12 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("@/lib/navigation/assignLocation", () => ({
+  assignLocation: vi.fn(),
+}));
+
+import { assignLocation } from "@/lib/navigation/assignLocation";
 import LoginModal from "./LoginModal";
 
 describe("LoginModal", () => {
@@ -49,13 +54,34 @@ describe("LoginModal", () => {
     await user.click(screen.getByRole("button", { name: "Zaloguj nickiem" }));
 
     expect(screen.getByRole("button", { name: "Logowanie…" })).toBeDisabled();
-    resolveLogin?.({ json: async () => ({ ok: true }) });
+    resolveLogin?.({ json: async () => ({ ok: true, mustResetPassword: false }) });
     await screen.findByRole("button", { name: "Zaloguj nickiem" });
+  });
+
+  it("redirects to password reset when server marks session as mustResetPassword", async () => {
+    const user = userEvent.setup();
+    vi.mocked(assignLocation).mockClear();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({ json: async () => ({ ok: true, mustResetPassword: true }) })
+    );
+    const onLoginSuccess = vi.fn();
+
+    render(<LoginModal open onClose={vi.fn()} onLoginSuccess={onLoginSuccess} />);
+
+    await user.type(screen.getByLabelText(/Nick \(login\)/i), "admin");
+    await user.type(screen.getByLabelText(/hasło/i), "demo-password");
+    await user.click(screen.getByRole("button", { name: "Zaloguj nickiem" }));
+
+    await waitFor(() => {
+      expect(assignLocation).toHaveBeenCalledWith("/reset-password");
+    });
+    expect(onLoginSuccess).not.toHaveBeenCalled();
   });
 
   it("submits login request and does not show error on success", async () => {
     const user = userEvent.setup();
-    const fetchMock = vi.fn().mockResolvedValue({ json: async () => ({ ok: true }) });
+    const fetchMock = vi.fn().mockResolvedValue({ json: async () => ({ ok: true, mustResetPassword: false }) });
     const onLoginSuccess = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
 
@@ -78,7 +104,7 @@ describe("LoginModal", () => {
 
   it("re-enables submit button after successful login with custom callback", async () => {
     const user = userEvent.setup();
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ json: async () => ({ ok: true }) }));
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ json: async () => ({ ok: true, mustResetPassword: false }) }));
 
     render(<LoginModal open onClose={vi.fn()} onLoginSuccess={vi.fn()} />);
 

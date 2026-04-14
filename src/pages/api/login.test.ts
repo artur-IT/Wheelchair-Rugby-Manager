@@ -62,6 +62,7 @@ describe("POST /api/login", () => {
       id: "u1",
       role: "ADMIN",
       passwordHash: "hash",
+      mustResetPassword: false,
     } as never);
     vi.mocked(verifyPassword).mockResolvedValueOnce(true);
 
@@ -80,6 +81,38 @@ describe("POST /api/login", () => {
     expect(res.status).toBe(200);
     const body = (await res.json()) as { ok: boolean };
     expect(body.ok).toBe(true);
+    expect(setAuthSessionCookies).toHaveBeenCalled();
+  });
+
+  it("returns mustResetPassword when user must change password after login", async () => {
+    const { prisma } = await import("@/lib/prisma");
+    const { verifyPassword } = await import("@/lib/auth/password");
+    const { setAuthSessionCookies } = await import("@/lib/auth/sessionCookies");
+
+    vi.mocked(prisma.user.findFirst).mockResolvedValueOnce({
+      id: "u1",
+      role: "ADMIN",
+      passwordHash: "hash",
+      mustResetPassword: true,
+    } as never);
+    vi.mocked(verifyPassword).mockResolvedValueOnce(true);
+
+    const request = new Request("http://localhost/api/login", {
+      method: "POST",
+      headers: { Accept: "application/json", "Content-Type": "application/json" },
+      body: JSON.stringify({ localLogin: "admin", password: "demo-password" }),
+    });
+
+    const res = await POST({
+      request,
+      cookies: cookies(),
+      redirect: vi.fn(),
+      url: new URL("http://localhost/"),
+    } as never);
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { ok: boolean; mustResetPassword: boolean };
+    expect(body.ok).toBe(true);
+    expect(body.mustResetPassword).toBe(true);
     expect(setAuthSessionCookies).toHaveBeenCalled();
   });
 });

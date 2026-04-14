@@ -50,9 +50,22 @@ describe("authorizeClubAccess", () => {
     if (!res.ok) expect(res.response.status).toBe(401);
   });
 
+  it("returns 403 when user must reset password before using the app", async () => {
+    const { prisma } = await import("@/lib/prisma");
+    vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({
+      id: "u1",
+      role: "ADMIN",
+      mustResetPassword: true,
+    } as never);
+
+    const res = await authorizeClubAccess(mockCookies("ok", "u1", "ADMIN"), "club-1");
+    expect(res.ok).toBe(false);
+    if (!res.ok) expect(res.response.status).toBe(403);
+  });
+
   it("returns 403 when user is not club owner (no role bypass)", async () => {
     const { prisma } = await import("@/lib/prisma");
-    vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({ id: "u2", role: "ADMIN" } as never);
+    vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({ id: "u2", role: "ADMIN", mustResetPassword: false } as never);
     vi.mocked(prisma.club.findUnique).mockResolvedValueOnce({ ownerUserId: "u1" } as never);
 
     const res = await authorizeClubAccess(mockCookies("ok", "u2", "ADMIN"), "club-1");
@@ -62,7 +75,7 @@ describe("authorizeClubAccess", () => {
 
   it("returns success when user owns the club", async () => {
     const { prisma } = await import("@/lib/prisma");
-    vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({ id: "u1", role: "ADMIN" } as never);
+    vi.mocked(prisma.user.findUnique).mockResolvedValueOnce({ id: "u1", role: "ADMIN", mustResetPassword: false } as never);
     vi.mocked(prisma.club.findUnique).mockResolvedValueOnce({ ownerUserId: "u1" } as never);
 
     const res = await authorizeClubAccess(mockCookies("ok", "u1", "ADMIN"), "club-1");
