@@ -57,11 +57,13 @@ src/
 
 ## 📝 Getting Started
 
-To run this project:
+1. Install dependencies with `pnpm install`.
+2. Verify the `.env` file (or `.env.example`) provides a `DATABASE_URL` that points at your PostgreSQL instance and any other secrets you expect to override.
+3. Run `pnpm prisma generate` so that `@prisma/client` can load the generated runtime (`.prisma/client/default` is missing until you do this).
+4. (Optional) Seed the database with `pnpm run db:seed`.
+5. Start the dev server via `pnpm run dev`.
 
-1. Install dependencies
-2. Configure your tournament and club data
-3. Use the dashboard to manage teams and tournaments
+> ⚠️ Whenever you reinstall dependencies or change the Prisma schema, rerun `pnpm prisma generate` before starting Astro. Skipping this step triggers the “Cannot find module '.prisma/client/default'” error when the API tries to instantiate `PrismaClient`.
 
 ---
 
