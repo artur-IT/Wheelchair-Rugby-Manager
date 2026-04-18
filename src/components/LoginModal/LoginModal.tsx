@@ -1,8 +1,20 @@
 import { useState, useEffect } from "react";
-import { Dialog, DialogTitle, DialogContent, TextField, Button, Alert, Box, IconButton, ToggleButtonGroup, ToggleButton } from "@mui/material";
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  TextField,
+  Button,
+  Alert,
+  Box,
+  IconButton,
+  ToggleButtonGroup,
+  ToggleButton,
+} from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import { signIn, signUp } from "supertokens-web-js/recipe/emailpassword";
 import { getAuthorisationURLWithQueryParamsAndSetState } from "supertokens-web-js/recipe/thirdparty";
+import { getOAuthRedirectOrigin } from "@/lib/browser/oauthRedirectOrigin";
 import { ensureSuperTokensFrontendInitialized } from "@/lib/supertokens/initFrontend";
 
 interface Props {
@@ -30,10 +42,14 @@ export default function LoginModal({ open, onClose, onLoginSuccess }: Props) {
     setLoading(true);
     try {
       ensureSuperTokensFrontendInitialized();
-      const site = window.location.origin;
+      const site = getOAuthRedirectOrigin();
+      const frontendCallback = `${site}/auth/callback`;
+      // Must match Google Cloud "Authorized redirect URIs" (GET is handled in api/auth/[...path].ts).
+      const googleRedirectRegistered = `${site}/api/auth/callback/google`;
       const url = await getAuthorisationURLWithQueryParamsAndSetState({
         thirdPartyId: "google",
-        frontendRedirectURI: `${site}/auth/callback`,
+        frontendRedirectURI: frontendCallback,
+        redirectURIOnProviderDashboard: googleRedirectRegistered,
       });
       window.location.assign(url);
     } catch {
@@ -111,15 +127,7 @@ export default function LoginModal({ open, onClose, onLoginSuccess }: Props) {
         </Button>
 
         <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
-          <TextField
-            name="email"
-            label="Email"
-            type="email"
-            autoComplete="email"
-            required
-            fullWidth
-            sx={{ mb: 2 }}
-          />
+          <TextField name="email" label="Email" type="email" autoComplete="email" required fullWidth sx={{ mb: 2 }} />
           <TextField
             name="password"
             label="Hasło"
