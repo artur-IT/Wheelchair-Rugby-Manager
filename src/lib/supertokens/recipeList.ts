@@ -150,12 +150,20 @@ export function buildRecipeList() {
               email,
             });
             if (superTokensResult.status !== "OK") {
-              if (superTokensResult.status === "WRONG_CREDENTIALS_ERROR" && loginStateUser && !loginStateUser.manualLock) {
+              if (
+                superTokensResult.status === "WRONG_CREDENTIALS_ERROR" &&
+                loginStateUser &&
+                !loginStateUser.manualLock
+              ) {
                 const nextState = computeFailedLoginState(loginStateUser.failedLoginAttempts, now);
-                await prisma.user.update({
-                  where: { id: loginStateUser.id },
-                  data: nextState,
-                });
+                await prisma.user
+                  .update({
+                    where: { id: loginStateUser.id },
+                    data: nextState,
+                  })
+                  .catch((err) => {
+                    console.error("Failed to update login attempt state:", err);
+                  });
               }
               return superTokensResult;
             }
