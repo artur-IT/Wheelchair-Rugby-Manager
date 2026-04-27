@@ -1,7 +1,9 @@
 /** Read env on Astro server (import.meta.env) or Node (process.env). */
 function readEnv(name: string): string | undefined {
   const fromImportMeta =
-    typeof import.meta !== "undefined" && import.meta.env && (import.meta.env as Record<string, string | undefined>)[name];
+    typeof import.meta !== "undefined" &&
+    import.meta.env &&
+    (import.meta.env as Record<string, string | undefined>)[name];
   if (typeof fromImportMeta === "string" && fromImportMeta.trim()) return fromImportMeta.trim();
   const fromProcess = typeof process !== "undefined" ? process.env[name] : undefined;
   if (typeof fromProcess === "string" && fromProcess.trim()) return fromProcess.trim();
@@ -35,5 +37,8 @@ export function getGoogleClientSecret(): string {
 }
 
 export function isProductionBuild(): boolean {
-  return Boolean(import.meta.env.PROD);
+  if (typeof import.meta !== "undefined" && import.meta.env) {
+    return Boolean((import.meta.env as { PROD?: boolean }).PROD);
+  }
+  return process.env.NODE_ENV === "production";
 }

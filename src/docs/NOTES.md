@@ -1,5 +1,12 @@
 # Brudnopis notatek do projektu
 
+Co przenieść do nast. projektu?:
+
+- Code Rabbit: sprawdził się dobrze do code review po commitach, ALE przed zatwierdzeniem PR, nitpick - innna możliwość.
+- Biome? (Prettier + ESLint w jednym)
+- GitHub Gists: sprawdził się dobrze do Daily Notes, dobry jest podział na week-1.md, przenieść tu NOTES.md z projektu żeby nie commitować
+- Code review: stosować conventional comments! (stosuj labels np. suggestion: .....)
+
 ### Generowanie Designu UI z AI
 
 - **Najlepiej wygenerował Google AI Studio (z mojego prompta)** - mało plików, dobra struktura kodu,

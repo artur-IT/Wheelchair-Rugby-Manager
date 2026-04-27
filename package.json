@@ -16,7 +16,8 @@
     "format": "prettier --write .",
     "db:clear": "node scripts/clearDb.mjs",
     "db:seed": "node scripts/seedDb.mjs",
-    "db:reset-data": "pnpm run db:clear && pnpm run db:seed"
+    "db:reset-data": "pnpm run db:clear && pnpm run db:seed",
+    "sync:st-prisma": "tsx scripts/sync_supertokens-prisma.ts"
   },
   "dependencies": {
     "@astrojs/node": "^10.0.1",
@@ -76,6 +77,7 @@
     "prettier": "^3.5.3",
     "prettier-plugin-astro": "0.14.1",
     "prisma": "^7.7.0",
+    "tsx": "^4.21.0",
     "typescript-eslint": "8.28.0",
     "vitest": "^4.0.18"
   },
