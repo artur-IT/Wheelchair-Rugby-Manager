@@ -154,4 +154,30 @@ describe("TournamentForm", () => {
     expect(typeof body.startDate).toBe("string");
     expect(typeof body.endDate).toBe("string");
   });
+
+  it("shows error and disables submit when there are no seasons for new tournament", async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo) => {
+      const url = typeof input === "string" ? input : input.url;
+
+      if (url === "/api/seasons") {
+        return { ok: true, json: async () => [] };
+      }
+
+      return { ok: true, json: async () => ({ ok: true }) };
+    });
+
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<TournamentForm />);
+
+    expect(
+      await screen.findByText(
+        "Nie można utworzyć turnieju, bo nie ma jeszcze żadnego sezonu. Najpierw dodaj sezon w Ustawieniach."
+      )
+    ).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: "Zapisz Turniej" })).toBeDisabled();
+    });
+  });
 });

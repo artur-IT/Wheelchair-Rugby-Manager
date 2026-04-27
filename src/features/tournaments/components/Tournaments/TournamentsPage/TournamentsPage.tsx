@@ -70,7 +70,9 @@ function TournamentsContent() {
   const listError = isError && error instanceof Error ? error.message : null;
   const selectedSeason = defaultSeasonId ? seasons.find((season) => season.id === defaultSeasonId) : null;
   const selectedSeasonLabel = selectedSeason ? `${selectedSeason.name} (${selectedSeason.year})` : "nie wybrano";
-  const visibleTournaments = defaultSeasonId ? tournaments.filter((tournament) => tournament.seasonId === defaultSeasonId) : [];
+  const visibleTournaments = defaultSeasonId
+    ? tournaments.filter((tournament) => tournament.seasonId === defaultSeasonId)
+    : [];
 
   function openDeleteDialog(tournament: Tournament) {
     if (deleteMutation.isPending) return;
@@ -118,7 +120,13 @@ function TournamentsContent() {
           <Typography variant="h4" sx={{ fontWeight: "bold", mb: 0.5 }}>
             Turnieje
           </Typography>
-          <Typography color="textSecondary">Zarządzaj wydarzeniami w sezonie: {selectedSeasonLabel}.</Typography>
+          <Typography color="textSecondary">
+            Zarządzaj wydarzeniami w sezonie:{" "}
+            <Box component="span" sx={{ fontWeight: "bold" }}>
+              {selectedSeasonLabel}
+            </Box>
+            .
+          </Typography>
         </Box>
         <Button component="a" href="/tournaments/new" variant="contained" startIcon={<Plus size={20} />}>
           Nowy Turniej

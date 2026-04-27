@@ -28,6 +28,7 @@ import { useForm, Controller, type FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import DataLoadAlert from "@/components/ui/DataLoadAlert";
 import { blurActiveElement } from "@/lib/a11y/blurActiveElement";
+import { fetchSeasonsList } from "@/lib/api/seasons";
 import { createTournament, fetchTournamentById, updateTournament } from "@/lib/api/tournaments";
 import { focusFirstFieldError } from "@/lib/forms/focusFirstFieldError";
 import { queryKeys } from "@/lib/queryKeys";
@@ -143,6 +144,11 @@ function TournamentFormContent({ tournamentId }: Props) {
   const prefillLoading = Boolean(tournamentId) && isPending;
 
   const loadError = loadIsError && loadErrorObj instanceof Error ? loadErrorObj.message : null;
+  const { data: seasons = [] } = useQuery({
+    queryKey: queryKeys.seasons.list(),
+    queryFn: ({ signal }) => fetchSeasonsList(signal),
+    enabled: !tournamentId,
+  });
 
   useEffect(() => {
     if (tournamentForEdit) {
@@ -185,6 +191,7 @@ function TournamentFormContent({ tournamentId }: Props) {
   };
 
   const isSubmitting = submitMutation.isPending;
+  const noSeasonsConfigured = !tournamentId && seasons.length === 0;
   const showAllErrors = submitCount > 0;
 
   const title = tournamentId ? "Edytuj Turniej" : "Nowy Turniej";
@@ -205,6 +212,11 @@ function TournamentFormContent({ tournamentId }: Props) {
       {formError ? (
         <Alert severity="error" sx={{ mb: 3 }}>
           {formError}
+        </Alert>
+      ) : null}
+      {noSeasonsConfigured ? (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          Nie można utworzyć turnieju, bo nie ma jeszcze żadnego sezonu. Najpierw dodaj sezon w Ustawieniach.
         </Alert>
       ) : null}
 
@@ -640,7 +652,7 @@ function TournamentFormContent({ tournamentId }: Props) {
             <Button variant="outlined" fullWidth component="a" href="/tournaments">
               Anuluj
             </Button>
-            <Button variant="contained" type="submit" fullWidth disabled={isSubmitting}>
+            <Button variant="contained" type="submit" fullWidth disabled={isSubmitting || noSeasonsConfigured}>
               {isSubmitting ? "Zapisywanie..." : "Zapisz Turniej"}
             </Button>
           </Box>
