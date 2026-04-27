@@ -144,7 +144,7 @@ function TournamentFormContent({ tournamentId }: Props) {
   const prefillLoading = Boolean(tournamentId) && isPending;
 
   const loadError = loadIsError && loadErrorObj instanceof Error ? loadErrorObj.message : null;
-  const { data: seasons = [] } = useQuery({
+  const { data: seasons = [], isPending: seasonsLoading } = useQuery({
     queryKey: queryKeys.seasons.list(),
     queryFn: ({ signal }) => fetchSeasonsList(signal),
     enabled: !tournamentId,
@@ -191,7 +191,7 @@ function TournamentFormContent({ tournamentId }: Props) {
   };
 
   const isSubmitting = submitMutation.isPending;
-  const noSeasonsConfigured = !tournamentId && seasons.length === 0;
+  const noSeasonsConfigured = !tournamentId && seasons.length === 0 && !seasonsLoading;
   const showAllErrors = submitCount > 0;
 
   const title = tournamentId ? "Edytuj Turniej" : "Nowy Turniej";
