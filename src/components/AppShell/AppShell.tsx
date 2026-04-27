@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import type { ReactNode } from "react";
 import { LayoutDashboard, Trophy, Settings, Building2, LogOut, Menu, X, UserCircle } from "lucide-react";
 import { signOut } from "supertokens-web-js/recipe/session";
+import { fetchCurrentUserName } from "@/lib/api/users";
 import { ensureSuperTokensFrontendInitialized } from "@/lib/supertokens/initFrontend";
 import {
   Box,
@@ -79,10 +80,12 @@ function DrawerContent({
   currentPath,
   onCloseMobile,
   onLogout,
+  userName,
 }: {
   currentPath: string;
   onCloseMobile: () => void;
   onLogout: () => Promise<void>;
+  userName: string | null;
 }) {
   return (
     <Box sx={{ width: "100%", p: 2, display: "flex", flexDirection: "column", minHeight: "100%" }}>
@@ -130,14 +133,24 @@ function DrawerContent({
           </ListItem>
         </List>
       </Box>
+      {userName ? (
+        <>
+          <Typography variant="body2" sx={{ textAlign: "center", mt: "auto", color: "text.secondary" }}>
+            Zalogowany:{" "}
+          </Typography>
+          <Box component="span" sx={{ fontWeight: "bold", textTransform: "capitalize", textAlign: "center" }}>
+            {userName}
+          </Box>
+        </>
+      ) : null}
       <Typography
         variant="body2"
         sx={{
           textAlign: "center",
-          mt: "auto",
+          mt: userName ? 0.5 : "auto",
         }}
       >
-        v.2.0
+        2.0
       </Typography>
     </Box>
   );
@@ -145,11 +158,28 @@ function DrawerContent({
 
 export default function AppShell({ children, currentPath, containerMaxWidth = "lg" }: AppShellProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [userName, setUserName] = useState<string | null>(null);
   const closeMobileDrawer = () => setMobileOpen(false);
   const toggleMobileDrawer = () => setMobileOpen((prev) => !prev);
 
   useEffect(() => {
     ensureSuperTokensFrontendInitialized();
+  }, []);
+
+  useEffect(() => {
+    const abortController = new AbortController();
+    const loadCurrentUserName = async () => {
+      const name = await fetchCurrentUserName(abortController.signal);
+      setUserName(name);
+    };
+
+    void loadCurrentUserName().catch(() => {
+      setUserName(null);
+    });
+
+    return () => {
+      abortController.abort();
+    };
   }, []);
 
   const handleLogout = async () => {
@@ -193,7 +223,12 @@ export default function AppShell({ children, currentPath, containerMaxWidth = "l
           },
         }}
       >
-        <DrawerContent currentPath={currentPath} onCloseMobile={closeMobileDrawer} onLogout={handleLogout} />
+        <DrawerContent
+          currentPath={currentPath}
+          onCloseMobile={closeMobileDrawer}
+          onLogout={handleLogout}
+          userName={userName}
+        />
       </Drawer>
 
       <Box
@@ -228,7 +263,12 @@ export default function AppShell({ children, currentPath, containerMaxWidth = "l
           onClose={closeMobileDrawer}
           sx={{ display: { xs: "block", md: "none" } }}
         >
-          <DrawerContent currentPath={currentPath} onCloseMobile={closeMobileDrawer} onLogout={handleLogout} />
+          <DrawerContent
+            currentPath={currentPath}
+            onCloseMobile={closeMobileDrawer}
+            onLogout={handleLogout}
+            userName={userName}
+          />
         </Drawer>
 
         <Box
@@ -246,9 +286,6 @@ export default function AppShell({ children, currentPath, containerMaxWidth = "l
             {children}
           </Container>
         </Box>
-        <Typography variant="body2" sx={{ textAlign: "center", mt: 2 }}>
-          v.2.0
-        </Typography>
       </Box>
     </Box>
   );

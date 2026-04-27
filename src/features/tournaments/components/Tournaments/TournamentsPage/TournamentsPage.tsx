@@ -69,7 +69,9 @@ function TournamentsContent() {
 
   const listError = isError && error instanceof Error ? error.message : null;
   const selectedSeason = defaultSeasonId ? seasons.find((season) => season.id === defaultSeasonId) : null;
-  const selectedSeasonLabel = selectedSeason ? `${selectedSeason.name} (${selectedSeason.year})` : "nie wybrano";
+  const selectedSeasonLabel = selectedSeason
+    ? `${selectedSeason.name} (${selectedSeason.year})`
+    : "nie wybrano domyślnego sezonu";
   const visibleTournaments = defaultSeasonId
     ? tournaments.filter((tournament) => tournament.seasonId === defaultSeasonId)
     : [];
