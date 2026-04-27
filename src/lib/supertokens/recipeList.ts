@@ -9,7 +9,12 @@ import { prisma } from "@/lib/prisma";
 import { hashPassword, randomUnusedPasswordHash } from "@/lib/supertokens/password";
 import { getGoogleClientId, getGoogleClientSecret, isProductionBuild } from "@/lib/supertokens/env";
 import { validateAuthEmail, validateAuthPassword } from "@/lib/supertokens/authValidation";
-import { computeFailedLoginState, isTemporarilyLocked } from "@/lib/supertokens/loginAttemptPolicy";
+import {
+  computeFailedLoginState,
+  computeRemainingLoginAttempts,
+  isTemporarilyLocked,
+  MAX_FAILED_LOGIN_ATTEMPTS,
+} from "@/lib/supertokens/loginAttemptPolicy";
 import Dashboard from "supertokens-node/recipe/dashboard";
 import UserRoles from "supertokens-node/recipe/userroles";
 
@@ -139,10 +144,19 @@ export function buildRecipeList() {
             const now = new Date();
 
             if (loginStateUser?.manualLock) {
-              return { status: "WRONG_CREDENTIALS_ERROR" as const };
+              return {
+                status: "WRONG_CREDENTIALS_ERROR" as const,
+                remainingAttempts: 0,
+                maxAttempts: MAX_FAILED_LOGIN_ATTEMPTS,
+              };
             }
             if (loginStateUser?.lockUntil && isTemporarilyLocked(loginStateUser.lockUntil, now)) {
-              return { status: "WRONG_CREDENTIALS_ERROR" as const };
+              return {
+                status: "WRONG_CREDENTIALS_ERROR" as const,
+                remainingAttempts: 0,
+                maxAttempts: MAX_FAILED_LOGIN_ATTEMPTS,
+                lockUntil: loginStateUser.lockUntil.toISOString(),
+              };
             }
 
             const superTokensResult = await original.signIn({
@@ -164,6 +178,12 @@ export function buildRecipeList() {
                   .catch((err) => {
                     console.error("Failed to update login attempt state:", err);
                   });
+                return {
+                  ...superTokensResult,
+                  remainingAttempts: computeRemainingLoginAttempts(nextState.failedLoginAttempts),
+                  maxAttempts: MAX_FAILED_LOGIN_ATTEMPTS,
+                  lockUntil: nextState.lockUntil ? nextState.lockUntil.toISOString() : null,
+                } as typeof superTokensResult;
               }
               return superTokensResult;
             }

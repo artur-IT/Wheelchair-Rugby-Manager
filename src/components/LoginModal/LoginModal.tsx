@@ -31,6 +31,87 @@ interface SignUpFieldError {
 }
 const UI_LOGIN_WARNING_AFTER_ATTEMPTS = 3;
 const UI_LOGIN_LOCK_HINT_AFTER_ATTEMPTS = 5;
+const UI_LOGIN_LOCK_WINDOW_MS = 5 * 60 * 1000;
+
+interface SignInErrorResultWithAttemptMeta {
+  status: "WRONG_CREDENTIALS_ERROR";
+  remainingAttempts?: unknown;
+  maxAttempts?: unknown;
+  lockUntil?: unknown;
+}
+
+function parseLockUntil(result: unknown): Date | null {
+  const maybeResult = result as SignInErrorResultWithAttemptMeta;
+  if (maybeResult?.status !== "WRONG_CREDENTIALS_ERROR") {
+    return null;
+  }
+  if (typeof maybeResult.lockUntil !== "string") {
+    return null;
+  }
+  const parsed = new Date(maybeResult.lockUntil);
+  if (Number.isNaN(parsed.getTime())) {
+    return null;
+  }
+  return parsed;
+}
+
+function formatLockUntilTime(lockUntil: Date): string {
+  return lockUntil.toLocaleTimeString("pl-PL", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+}
+
+function parseRemainingAttempts(result: unknown): number | null {
+  const maybeResult = result as SignInErrorResultWithAttemptMeta;
+  if (maybeResult?.status !== "WRONG_CREDENTIALS_ERROR") {
+    return null;
+  }
+  if (typeof maybeResult.remainingAttempts !== "number" || !Number.isFinite(maybeResult.remainingAttempts)) {
+    return null;
+  }
+  const attempts = Math.floor(maybeResult.remainingAttempts);
+  if (attempts < 0) {
+    return 0;
+  }
+  return attempts;
+}
+
+function buildSigninErrorMessage(result: unknown, failedAttemptsInSession: number): string {
+  const lockUntilFromBackend = parseLockUntil(result);
+  if (lockUntilFromBackend) {
+    return `Konto jest czasowo zablokowane po zbyt wielu nieudanych próbach logowania. Spróbuj ponownie o ${formatLockUntilTime(
+      lockUntilFromBackend
+    )}.`;
+  }
+
+  const remainingAttempts = parseRemainingAttempts(result);
+  if (remainingAttempts !== null) {
+    if (remainingAttempts <= 0) {
+      const lockUntil = parseLockUntil(result) ?? new Date(Date.now() + UI_LOGIN_LOCK_WINDOW_MS);
+      return `Konto jest czasowo zablokowane po zbyt wielu nieudanych próbach logowania. Spróbuj ponownie o ${formatLockUntilTime(
+        lockUntil
+      )}.`;
+    }
+    return `Błędny adres e-mail lub hasło. Pozostałe próby: ${remainingAttempts}.`;
+  }
+
+  const fallbackRemainingAttempts = Math.max(0, UI_LOGIN_LOCK_HINT_AFTER_ATTEMPTS - failedAttemptsInSession);
+  if (fallbackRemainingAttempts > 0) {
+    return `Błędny adres e-mail lub hasło. Pozostałe próby: ${fallbackRemainingAttempts}.`;
+  }
+  if (failedAttemptsInSession >= UI_LOGIN_LOCK_HINT_AFTER_ATTEMPTS) {
+    const fallbackLockUntil = new Date(Date.now() + UI_LOGIN_LOCK_WINDOW_MS);
+    return `Konto jest czasowo zablokowane po zbyt wielu nieudanych próbach logowania. Spróbuj ponownie o ${formatLockUntilTime(
+      fallbackLockUntil
+    )}.`;
+  }
+  if (failedAttemptsInSession >= UI_LOGIN_WARNING_AFTER_ATTEMPTS) {
+    return "Kolejna nieudana próba logowania. Uwaga: po kilku błędnych próbach konto może zostać czasowo zablokowane.";
+  }
+  return "Błędny adres e-mail lub hasło. Spróbuj ponownie.";
+}
 
 function buildSignupFieldErrorMessage(fieldError: SignUpFieldError | undefined): string {
   if (!fieldError) {
@@ -118,17 +199,7 @@ export default function LoginModal({ open, onClose, onLoginSuccess }: Props) {
         }
         const nextFailedAttempts = failedSigninAttemptsInSession + 1;
         setFailedSigninAttemptsInSession(nextFailedAttempts);
-        if (nextFailedAttempts >= UI_LOGIN_LOCK_HINT_AFTER_ATTEMPTS) {
-          setErrorMessage(
-            "Zaczekaj lub skontaktuj się z administratorem systemu żeby odblokować konto: test@example.com"
-          );
-        } else if (nextFailedAttempts >= UI_LOGIN_WARNING_AFTER_ATTEMPTS) {
-          setErrorMessage(
-            "Kolejna nieudana próba logowania. Uwaga: po kilku błędnych próbach konto może zostać czasowo zablokowane."
-          );
-        } else {
-          setErrorMessage("Błędny adres e-mail lub hasło. Spróbuj ponownie.");
-        }
+        setErrorMessage(buildSigninErrorMessage(result, nextFailedAttempts));
       } else {
         const result = await signUp({ formFields });
         if (result.status === "OK") {
@@ -147,17 +218,7 @@ export default function LoginModal({ open, onClose, onLoginSuccess }: Props) {
       if (mode === "signin") {
         const nextFailedAttempts = failedSigninAttemptsInSession + 1;
         setFailedSigninAttemptsInSession(nextFailedAttempts);
-        if (nextFailedAttempts >= UI_LOGIN_LOCK_HINT_AFTER_ATTEMPTS) {
-          setErrorMessage(
-            "Zaczekaj lub skontaktuj się z administratorem systemu żeby odblokować konto: test@example.com"
-          );
-        } else if (nextFailedAttempts >= UI_LOGIN_WARNING_AFTER_ATTEMPTS) {
-          setErrorMessage(
-            "Kolejna nieudana próba logowania. Uwaga: po kilku błędnych próbach konto może zostać czasowo zablokowane."
-          );
-        } else {
-          setErrorMessage("Błędny adres e-mail lub hasło. Spróbuj ponownie.");
-        }
+        setErrorMessage(buildSigninErrorMessage(null, nextFailedAttempts));
       } else {
         setErrorMessage("Wystąpił błąd podczas rejestracji.");
       }

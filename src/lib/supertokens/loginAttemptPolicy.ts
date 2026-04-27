@@ -22,3 +22,11 @@ export function computeFailedLoginState(
     lockUntil: new Date(now.getTime() + LOGIN_LOCK_WINDOW_MS),
   };
 }
+
+export function computeRemainingLoginAttempts(failedLoginAttempts: number): number {
+  const remainingAttempts = MAX_FAILED_LOGIN_ATTEMPTS - failedLoginAttempts;
+  if (remainingAttempts <= 0) {
+    return 0;
+  }
+  return remainingAttempts;
+}

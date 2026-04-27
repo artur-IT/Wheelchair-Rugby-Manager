@@ -29,6 +29,7 @@ describe("LoginModal", () => {
   });
 
   afterEach(() => {
+    vi.useRealTimers();
     vi.unstubAllGlobals();
   });
 
@@ -49,7 +50,63 @@ describe("LoginModal", () => {
     await user.type(screen.getByLabelText(/Hasło/i), "wrong-password");
     await user.click(screen.getByRole("button", { name: "Zaloguj" }));
 
-    expect(await screen.findByText("Błędny adres e-mail lub hasło. Spróbuj ponownie.")).toBeInTheDocument();
+    expect(await screen.findByText("Błędny adres e-mail lub hasło. Pozostałe próby: 4.")).toBeInTheDocument();
+  });
+
+  it("shows remaining attempts from backend metadata", async () => {
+    const user = userEvent.setup();
+    signInMock.mockResolvedValue({ status: "WRONG_CREDENTIALS_ERROR", remainingAttempts: 2, maxAttempts: 5 });
+
+    render(<LoginModal open onClose={vi.fn()} />);
+
+    await user.type(screen.getByLabelText(/E-mail/i), "admin@example.com");
+    await user.type(screen.getByLabelText(/Hasło/i), "wrong-password");
+    await user.click(screen.getByRole("button", { name: "Zaloguj" }));
+
+    expect(await screen.findByText("Błędny adres e-mail lub hasło. Pozostałe próby: 2.")).toBeInTheDocument();
+  });
+
+  it("shows temporary lock message with unlock time when backend reports lockUntil", async () => {
+    const user = userEvent.setup();
+    signInMock.mockResolvedValue({
+      status: "WRONG_CREDENTIALS_ERROR",
+      remainingAttempts: 0,
+      maxAttempts: 5,
+      lockUntil: "2026-01-01T14:30:00.000Z",
+    });
+
+    render(<LoginModal open onClose={vi.fn()} />);
+
+    await user.type(screen.getByLabelText(/E-mail/i), "admin@example.com");
+    await user.type(screen.getByLabelText(/Hasło/i), "wrong-password");
+    await user.click(screen.getByRole("button", { name: "Zaloguj" }));
+
+    const expectedTime = new Date("2026-01-01T14:30:00.000Z").toLocaleTimeString("pl-PL", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+    expect(await screen.findByText(new RegExp(`Spróbuj ponownie o ${expectedTime}\\.$`))).toBeInTheDocument();
+  });
+
+  it("shows computed unlock time when backend reports zero attempts without lockUntil", async () => {
+    const user = userEvent.setup();
+    const baseNowMs = new Date("2026-01-01T12:00:00.000Z").getTime();
+    vi.spyOn(Date, "now").mockReturnValue(baseNowMs);
+    signInMock.mockResolvedValue({ status: "WRONG_CREDENTIALS_ERROR", remainingAttempts: 0, maxAttempts: 5 });
+
+    render(<LoginModal open onClose={vi.fn()} />);
+
+    await user.type(screen.getByLabelText(/E-mail/i), "admin@example.com");
+    await user.type(screen.getByLabelText(/Hasło/i), "wrong-password");
+    await user.click(screen.getByRole("button", { name: "Zaloguj" }));
+
+    const expectedTime = new Date(baseNowMs + 5 * 60 * 1000).toLocaleTimeString("pl-PL", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+    expect(await screen.findByText(new RegExp(`Spróbuj ponownie o ${expectedTime}\\.$`))).toBeInTheDocument();
   });
 
   it("shows warning after repeated failed sign-in attempts", async () => {
@@ -62,21 +119,19 @@ describe("LoginModal", () => {
     await user.type(screen.getByLabelText(/Hasło/i), "wrong-password");
 
     await user.click(screen.getByRole("button", { name: "Zaloguj" }));
-    await screen.findByText("Błędny adres e-mail lub hasło. Spróbuj ponownie.");
+    await screen.findByText("Błędny adres e-mail lub hasło. Pozostałe próby: 4.");
 
     await user.click(screen.getByRole("button", { name: "Zaloguj" }));
-    await screen.findByText("Błędny adres e-mail lub hasło. Spróbuj ponownie.");
+    await screen.findByText("Błędny adres e-mail lub hasło. Pozostałe próby: 3.");
 
     await user.click(screen.getByRole("button", { name: "Zaloguj" }));
-    expect(
-      await screen.findByText(
-        "Kolejna nieudana próba logowania. Uwaga: po kilku błędnych próbach konto może zostać czasowo zablokowane."
-      )
-    ).toBeInTheDocument();
+    expect(await screen.findByText("Błędny adres e-mail lub hasło. Pozostałe próby: 2.")).toBeInTheDocument();
   });
 
-  it("shows lock hint after many failed sign-in attempts", async () => {
+  it("shows fallback unlock time after many failed sign-in attempts", async () => {
     const user = userEvent.setup();
+    const baseNowMs = new Date("2026-01-01T10:00:00.000Z").getTime();
+    vi.spyOn(Date, "now").mockReturnValue(baseNowMs);
     signInMock.mockResolvedValue({ status: "WRONG_CREDENTIALS_ERROR" });
 
     render(<LoginModal open onClose={vi.fn()} />);
@@ -88,11 +143,12 @@ describe("LoginModal", () => {
       await user.click(screen.getByRole("button", { name: "Zaloguj" }));
     }
 
-    expect(
-      await screen.findByText(
-        "Zaczekaj lub skontaktuj się z administratorem systemu żeby odblokować konto: test@example.com"
-      )
-    ).toBeInTheDocument();
+    const expectedTime = new Date(baseNowMs + 5 * 60 * 1000).toLocaleTimeString("pl-PL", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+    expect(await screen.findByText(new RegExp(`Spróbuj ponownie o ${expectedTime}\\.$`))).toBeInTheDocument();
   });
 
   it("disables submit button while login request is pending", async () => {

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   computeFailedLoginState,
+  computeRemainingLoginAttempts,
   isTemporarilyLocked,
   LOGIN_LOCK_WINDOW_MS,
   MAX_FAILED_LOGIN_ATTEMPTS,
@@ -29,5 +30,12 @@ describe("loginAttemptPolicy", () => {
     expect(isTemporarilyLocked(new Date(now.getTime() + 1000), now)).toBe(true);
     expect(isTemporarilyLocked(now, now)).toBe(false);
     expect(isTemporarilyLocked(null, now)).toBe(false);
+  });
+
+  it("calculates remaining attempts and clamps at zero", () => {
+    expect(computeRemainingLoginAttempts(0)).toBe(MAX_FAILED_LOGIN_ATTEMPTS);
+    expect(computeRemainingLoginAttempts(MAX_FAILED_LOGIN_ATTEMPTS - 1)).toBe(1);
+    expect(computeRemainingLoginAttempts(MAX_FAILED_LOGIN_ATTEMPTS)).toBe(0);
+    expect(computeRemainingLoginAttempts(MAX_FAILED_LOGIN_ATTEMPTS + 1)).toBe(0);
   });
 });
