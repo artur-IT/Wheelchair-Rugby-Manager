@@ -96,7 +96,13 @@ async function mapSuperTokensUserToPrismaUser(superTokensUserId: string, prismaU
   }
 }
 
-type SyncOutcome = "linked_existing_prisma" | "created_prisma" | "skipped_no_email" | "already_ok" | "orphan_mapping";
+type SyncOutcome =
+  | "linked_existing_prisma"
+  | "created_prisma"
+  | "recreated_orphan_prisma"
+  | "skipped_no_email"
+  | "already_ok"
+  | "orphan_mapping";
 
 async function syncOneUser(stUser: {
   id: string;
@@ -112,10 +118,29 @@ async function syncOneUser(stUser: {
   if (mapping.status === "OK") {
     const prismaRow = await prisma.user.findUnique({ where: { id: mapping.externalUserId } });
     if (!prismaRow) {
-      console.warn(
-        `[sync] SuperTokens user ${stUser.id} maps to missing Prisma id ${mapping.externalUserId} — fix manually.`
-      );
-      return "orphan_mapping";
+      const existingByEmail = await findUserByEmailInsensitive(email);
+      if (existingByEmail && existingByEmail.id !== mapping.externalUserId) {
+        // eslint-disable-next-line no-console -- CLI script
+        console.warn(
+          `[sync] SuperTokens user ${stUser.id} maps to missing Prisma id ${mapping.externalUserId}, but email ${email} is already used by Prisma id ${existingByEmail.id} — fix manually.`
+        );
+        return "orphan_mapping";
+      }
+
+      const placeholder = await randomUnusedPasswordHash();
+      await prisma.user.create({
+        data: {
+          id: mapping.externalUserId,
+          email,
+          name: nameFromEmail(email),
+          password: placeholder,
+          role: UserRole.USER,
+        },
+        select: { id: true },
+      });
+
+      await assignDefaultRole(stUser.id);
+      return "recreated_orphan_prisma";
     }
     await assignDefaultRole(stUser.id);
     return "already_ok";
@@ -151,6 +176,7 @@ async function main(): Promise<void> {
     users_seen: 0,
     linked_existing_prisma: 0,
     created_prisma: 0,
+    recreated_orphan_prisma: 0,
     skipped_no_email: 0,
     already_ok: 0,
     orphan_mapping: 0,
@@ -184,6 +210,7 @@ async function main(): Promise<void> {
 
 await main()
   .catch((e: unknown) => {
+    // eslint-disable-next-line no-console -- CLI script
     console.error(e);
     process.exitCode = 1;
   })
