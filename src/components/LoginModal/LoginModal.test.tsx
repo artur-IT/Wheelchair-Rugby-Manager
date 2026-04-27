@@ -50,7 +50,7 @@ describe("LoginModal", () => {
     await user.type(screen.getByLabelText(/Hasło/i), "wrong-password");
     await user.click(screen.getByRole("button", { name: "Zaloguj" }));
 
-    expect(await screen.findByText("Błędny adres e-mail lub hasło. Pozostałe próby: 4.")).toBeInTheDocument();
+    expect(await screen.findByText("Błędny adres e-mail lub hasło. Spróbuj ponownie.")).toBeInTheDocument();
   });
 
   it("shows remaining attempts from backend metadata", async () => {
@@ -119,13 +119,17 @@ describe("LoginModal", () => {
     await user.type(screen.getByLabelText(/Hasło/i), "wrong-password");
 
     await user.click(screen.getByRole("button", { name: "Zaloguj" }));
-    await screen.findByText("Błędny adres e-mail lub hasło. Pozostałe próby: 4.");
+    await screen.findByText("Błędny adres e-mail lub hasło. Spróbuj ponownie.");
 
     await user.click(screen.getByRole("button", { name: "Zaloguj" }));
-    await screen.findByText("Błędny adres e-mail lub hasło. Pozostałe próby: 3.");
+    await screen.findByText("Błędny adres e-mail lub hasło. Spróbuj ponownie.");
 
     await user.click(screen.getByRole("button", { name: "Zaloguj" }));
-    expect(await screen.findByText("Błędny adres e-mail lub hasło. Pozostałe próby: 2.")).toBeInTheDocument();
+    expect(
+      await screen.findByText(
+        "Błędny adres e-mail lub hasło. Pozostałe próby: 2. Uwaga: po kilku błędnych próbach konto może zostać czasowo zablokowane."
+      )
+    ).toBeInTheDocument();
   });
 
   it("shows fallback unlock time after many failed sign-in attempts", async () => {

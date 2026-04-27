@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import UserRoles from "supertokens-node/recipe/userroles";
 import {
   hasAnyRole,
@@ -19,15 +19,17 @@ vi.mock("supertokens-node/recipe/userroles", () => ({
 const identity = { tenantId: "public", userId: "user-1" };
 
 describe("supertokens authorization helpers", () => {
+  beforeEach(() => {
+    vi.resetAllMocks();
+  });
+
   it("hasRole returns true for matched role", async () => {
     vi.mocked(UserRoles.getRolesForUser).mockResolvedValueOnce({ status: "OK", roles: ["ADMIN"] });
     await expect(hasRole(identity, "ADMIN")).resolves.toBe(true);
   });
 
   it("hasAnyRole returns false when no role matches", async () => {
-    vi.mocked(UserRoles.getRolesForUser)
-      .mockResolvedValueOnce({ status: "OK", roles: [] })
-      .mockResolvedValueOnce({ status: "OK", roles: [] });
+    vi.mocked(UserRoles.getRolesForUser).mockResolvedValueOnce({ status: "OK", roles: [] });
     await expect(hasAnyRole(identity, ["ADMIN", "COACH"])).resolves.toBe(false);
   });
 
@@ -48,9 +50,7 @@ describe("supertokens authorization helpers", () => {
   });
 
   it("requireAnyRole returns success when one role matches", async () => {
-    vi.mocked(UserRoles.getRolesForUser)
-      .mockResolvedValueOnce({ status: "OK", roles: ["COACH"] })
-      .mockResolvedValueOnce({ status: "OK", roles: ["COACH"] });
+    vi.mocked(UserRoles.getRolesForUser).mockResolvedValueOnce({ status: "OK", roles: ["COACH"] });
     const result = await requireAnyRole(identity, ["ADMIN", "COACH"]);
     expect(result.ok).toBe(true);
   });

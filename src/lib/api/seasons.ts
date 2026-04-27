@@ -57,10 +57,15 @@ export async function deleteSeasonById(id: string): Promise<void> {
 
 /** GET /api/seasons/:id */
 export async function fetchSeasonById(id: string, signal?: AbortSignal): Promise<Season> {
-  const res = await fetch(`/api/seasons/${id}`, { signal });
+  const res = await fetch("/api/seasons", { signal });
   if (!res.ok) {
     const msg = await getErrorMessageFromResponse(res, "Nie udało się pobrać sezonu.");
     throw new Error(msg);
   }
-  return res.json() as Promise<Season>;
+  const seasons = (await res.json()) as Season[];
+  const season = seasons.find((candidate) => candidate.id === id);
+  if (!season) {
+    throw new Error("Nie znaleziono zasobu.");
+  }
+  return season;
 }
