@@ -97,10 +97,6 @@ function buildSigninErrorMessage(result: unknown, failedAttemptsInSession: numbe
     return `Błędny adres e-mail lub hasło. Pozostałe próby: ${remainingAttempts}.`;
   }
 
-  const fallbackRemainingAttempts = Math.max(0, UI_LOGIN_LOCK_HINT_AFTER_ATTEMPTS - failedAttemptsInSession);
-  if (fallbackRemainingAttempts > 0) {
-    return `Błędny adres e-mail lub hasło. Pozostałe próby: ${fallbackRemainingAttempts}.`;
-  }
   if (failedAttemptsInSession >= UI_LOGIN_LOCK_HINT_AFTER_ATTEMPTS) {
     const fallbackLockUntil = new Date(Date.now() + UI_LOGIN_LOCK_WINDOW_MS);
     return `Konto jest czasowo zablokowane po zbyt wielu nieudanych próbach logowania. Spróbuj ponownie o ${formatLockUntilTime(
@@ -108,7 +104,8 @@ function buildSigninErrorMessage(result: unknown, failedAttemptsInSession: numbe
     )}.`;
   }
   if (failedAttemptsInSession >= UI_LOGIN_WARNING_AFTER_ATTEMPTS) {
-    return "Kolejna nieudana próba logowania. Uwaga: po kilku błędnych próbach konto może zostać czasowo zablokowane.";
+    const fallbackRemainingAttempts = UI_LOGIN_LOCK_HINT_AFTER_ATTEMPTS - failedAttemptsInSession;
+    return `Błędny adres e-mail lub hasło. Pozostałe próby: ${fallbackRemainingAttempts}. Uwaga: po kilku błędnych próbach konto może zostać czasowo zablokowane.`;
   }
   return "Błędny adres e-mail lub hasło. Spróbuj ponownie.";
 }
