@@ -1,10 +1,24 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+const signOutMock = vi.fn().mockResolvedValue(undefined);
+
+vi.mock("supertokens-web-js/recipe/session", () => ({
+  signOut: (...args: unknown[]) => signOutMock(...args),
+}));
+
+vi.mock("@/lib/supertokens/initFrontend", () => ({
+  ensureSuperTokensFrontendInitialized: vi.fn(),
+}));
 
 import AppShell from "./AppShell";
 
 describe("AppShell", () => {
+  beforeEach(() => {
+    signOutMock.mockClear();
+  });
+
   afterEach(() => {
     vi.unstubAllGlobals();
   });
@@ -21,10 +35,10 @@ describe("AppShell", () => {
     expect(screen.getByRole("link", { name: "Turnieje" })).toHaveAttribute("href", "/tournaments");
   });
 
-  it("calls logout endpoint when user clicks logout", async () => {
+  it("calls SuperTokens signOut when user clicks logout", async () => {
     const user = userEvent.setup();
-    const fetchMock = vi.fn().mockResolvedValue({ ok: true });
-    vi.stubGlobal("fetch", fetchMock);
+    const assignMock = vi.fn();
+    vi.stubGlobal("location", { ...window.location, href: "", assign: assignMock, replace: vi.fn() });
 
     render(
       <AppShell currentPath="/dashboard">
@@ -34,6 +48,6 @@ describe("AppShell", () => {
 
     await user.click(screen.getByRole("button", { name: "Wyloguj" }));
 
-    expect(fetchMock).toHaveBeenCalledWith("/api/logout", { method: "POST" });
+    expect(signOutMock).toHaveBeenCalledTimes(1);
   });
 });

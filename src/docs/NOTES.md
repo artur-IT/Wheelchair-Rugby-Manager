@@ -1,5 +1,12 @@
 # Brudnopis notatek do projektu
 
+Co przenieść do nast. projektu?:
+
+- Code Rabbit: sprawdził się dobrze do code review po commitach, ALE przed zatwierdzeniem PR, nitpick - innna możliwość.
+- Biome? (Prettier + ESLint w jednym)
+- GitHub Gists: sprawdził się dobrze do Daily Notes, dobry jest podział na week-1.md, przenieść tu NOTES.md z projektu żeby nie commitować
+- Code review: stosować conventional comments! (stosuj labels np. suggestion: .....)
+
 ### Generowanie Designu UI z AI
 
 - **Najlepiej wygenerował Google AI Studio (z mojego prompta)** - mało plików, dobra struktura kodu,
@@ -292,3 +299,17 @@ React 19.2 - najpierw (przed innymi bibl.) stosować jego rozwiązania w projekt
 
 SUMMARY PROMPT for PR#: <span style="color: orange;">PROMPT</span>
 Na podstawie dzisiejszych zmian w zmienionych plikach wygeneruj krótkie podsumowanie zmian dla PR #<numer_PR> pomiń w podsumowaniu nazwy plików, nazwy funkcji, API itp. to podsumowanie ma być czytelne i zrozumiałe dla każdego zwykłego człowieka.
+
+---
+
+### <span style="color: orange;">SuperTokens</span>
+
+### Co musisz ustawić w Google Cloud:
+
+W OAuth 2.0 Client → Authorized redirect URIs dodaj adres callback SuperTokens (ten sam host/port co aplikacja), np.:
+
+http://localhost:3000/api/auth/callback/google
+
+(dla produkcji: https://twoja-domena/api/auth/callback/google).
+
+Ścieżka /auth/callback w aplikacji to tylko strona, która wywołuje signInAndUp() — w konsoli Google musi być callback API, jak wyżej.

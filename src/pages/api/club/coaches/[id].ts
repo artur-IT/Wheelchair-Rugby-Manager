@@ -4,13 +4,13 @@ import { prisma } from "@/lib/prisma";
 import { ClubCoachRefereePersonSchema } from "@/lib/clubSchemas";
 import { ensureEntityAccess, parseRequestJson, parseWithSchema, requiredId } from "@/lib/clubApiHelpers";
 
-export const GET: APIRoute = async ({ params, cookies }) => {
+export const GET: APIRoute = async ({ params, request }) => {
   const idResult = requiredId(params.id, "Brak id trenera");
   if (!idResult.ok) return idResult.response;
   const id = idResult.data;
 
   const guard = await ensureEntityAccess(
-    cookies,
+    request,
     await prisma.clubCoach.findUnique({ where: { id } }),
     (item) => item.clubId,
     "Nie znaleziono trenera"
@@ -20,12 +20,12 @@ export const GET: APIRoute = async ({ params, cookies }) => {
   return json(guard.data);
 };
 
-export const PUT: APIRoute = async ({ params, request, cookies }) => {
+export const PUT: APIRoute = async ({ params, request }) => {
   const id = params.id;
   if (!id) return json({ error: "Brak id trenera" }, 400);
 
   const guard = await ensureEntityAccess(
-    cookies,
+    request,
     await prisma.clubCoach.findUnique({ where: { id } }),
     (item) => item.clubId,
     "Nie znaleziono trenera"
@@ -42,13 +42,13 @@ export const PUT: APIRoute = async ({ params, request, cookies }) => {
   return json(updated);
 };
 
-export const DELETE: APIRoute = async ({ params, cookies }) => {
+export const DELETE: APIRoute = async ({ params, request }) => {
   const idResult = requiredId(params.id, "Brak id trenera");
   if (!idResult.ok) return idResult.response;
   const id = idResult.data;
 
   const guard = await ensureEntityAccess(
-    cookies,
+    request,
     await prisma.clubCoach.findUnique({ where: { id } }),
     (item) => item.clubId,
     "Nie znaleziono trenera"

@@ -5,11 +5,11 @@ import { ClubUpsertSchema } from "@/lib/clubSchemas";
 import { getClubById, clubInclude } from "@/lib/club";
 import { ensureClubAccess, mapPrismaError, parseRequestJson, parseWithSchema, requiredId } from "@/lib/clubApiHelpers";
 
-export const GET: APIRoute = async ({ params, cookies }) => {
+export const GET: APIRoute = async ({ params, request }) => {
   const idResult = requiredId(params.id, "Brak id klubu");
   if (!idResult.ok) return idResult.response;
   const id = idResult.data;
-  const authz = await ensureClubAccess(cookies, id);
+  const authz = await ensureClubAccess(request, id);
   if (!authz.ok) return authz.response;
 
   const club = await getClubById(id);
@@ -17,11 +17,11 @@ export const GET: APIRoute = async ({ params, cookies }) => {
   return json(club);
 };
 
-export const PUT: APIRoute = async ({ params, request, cookies }) => {
+export const PUT: APIRoute = async ({ params, request }) => {
   const idResult = requiredId(params.id, "Brak id klubu");
   if (!idResult.ok) return idResult.response;
   const id = idResult.data;
-  const authz = await ensureClubAccess(cookies, id);
+  const authz = await ensureClubAccess(request, id);
   if (!authz.ok) return authz.response;
 
   const existing = await getClubById(id);
@@ -48,11 +48,11 @@ export const PUT: APIRoute = async ({ params, request, cookies }) => {
   }
 };
 
-export const DELETE: APIRoute = async ({ params, cookies }) => {
+export const DELETE: APIRoute = async ({ params, request }) => {
   const idResult = requiredId(params.id, "Brak id klubu");
   if (!idResult.ok) return idResult.response;
   const id = idResult.data;
-  const authz = await ensureClubAccess(cookies, id);
+  const authz = await ensureClubAccess(request, id);
   if (!authz.ok) return authz.response;
 
   const existing = await getClubById(id);

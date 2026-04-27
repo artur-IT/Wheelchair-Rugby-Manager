@@ -42,6 +42,9 @@ describe("TournamentsPage", () => {
     let listCalls = 0;
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = typeof input === "string" ? input : input.toString();
+      if (url.includes("/api/auth/session/refresh")) {
+        return new Response(JSON.stringify({}), { status: 200 });
+      }
       if (url === "/api/seasons" && (!init || init.method == null)) {
         return new Response(
           JSON.stringify([
@@ -95,7 +98,10 @@ describe("TournamentsPage", () => {
     expect(screen.queryByText("Turniej B")).not.toBeInTheDocument();
 
     await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledWith("/api/tournaments/t1", { method: "DELETE" });
+      const deleteCall = fetchMock.mock.calls.find(
+        (c) => c[0] === "/api/tournaments/t1" && (c[1] as RequestInit | undefined)?.method === "DELETE"
+      );
+      expect(deleteCall).toBeDefined();
     });
 
     vi.unstubAllGlobals();

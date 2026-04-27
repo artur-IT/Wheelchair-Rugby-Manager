@@ -57,10 +57,10 @@ describe("AddPersonDialog — validation", () => {
 
     await user.type(screen.getByLabelText("Imię"), "Jan");
     await user.type(screen.getByLabelText("Nazwisko"), "Kowalski");
-    await user.type(screen.getByLabelText("Email"), `${"a".repeat(MAX_SHORT_TEXT)}@x.pl`);
+    await user.type(screen.getByLabelText("E-mail"), `${"a".repeat(MAX_SHORT_TEXT)}@x.pl`);
     await user.click(screen.getByRole("button", { name: "Zapisz" }));
 
-    expect(screen.getByRole("alert")).toHaveTextContent(/Email nie może przekraczać 50 znaków/i);
+    expect(screen.getByRole("alert")).toHaveTextContent(/E-mail nie może przekraczać 50 znaków/i);
     expect(onSubmit).not.toHaveBeenCalled();
   });
 

@@ -3,7 +3,7 @@ import { z } from "zod";
 const zodPlErrorMap = (issue: any, ctx: any) => {
   if (issue?.code === "invalid_type" && issue?.received === "undefined") return { message: "To pole jest wymagane" };
   if (issue?.code === "invalid_string") {
-    if (issue?.validation === "email") return { message: "Nieprawidłowy adres email" };
+    if (issue?.validation === "email") return { message: "Nieprawidłowy adres e-mail" };
     if (issue?.validation === "url") return { message: "Nieprawidłowy adres URL" };
   }
   if (issue?.code === "too_small") {

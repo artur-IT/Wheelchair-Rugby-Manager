@@ -1,6 +1,6 @@
 // ─── Enums (mirror Prisma enums) ─────────────────────────────────────────────
 
-export type UserRole = "COACH" | "ORGANIZER";
+export type UserRole = "USER" | "ADMIN";
 export type MatchStatus = "SCHEDULED" | "COMPLETED" | "CANCELLED";
 export type MealLocation = "HALL" | "HOTEL";
 export type RefereeRole = "REFEREE_1" | "REFEREE_2" | "TABLE_CLOCK" | "TABLE_PENALTY";

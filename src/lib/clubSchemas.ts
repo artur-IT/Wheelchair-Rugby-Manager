@@ -52,7 +52,7 @@ export const ClubUpsertSchema = z
     contactAddress: z.string().optional(),
     contactCity: z.string().optional(),
     contactPostalCode: optionalPostalCodeSchema,
-    contactEmail: z.union([z.literal(""), z.string().email("Nieprawidłowy email")]).optional(),
+    contactEmail: z.union([z.literal(""), z.string().email("Nieprawidłowy adres e-mail")]).optional(),
     contactPhone: z.string().optional(),
     websiteUrl: optionalUrlSchema,
     logoUrl: optionalLogoSchema,
@@ -152,7 +152,7 @@ const optionalClubNineDigitPhone = z
 const optionalClubEmailNullable = z
   .preprocess((v) => (v === null || v === undefined ? "" : String(v).trim()), z.string().max(MAX_SHORT_TEXT))
   .refine((s) => s.length === 0 || z.string().email().safeParse(s).success, {
-    message: "Nieprawidłowy email",
+    message: "Nieprawidłowy adres e-mail",
   })
   .transform((s) => (s.length === 0 ? null : s));
 

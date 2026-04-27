@@ -15,7 +15,7 @@ const CLUB_PLAYER_FIELD_LABELS: Record<string, string> = {
   number: "Numer koszulki",
   status: "Status",
   birthDate: "Data urodzenia",
-  contactEmail: "Email kontaktowy",
+  contactEmail: "E-mail kontaktowy",
   contactPhone: "Telefon kontaktowy",
   contactAddress: "Ulica",
   contactCity: "Miasto",

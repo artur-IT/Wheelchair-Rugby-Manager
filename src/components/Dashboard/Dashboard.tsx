@@ -71,7 +71,6 @@ function DashboardContent() {
     data: defaultSeason,
     isError: seasonMetaIsError,
     error: seasonMetaErr,
-    refetch: refetchSeasonMeta,
     isPending: seasonLoading,
   } = seasonMetaQuery;
 
@@ -99,12 +98,7 @@ function DashboardContent() {
         <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 0.5, flexWrap: "wrap" }}>
           <Typography color="textSecondary">Oto podsumowanie sezonu:</Typography>
           {seasonMetaError ? (
-            <DataLoadAlert
-              message={seasonMetaError}
-              severity="warning"
-              onRetry={() => void refetchSeasonMeta()}
-              sx={{ py: 0 }}
-            />
+            <DataLoadAlert message={seasonMetaError} severity="warning" sx={{ py: 0 }} />
           ) : defaultSeasonId && seasonLoading ? (
             <CircularProgress size={18} sx={{ ml: 0.5 }} />
           ) : defaultSeason ? (

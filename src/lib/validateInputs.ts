@@ -56,8 +56,8 @@ export const requiredLastNameSchema = z
 
 export const requiredEmailSchema = z
   .string()
-  .email("Nieprawidłowy adres email")
-  .max(MAX_SHORT_TEXT, `Email nie może przekraczać ${MAX_SHORT_TEXT} znaków`);
+  .email("Nieprawidłowy adres e-mail")
+  .max(MAX_SHORT_TEXT, `E-mail nie może przekraczać ${MAX_SHORT_TEXT} znaków`);
 
 /** Optional first name: accepts empty string or up to 50 characters. */
 export const optionalFirstNameSchema = z
@@ -74,7 +74,10 @@ export const optionalLastNameSchema = z
 /** Optional email: accepts empty string or a valid email up to 50 characters. */
 export const optionalEmailSchema = z
   .union([
-    z.string().email("Nieprawidłowy email").max(MAX_SHORT_TEXT, `Email nie może przekraczać ${MAX_SHORT_TEXT} znaków`),
+    z
+      .string()
+      .email("Nieprawidłowy adres e-mail")
+      .max(MAX_SHORT_TEXT, `E-mail nie może przekraczać ${MAX_SHORT_TEXT} znaków`),
     z.literal(""),
   ])
   .optional();

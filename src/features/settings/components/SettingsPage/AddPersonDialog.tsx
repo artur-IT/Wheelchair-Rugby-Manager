@@ -72,7 +72,7 @@ export default function AddPersonDialog({
     }
     const email = form.email.trim();
     if (email && email.length > MAX_SHORT_TEXT) {
-      setLocalError(`Email nie może przekraczać ${MAX_SHORT_TEXT} znaków`);
+      setLocalError(`E-mail nie może przekraczać ${MAX_SHORT_TEXT} znaków`);
       return;
     }
     const phone = form.phone.trim();
@@ -99,7 +99,7 @@ export default function AddPersonDialog({
           {error && <Alert severity="error">{error}</Alert>}
           <TextField label="Imię" value={form.firstName} onChange={handleFieldChange("firstName")} />
           <TextField label="Nazwisko" value={form.lastName} onChange={handleFieldChange("lastName")} />
-          <TextField label="Email" type="email" value={form.email} onChange={handleFieldChange("email")} />
+          <TextField label="E-mail" type="email" value={form.email} onChange={handleFieldChange("email")} />
           <TextField
             label="Telefon"
             placeholder="9 cyfr"

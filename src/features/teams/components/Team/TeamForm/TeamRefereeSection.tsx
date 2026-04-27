@@ -42,7 +42,7 @@ export default function TeamRefereeSection({
         <Grid size={{ xs: 12, sm: 6 }}>
           <TextField
             fullWidth
-            label="Email (opcjonalnie)"
+            label="E-mail (opcjonalnie)"
             {...register("refereeEmail")}
             error={Boolean(touchedFields.refereeEmail && errors.refereeEmail)}
             helperText={touchedFields.refereeEmail ? errors.refereeEmail?.message : undefined}

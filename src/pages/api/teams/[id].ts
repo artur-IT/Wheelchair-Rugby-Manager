@@ -17,7 +17,7 @@ const UpdateTeamSchema = z
       .optional(),
     contactFirstName: z.string().min(1, "Imię jest wymagane").optional(),
     contactLastName: z.string().min(1, "Nazwisko jest wymagane").optional(),
-    contactEmail: z.string().email("Nieprawidłowy email").optional(),
+    contactEmail: z.string().email("Nieprawidłowy adres e-mail").optional(),
     contactPhone: z.string().min(1, "Telefon jest wymagany").optional(),
     seasonId: z.string().optional(),
     coachId: z.string().optional(),

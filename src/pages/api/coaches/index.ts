@@ -10,7 +10,7 @@ const CreateCoachSchema = z
   .object({
     firstName: z.string().min(1, "Imię jest wymagane"),
     lastName: z.string().min(1, "Nazwisko jest wymagane"),
-    email: z.union([z.string().email("Nieprawidłowy email"), z.literal(""), z.null()]).optional(),
+    email: z.union([z.string().email("Nieprawidłowy adres e-mail"), z.literal(""), z.null()]).optional(),
     phone: z
       .string()
       .transform((v) => sanitizePhone(v))

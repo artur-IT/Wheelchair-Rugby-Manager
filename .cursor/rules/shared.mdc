@@ -11,8 +11,7 @@ alwaysApply: true
 - **Routing**: Astro
 - **Fetching API**: Tanstack Query
 - **Forms**: React Hook Form + Zod (on the backend to validate requests)
-- **Authentication**: OAuth 2.0 + OpenID Connect (OIDC)
-  - **Hashing passwords**: Argon2
+- **Authentication**: SuperTokens
 - **Style**: Material UI + global.css
 - **ESLint + Prettier**
 - **Builder**: Vite

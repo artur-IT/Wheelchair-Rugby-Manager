@@ -4,6 +4,7 @@ import { motion } from "motion/react";
 import { Button, Grid, Card, CardContent, Box, Typography } from "@mui/material";
 import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
 import LoginModal from "@/components/LoginModal/LoginModal";
+import { getYear } from "date-fns";
 
 const FEATURES = [
   {
@@ -89,7 +90,7 @@ export default function LandingPage() {
         <Box component="nav" sx={NAV_SX}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <Trophy color="#FE9A00" size={32} />
-            <Typography variant="h5" sx={{ letterSpacing: "-0.05em" }}>
+            <Typography variant="h6" sx={{ letterSpacing: "-0.05em" }}>
               Wheelchair Rugby Manager
             </Typography>
           </Box>
@@ -106,7 +107,7 @@ export default function LandingPage() {
                 fontWeight: 900,
                 mb: 3,
                 lineHeight: 1.1,
-                fontSize: { xs: "3rem", md: "4.5rem" },
+                fontSize: { xs: "2rem", md: "3rem" },
               }}
             >
               Zarządzaj Sezonem <br />
@@ -117,7 +118,7 @@ export default function LandingPage() {
             <Typography
               sx={{
                 color: "text.secondary",
-                fontSize: "1.25rem",
+                fontSize: "1rem",
                 maxWidth: "42rem",
                 mx: "auto",
                 mb: 5,
@@ -150,7 +151,7 @@ export default function LandingPage() {
         </Box>
 
         <Box component="footer" sx={FOOTER_SX}>
-          &copy; 2024 RugbyManager. Wszystkie prawa zastrzeżone.
+          &copy; {getYear(new Date())} RugbyManager. Wszystkie prawa zastrzeżone.
         </Box>
       </Box>
     </ThemeRegistry>

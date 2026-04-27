@@ -14,14 +14,17 @@ model User {
   email       String       @unique
   password    String
   role        UserRole
+  failedLoginAttempts Int  @default(0)
+  lockUntil   DateTime?
+  manualLock  Boolean      @default(false)
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   clubs       Club[]
 }
 
 enum UserRole {
-  COACH
-  ORGANIZER
+  USER
+  ADMIN
 }
 
 enum ClubTeamFormula {

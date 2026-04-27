@@ -10,13 +10,13 @@ import {
   requiredId,
 } from "@/lib/clubApiHelpers";
 
-export const GET: APIRoute = async ({ params, cookies }) => {
+export const GET: APIRoute = async ({ params, request }) => {
   const idResult = requiredId(params.id, "Brak id drużyny");
   if (!idResult.ok) return idResult.response;
   const id = idResult.data;
 
   const guard = await ensureEntityAccess(
-    cookies,
+    request,
     await prisma.clubTeam.findUnique({
       where: { id },
       include: { coach: true, players: { include: { player: true } } },
@@ -29,12 +29,12 @@ export const GET: APIRoute = async ({ params, cookies }) => {
   return json(guard.data);
 };
 
-export const PUT: APIRoute = async ({ params, request, cookies }) => {
+export const PUT: APIRoute = async ({ params, request }) => {
   const id = params.id;
   if (!id) return json({ error: "Brak id drużyny" }, 400);
 
   const guard = await ensureEntityAccess(
-    cookies,
+    request,
     await prisma.clubTeam.findUnique({ where: { id } }),
     (item) => item.clubId,
     "Nie znaleziono drużyny"
@@ -74,13 +74,13 @@ export const PUT: APIRoute = async ({ params, request, cookies }) => {
   }
 };
 
-export const DELETE: APIRoute = async ({ params, cookies }) => {
+export const DELETE: APIRoute = async ({ params, request }) => {
   const idResult = requiredId(params.id, "Brak id drużyny");
   if (!idResult.ok) return idResult.response;
   const id = idResult.data;
 
   const guard = await ensureEntityAccess(
-    cookies,
+    request,
     await prisma.clubTeam.findUnique({ where: { id } }),
     (item) => item.clubId,
     "Nie znaleziono drużyny"

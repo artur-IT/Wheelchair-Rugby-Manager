@@ -312,7 +312,7 @@ export default function ClubSimpleMemberPersonnelSection({
                   <TextField
                     {...field}
                     value={field.value ?? ""}
-                    label="Email"
+                    label="E-mail"
                     type="email"
                     error={Boolean(fieldState.error)}
                     helperText={fieldState.error?.message}

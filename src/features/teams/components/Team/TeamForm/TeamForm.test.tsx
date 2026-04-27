@@ -57,7 +57,7 @@ describe("TeamForm", () => {
     await user.type(screen.getByLabelText("Kod pocztowy"), "00-001");
     await user.type(screen.getAllByLabelText(/^Imię/)[0], "Jan");
     await user.type(screen.getAllByLabelText(/^Nazwisko/)[0], "Kowalski");
-    await user.type(screen.getAllByLabelText(/^Email/)[0], "jan@example.com");
+    await user.type(screen.getAllByLabelText(/^E-mail/)[0], "jan@example.com");
     await user.type(screen.getAllByLabelText(/^Telefon/)[0], "123456789");
     // Fill required coach fields (index 1: contact is [0], coach is [1], referee is [2])
     await user.type(screen.getAllByLabelText(/^Imię/)[1], "Anna");
@@ -111,7 +111,7 @@ describe("TeamForm", () => {
     await user.type(screen.getByLabelText("Kod pocztowy"), "00-001");
     await user.type(screen.getAllByLabelText(/^Imię/)[0], "Jan");
     await user.type(screen.getAllByLabelText(/^Nazwisko/)[0], "Kowalski");
-    await user.type(screen.getAllByLabelText(/^Email/)[0], "jan@example.com");
+    await user.type(screen.getAllByLabelText(/^E-mail/)[0], "jan@example.com");
     await user.type(screen.getAllByLabelText(/^Telefon/)[0], "123456789");
     await user.type(screen.getAllByLabelText(/^Imię/)[1], "Anna");
     await user.type(screen.getAllByLabelText(/^Nazwisko/)[1], "Nowak");
@@ -138,7 +138,7 @@ describe("TeamForm", () => {
     await user.type(screen.getByLabelText("Kod pocztowy"), "00-001");
     await user.type(screen.getAllByLabelText(/^Imię/)[0], "Jan");
     await user.type(screen.getAllByLabelText(/^Nazwisko/)[0], "Kowalski");
-    await user.type(screen.getAllByLabelText(/^Email/)[0], "jan@example.com");
+    await user.type(screen.getAllByLabelText(/^E-mail/)[0], "jan@example.com");
     await user.type(screen.getAllByLabelText(/^Telefon/)[0], "123456789");
     await user.type(screen.getAllByLabelText(/^Imię/)[1], "Anna");
     await user.type(screen.getAllByLabelText(/^Nazwisko/)[1], "Nowak");
@@ -189,7 +189,7 @@ describe("TeamForm", () => {
     renderWithQuery(<TeamFormContent mode="edit" initialTeam={initialTeam} onSuccess={onSuccess} />);
     await screen.findByRole("button", { name: "Zapisz zmiany" });
 
-    await user.type(screen.getByLabelText("Email (opcjonalnie)"), "ref@example.com");
+    await user.type(screen.getByLabelText("E-mail (opcjonalnie)"), "ref@example.com");
     await user.click(screen.getByRole("button", { name: "Zapisz zmiany" }));
 
     await waitFor(() => expect(onSuccess).toHaveBeenCalled());
@@ -253,7 +253,7 @@ describe("TeamForm", () => {
     renderWithQuery(<TeamFormContent mode="edit" initialTeam={initialTeam} onSuccess={onSuccess} />);
     await screen.findByRole("button", { name: "Zapisz zmiany" });
 
-    await user.type(screen.getAllByLabelText(/^Email$/)[1], "coach@example.com");
+    await user.type(screen.getAllByLabelText(/^E-mail$/)[1], "coach@example.com");
     await user.click(screen.getByRole("button", { name: "Zapisz zmiany" }));
 
     await waitFor(() => expect(onSuccess).toHaveBeenCalled());
@@ -318,7 +318,7 @@ describe("TeamForm", () => {
     renderWithQuery(<TeamFormContent mode="edit" initialTeam={initialTeam} onSuccess={onSuccess} />);
     await screen.findByRole("button", { name: "Zapisz zmiany" });
 
-    await user.type(screen.getAllByLabelText(/^Email$/)[1], "coach@example.com");
+    await user.type(screen.getAllByLabelText(/^E-mail$/)[1], "coach@example.com");
     await user.click(screen.getByRole("button", { name: "Zapisz zmiany" }));
 
     await waitFor(() => expect(onSuccess).toHaveBeenCalled());
@@ -375,7 +375,7 @@ describe("TeamForm", () => {
     renderWithQuery(<TeamFormContent mode="edit" initialTeam={initialTeam} onSuccess={onSuccess} />);
     await screen.findByRole("button", { name: "Zapisz zmiany" });
 
-    await user.type(screen.getAllByLabelText(/^Email$/)[1], "coach@example.com");
+    await user.type(screen.getAllByLabelText(/^E-mail$/)[1], "coach@example.com");
     await user.click(screen.getByRole("button", { name: "Zapisz zmiany" }));
 
     await waitFor(() => expect(onSuccess).toHaveBeenCalled());
@@ -441,7 +441,7 @@ describe("TeamForm", () => {
     renderWithQuery(<TeamFormContent mode="edit" initialTeam={initialTeam} onSuccess={onSuccess} />);
     await screen.findByRole("button", { name: "Zapisz zmiany" });
 
-    await user.type(screen.getAllByLabelText(/^Email$/)[1], "coach@example.com");
+    await user.type(screen.getAllByLabelText(/^E-mail$/)[1], "coach@example.com");
     await user.click(screen.getByRole("button", { name: "Zapisz zmiany" }));
 
     await waitFor(() => expect(onSuccess).toHaveBeenCalled());
@@ -506,7 +506,7 @@ describe("TeamForm", () => {
     renderWithQuery(<TeamFormContent mode="edit" initialTeam={initialTeam} onSuccess={onSuccess} />);
     const submitButton = await screen.findByRole("button", { name: "Zapisz zmiany" });
 
-    await user.type(screen.getByLabelText("Email (opcjonalnie)"), "ref@example.com");
+    await user.type(screen.getByLabelText("E-mail (opcjonalnie)"), "ref@example.com");
     submitButton.focus();
     expect(document.activeElement).toBe(submitButton);
     await user.click(submitButton);

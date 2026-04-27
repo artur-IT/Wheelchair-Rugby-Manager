@@ -1,4 +1,3 @@
-import type { AstroCookies } from "astro";
 import type { ZodType } from "zod";
 import { json } from "@/lib/api";
 import { getClubById } from "@/lib/club";
@@ -52,11 +51,8 @@ export const ensureClubExists = async (clubId: string): Promise<GuardResult<true
     : ({ ok: false, response: json({ error: "Nie znaleziono klubu" }, 404) } as const);
 };
 
-export const ensureClubAccess = async (
-  cookies: AstroCookies,
-  clubId: string
-): Promise<GuardResult<true>> => {
-  const authz = await authorizeClubAccess(cookies, clubId);
+export const ensureClubAccess = async (request: Request, clubId: string): Promise<GuardResult<true>> => {
+  const authz = await authorizeClubAccess(request, clubId);
   if (authz.ok === false) {
     return { ok: false, response: authz.response };
   }
@@ -65,14 +61,14 @@ export const ensureClubAccess = async (
 };
 
 export const ensureEntityAccess = async <TEntity>(
-  cookies: AstroCookies,
+  request: Request,
   entity: TEntity | null,
   getClubId: (item: TEntity) => string,
   notFoundMessage: string
 ): Promise<GuardResult<TEntity>> => {
   if (!entity) return { ok: false, response: json({ error: notFoundMessage }, 404) };
 
-  const authz = await ensureClubAccess(cookies, getClubId(entity));
+  const authz = await ensureClubAccess(request, getClubId(entity));
   if (!authz.ok) return { ok: false, response: authz.response };
 
   return { ok: true, data: entity };

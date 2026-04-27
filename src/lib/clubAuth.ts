@@ -1,9 +1,10 @@
-import type { AstroCookies } from "astro";
 import { prisma } from "@/lib/prisma";
 import { json } from "@/lib/api";
+import { requireRole } from "@/lib/supertokens/authorization";
+import { getSessionPrismaUser } from "@/lib/supertokens/sessionFromRequest";
 
 interface RequesterIdentity {
-  role?: string;
+  tenantId: string;
   userId: string;
 }
 
@@ -22,27 +23,22 @@ type AuthResult = AuthSuccess | AuthFailure;
 const unauthorized = () => ({ ok: false as const, response: json({ error: "Brak autoryzacji" }, 401) });
 const forbidden = () => ({ ok: false as const, response: json({ error: "Brak uprawnień" }, 403) });
 
-function getRequesterIdentity(cookies: AstroCookies): AuthResult {
-  const sessionValue = cookies.get("session")?.value;
-  if (sessionValue !== "ok") {
+async function getRequesterIdentity(request: Request): Promise<AuthResult> {
+  const sessionUser = await getSessionPrismaUser(request);
+  if (!sessionUser) {
     return unauthorized();
   }
 
-  const userId = cookies.get("sessionUserId")?.value?.trim();
-  if (!userId) {
-    return unauthorized();
-  }
-
-  const role = cookies.get("sessionUserRole")?.value?.trim().toUpperCase();
-  return { ok: true, identity: { role, userId } };
+  return { ok: true, identity: { tenantId: sessionUser.tenantId, userId: sessionUser.userId } };
 }
 
-export async function authorizeClubAccess(cookies: AstroCookies, resourceClubId: string): Promise<AuthResult> {
-  const auth = getRequesterIdentity(cookies);
+export async function authorizeClubAccess(request: Request, resourceClubId: string): Promise<AuthResult> {
+  const auth = await getRequesterIdentity(request);
   if (!auth.ok) return auth;
 
-  const { role, userId } = auth.identity;
-  if (role === "ADMIN") return auth;
+  const { userId } = auth.identity;
+  const adminAuth = await requireRole(auth.identity, "ADMIN");
+  if (adminAuth.ok) return auth;
 
   const club = await prisma.club.findUnique({
     where: { id: resourceClubId },

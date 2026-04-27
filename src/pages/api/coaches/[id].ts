@@ -13,7 +13,7 @@ const UpdateCoachSchema = z
   .object({
     firstName: z.string().min(1, "Imię jest wymagane"),
     lastName: z.string().min(1, "Nazwisko jest wymagane"),
-    email: z.union([z.string().email("Nieprawidłowy email"), z.literal(""), z.null()]).optional(),
+    email: z.union([z.string().email("Nieprawidłowy adres e-mail"), z.literal(""), z.null()]).optional(),
     phone: z
       .string()
       .transform((v) => sanitizePhone(v))
@@ -52,7 +52,7 @@ export const PATCH: APIRoute = async ({ params, request }) => {
             return json({ error: "Trener już istnieje (numer telefonu jest zajęty)" }, 409);
           }
           if (target?.includes("email")) {
-            return json({ error: "Trener już istnieje (adres email jest zajęty)" }, 409);
+            return json({ error: "Trener już istnieje (adres e-mail jest zajęty)" }, 409);
           }
           return json({ error: "Trener już istnieje" }, 409);
         }

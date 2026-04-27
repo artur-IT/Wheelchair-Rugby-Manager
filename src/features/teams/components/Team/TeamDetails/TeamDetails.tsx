@@ -591,7 +591,7 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
                 : "Brak danych"}
             </Typography>{" "}
             <Typography variant="body2" color="textSecondary">
-              {team.contactEmail ?? "Brak emaila"}
+              {team.contactEmail ?? "Brak adresu e-mail"}
             </Typography>
             <Typography variant="body2" color="textSecondary">
               {team.contactPhone ?? "Brak telefonu"}
@@ -620,7 +620,7 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
                   {team.coach ? `${team.coach.firstName} ${team.coach.lastName}` : "Nie przypisano"}
                 </Typography>
                 <Typography variant="caption" color="textSecondary" display="block">
-                  {`Email: ${team.coach?.email ?? "Nie podano emaila"}`}
+                  {`E-mail: ${team.coach?.email ?? "Nie podano adresu e-mail"}`}
                 </Typography>
                 <Typography variant="caption" color="textSecondary" display="block">
                   {`Tel.: ${team.coach?.phone ?? "Nie podano telefonu"}`}
@@ -669,7 +669,7 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
                   {team.referee ? `${team.referee.firstName} ${team.referee.lastName}` : "Nie przypisano"}
                 </Typography>
                 <Typography variant="caption" color="textSecondary" display="block">
-                  {`Email: ${team.referee?.email ?? "-"}`}
+                  {`E-mail: ${team.referee?.email ?? "-"}`}
                 </Typography>
                 <Typography variant="caption" color="textSecondary" display="block">
                   {`Tel.: ${team.referee?.phone ?? "-"}`}

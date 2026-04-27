@@ -581,7 +581,7 @@ export default function ClubPlayersPersonnelSection({
                   <PlayerDetailField label="Data urodzenia">{playerBirthDisplay(p.birthDate)}</PlayerDetailField>
                   <PlayerDetailField label="Telefon">{p.contactPhone?.trim() || "—"}</PlayerDetailField>
                   <Box sx={{ gridColumn: { xs: "auto", sm: "1 / -1" } }}>
-                    <PlayerDetailField label="Email">{p.contactEmail?.trim() || "—"}</PlayerDetailField>
+                    <PlayerDetailField label="E-mail">{p.contactEmail?.trim() || "—"}</PlayerDetailField>
                   </Box>
                   <Box sx={{ gridColumn: { xs: "auto", sm: "1 / -1" } }}>
                     <PlayerDetailField label="Adres">{playerAddressLine(p)}</PlayerDetailField>
@@ -823,7 +823,7 @@ export default function ClubPlayersPersonnelSection({
                       {...field}
                       fullWidth
                       value={field.value ?? ""}
-                      label="Email kontaktowy"
+                      label="E-mail kontaktowy"
                       type="email"
                       error={Boolean(fieldState.error)}
                       helperText={fieldState.error?.message}

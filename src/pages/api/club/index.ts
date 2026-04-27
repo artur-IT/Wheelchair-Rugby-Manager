@@ -4,29 +4,28 @@ import { prisma } from "@/lib/prisma";
 import { ClubUpsertSchema } from "@/lib/clubSchemas";
 import { clubInclude } from "@/lib/club";
 import { mapPrismaError, parseRequestJson, parseWithSchema } from "@/lib/clubApiHelpers";
+import { getSessionPrismaUser } from "@/lib/supertokens/sessionFromRequest";
 
-const getSessionOwnerUserId = (cookieValue: string | undefined) => cookieValue?.trim() || null;
-
-export const GET: APIRoute = async ({ cookies }) => {
-  const ownerUserId = getSessionOwnerUserId(cookies.get("sessionUserId")?.value);
-  if (!ownerUserId) return json({ error: "Brak aktywnej sesji użytkownika" }, 401);
+export const GET: APIRoute = async ({ request }) => {
+  const sessionUser = await getSessionPrismaUser(request);
+  if (!sessionUser) return json({ error: "Brak aktywnej sesji użytkownika" }, 401);
 
   const clubs = await prisma.club.findMany({
-    where: { ownerUserId },
+    where: { ownerUserId: sessionUser.userId },
     include: clubInclude,
     orderBy: { createdAt: "desc" },
   });
   return json(clubs);
 };
 
-export const POST: APIRoute = async ({ request, cookies }) => {
-  const ownerUserId = getSessionOwnerUserId(cookies.get("sessionUserId")?.value);
-  if (!ownerUserId) return json({ error: "Brak aktywnej sesji użytkownika" }, 401);
+export const POST: APIRoute = async ({ request }) => {
+  const sessionUser = await getSessionPrismaUser(request);
+  if (!sessionUser) return json({ error: "Brak aktywnej sesji użytkownika" }, 401);
 
   const bodyResult = await parseRequestJson(request);
   if (!bodyResult.ok) return bodyResult.response;
 
-  const parsed = parseWithSchema(ClubUpsertSchema, { ...bodyResult.data, ownerUserId });
+  const parsed = parseWithSchema(ClubUpsertSchema, { ...bodyResult.data, ownerUserId: sessionUser.userId });
   if (!parsed.ok) return parsed.response;
 
   try {

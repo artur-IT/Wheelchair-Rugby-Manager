@@ -11,7 +11,7 @@ import {
   requiredId,
 } from "@/lib/clubApiHelpers";
 
-export const GET: APIRoute = async ({ params, cookies }) => {
+export const GET: APIRoute = async ({ params, request }) => {
   const clubIdResult = requiredId(params.id, "Brak id klubu");
   if (!clubIdResult.ok) return clubIdResult.response;
   const clubId = clubIdResult.data;
@@ -19,7 +19,7 @@ export const GET: APIRoute = async ({ params, cookies }) => {
   const clubGuard = await ensureClubExists(clubId);
   if (!clubGuard.ok) return clubGuard.response;
 
-  const authz = await ensureClubAccess(cookies, clubId);
+  const authz = await ensureClubAccess(request, clubId);
   if (!authz.ok) return authz.response;
 
   const teams = await prisma.clubTeam.findMany({
@@ -30,7 +30,7 @@ export const GET: APIRoute = async ({ params, cookies }) => {
   return json(teams);
 };
 
-export const POST: APIRoute = async ({ params, request, cookies }) => {
+export const POST: APIRoute = async ({ params, request }) => {
   const clubIdResult = requiredId(params.id, "Brak id klubu");
   if (!clubIdResult.ok) return clubIdResult.response;
   const clubId = clubIdResult.data;
@@ -38,7 +38,7 @@ export const POST: APIRoute = async ({ params, request, cookies }) => {
   const clubGuard = await ensureClubExists(clubId);
   if (!clubGuard.ok) return clubGuard.response;
 
-  const authz = await ensureClubAccess(cookies, clubId);
+  const authz = await ensureClubAccess(request, clubId);
   if (!authz.ok) return authz.response;
 
   const bodyResult = await parseRequestJson(request);

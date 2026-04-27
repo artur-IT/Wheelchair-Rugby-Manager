@@ -9,13 +9,13 @@ const ClubStaffRoleSchema = z.object({
   role: z.enum(["VOLUNTEER", "REFEREE", "OTHER"]).default("OTHER"),
 });
 
-export const GET: APIRoute = async ({ params, cookies }) => {
+export const GET: APIRoute = async ({ params, request }) => {
   const idResult = requiredId(params.id, "Brak id personelu");
   if (!idResult.ok) return idResult.response;
   const id = idResult.data;
 
   const guard = await ensureEntityAccess(
-    cookies,
+    request,
     await prisma.clubStaff.findUnique({ where: { id } }),
     (item) => item.clubId,
     "Nie znaleziono osoby"
@@ -25,13 +25,13 @@ export const GET: APIRoute = async ({ params, cookies }) => {
   return json(guard.data);
 };
 
-export const PUT: APIRoute = async ({ params, request, cookies }) => {
+export const PUT: APIRoute = async ({ params, request }) => {
   const idResult = requiredId(params.id, "Brak id personelu");
   if (!idResult.ok) return idResult.response;
   const id = idResult.data;
 
   const guard = await ensureEntityAccess(
-    cookies,
+    request,
     await prisma.clubStaff.findUnique({ where: { id } }),
     (item) => item.clubId,
     "Nie znaleziono osoby"
@@ -55,13 +55,13 @@ export const PUT: APIRoute = async ({ params, request, cookies }) => {
   return json(updated);
 };
 
-export const DELETE: APIRoute = async ({ params, cookies }) => {
+export const DELETE: APIRoute = async ({ params, request }) => {
   const idResult = requiredId(params.id, "Brak id personelu");
   if (!idResult.ok) return idResult.response;
   const id = idResult.data;
 
   const guard = await ensureEntityAccess(
-    cookies,
+    request,
     await prisma.clubStaff.findUnique({ where: { id } }),
     (item) => item.clubId,
     "Nie znaleziono osoby"

@@ -1,6 +1,15 @@
 import { defineMiddleware } from "astro:middleware";
+import { CollectingResponse } from "supertokens-node/framework/custom";
+import Session from "supertokens-node/recipe/session";
+import { mergeCollectingResponseCookies } from "@/lib/supertokens/collectingResponseToWeb";
+import { ensureSuperTokensInitialized } from "@/lib/supertokens/initSuperTokens";
+import { requestToPreParsedRequest } from "@/lib/supertokens/requestAdapter";
 
-const PUBLIC_PATHS = new Set(["/", "/api/login", "/api/logout"]);
+const PUBLIC_PATHS = new Set(["/", "/auth/callback"]);
+
+function isPublicAuthApi(pathname: string) {
+  return pathname.startsWith("/api/auth");
+}
 
 function isLikelyAssetPath(pathname: string) {
   return (
@@ -18,17 +27,39 @@ function isLikelyAssetPath(pathname: string) {
   );
 }
 
-export const onRequest = defineMiddleware(async (context, next) => {
-  const { url, cookies, redirect } = context;
+async function readSuperTokensSession(request: Request): Promise<{ ok: boolean; collecting: CollectingResponse }> {
+  ensureSuperTokensInitialized();
+  const req = requestToPreParsedRequest(request);
+  const collecting = new CollectingResponse();
+  try {
+    const session = await Session.getSession(req, collecting, { sessionRequired: false });
+    return { ok: !!session, collecting };
+  } catch {
+    return { ok: false, collecting };
+  }
+}
 
-  if (PUBLIC_PATHS.has(url.pathname) || isLikelyAssetPath(url.pathname)) {
+export const onRequest = defineMiddleware(async (context, next) => {
+  const { url, redirect, request } = context;
+
+  if (PUBLIC_PATHS.has(url.pathname) || isPublicAuthApi(url.pathname) || isLikelyAssetPath(url.pathname)) {
     return next();
   }
 
-  const session = cookies.get("session")?.value;
-  if (!session) {
+  const { ok, collecting } = await readSuperTokensSession(request);
+  if (!ok) {
+    if (url.pathname.startsWith("/api/")) {
+      return new Response(JSON.stringify({ error: "Brak autoryzacji" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
     return redirect("/?login=1");
   }
 
-  return next();
+  const response = await next();
+  if (response instanceof Response) {
+    return mergeCollectingResponseCookies(response, collecting);
+  }
+  return response;
 });

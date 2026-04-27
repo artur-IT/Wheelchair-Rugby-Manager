@@ -12,4 +12,12 @@ export default defineConfig({
   adapter: node({
     mode: "standalone",
   }),
+  vite: {
+    ssr: {
+      // Keep supertokens-node as a real Node dependency (CJS). Do NOT use ssr.noExternal here —
+      // bundling it breaks with "exports is not defined". Externalising avoids duplicate copies
+      // in Vite's SSR module runner and fixes "Initialisation not done" / wrong singleton.
+      external: ["supertokens-node"],
+    },
+  },
 });

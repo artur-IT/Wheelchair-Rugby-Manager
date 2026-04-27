@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { ReactNode } from "react";
 import { LayoutDashboard, Trophy, Settings, Building2, LogOut, Menu, X, UserCircle } from "lucide-react";
+import { signOut } from "supertokens-web-js/recipe/session";
+import { ensureSuperTokensFrontendInitialized } from "@/lib/supertokens/initFrontend";
 import {
   Box,
   AppBar,
@@ -145,8 +147,14 @@ export default function AppShell({ children, currentPath, containerMaxWidth = "l
   const [mobileOpen, setMobileOpen] = useState(false);
   const closeMobileDrawer = () => setMobileOpen(false);
   const toggleMobileDrawer = () => setMobileOpen((prev) => !prev);
+
+  useEffect(() => {
+    ensureSuperTokensFrontendInitialized();
+  }, []);
+
   const handleLogout = async () => {
-    await fetch("/api/logout", { method: "POST" });
+    ensureSuperTokensFrontendInitialized();
+    await signOut();
     window.location.href = "/";
   };
 

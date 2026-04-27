@@ -46,7 +46,7 @@ export default function TeamCoachSection({
         <Grid size={{ xs: 12, sm: 6 }}>
           <TextField
             fullWidth
-            label="Email"
+            label="E-mail"
             {...register("coachEmail")}
             error={Boolean(touchedFields.coachEmail && errors.coachEmail)}
             helperText={touchedFields.coachEmail ? errors.coachEmail?.message : undefined}

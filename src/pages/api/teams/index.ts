@@ -17,7 +17,7 @@ const CreateTeamSchema = z
       .optional(),
     contactFirstName: z.string().min(1, "Imię jest wymagane"),
     contactLastName: z.string().min(1, "Nazwisko jest wymagane"),
-    contactEmail: z.string().email("Nieprawidłowy email"),
+    contactEmail: z.string().email("Nieprawidłowy adres e-mail"),
     contactPhone: z.string().min(1, "Telefon jest wymagany"),
     seasonId: z.string().min(1, "Id sezonu jest wymagane"),
     coachId: z.string().optional(),
