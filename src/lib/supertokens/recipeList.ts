@@ -281,16 +281,27 @@ export function buildRecipeList() {
         functions: (original) => ({
           ...original,
           signInUp: async (input) => {
+            const email = input.email.trim().toLowerCase();
+            const existingPrismaUser = await findUserByEmailInsensitive(email);
             const result = await original.signInUp(input);
             if (result.status !== "OK") {
               return result;
             }
-            const email = input.email.trim().toLowerCase();
             if (!email) {
               return result;
             }
 
-            let prismaUser = await findUserByEmailInsensitive(email);
+            // Block cross-provider takeover: if Google just created a new recipe user but
+            // this email is already used by another account in our DB, cancel the new user.
+            if (result.createdNewRecipeUser && existingPrismaUser) {
+              await SuperTokens.deleteUser(result.user.id).catch(() => undefined);
+              return {
+                status: "SIGN_IN_UP_NOT_ALLOWED" as const,
+                reason: "Konto z tym adresem e-mail już istnieje.",
+              };
+            }
+
+            let prismaUser = existingPrismaUser;
             if (!prismaUser) {
               const placeholder = await randomUnusedPasswordHash();
               prismaUser = await prisma.user.create({

@@ -19,6 +19,10 @@ export default function SuperTokensOAuthFinish() {
           window.location.replace("/dashboard");
           return;
         }
+        if (result.status === "SIGN_IN_UP_NOT_ALLOWED") {
+          setMessage(result.reason || "Ten e-mail jest już używany przez inne konto.");
+          return;
+        }
         setMessage("Sign-in with Google did not complete. Please try again.");
       } catch {
         if (!cancelled) setMessage("Something went wrong. Please try again.");
