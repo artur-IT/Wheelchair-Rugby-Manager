@@ -214,6 +214,49 @@ export function buildRecipeList() {
             await assignDefaultRole(tenantId, superTokensResult.user.id, userContext);
             return superTokensResult;
           },
+          consumePasswordResetToken: async (input) => {
+            const result = await original.consumePasswordResetToken(input);
+            if (result.status !== "OK") {
+              return result;
+            }
+
+            // Keep Prisma lock state aligned with SuperTokens after successful reset.
+            const mapping = await SuperTokens.getUserIdMapping({
+              userId: result.userId,
+              userContext: input.userContext,
+            });
+            if (mapping.status === "OK") {
+              await prisma.user
+                .updateMany({
+                  where: { id: mapping.externalUserId, manualLock: false },
+                  data: {
+                    failedLoginAttempts: 0,
+                    lockUntil: null,
+                  },
+                })
+                .catch(() => undefined);
+              return result;
+            }
+
+            const stUser = await SuperTokens.getUser(result.userId, input.userContext);
+            const stEmail = stUser?.emails?.[0]?.trim().toLowerCase();
+            if (!stEmail) {
+              return result;
+            }
+            await prisma.user
+              .updateMany({
+                where: {
+                  email: { equals: stEmail, mode: "insensitive" },
+                  manualLock: false,
+                },
+                data: {
+                  failedLoginAttempts: 0,
+                  lockUntil: null,
+                },
+              })
+              .catch(() => undefined);
+            return result;
+          },
         }),
       },
     }),
