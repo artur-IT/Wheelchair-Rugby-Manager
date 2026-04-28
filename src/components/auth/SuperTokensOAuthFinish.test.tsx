@@ -38,8 +38,6 @@ describe("SuperTokensOAuthFinish", () => {
 
     render(<SuperTokensOAuthFinish />);
 
-    expect(
-      await screen.findByText("Ten e-mail jest już używany przez inne konto. Zaloguj się e-mailem i hasłem.")
-    ).toBeInTheDocument();
+    expect(await screen.findByText("Ten e-mail jest już używany przez inne konto.")).toBeInTheDocument();
   });
 });

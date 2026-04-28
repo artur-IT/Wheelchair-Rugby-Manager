@@ -40,6 +40,11 @@ interface SignInErrorResultWithAttemptMeta {
   lockUntil?: unknown;
 }
 
+interface GoogleEmailConflictResponse {
+  conflict?: boolean;
+  message?: string;
+}
+
 function parseLockUntil(result: unknown): Date | null {
   const maybeResult = result as SignInErrorResultWithAttemptMeta;
   if (maybeResult?.status !== "WRONG_CREDENTIALS_ERROR") {
@@ -157,6 +162,18 @@ export default function LoginModal({ open, onClose, onLoginSuccess }: Props) {
     setLoading(true);
     try {
       ensureSuperTokensFrontendInitialized();
+      const typedEmail = formValues.email.trim().toLowerCase();
+      if (typedEmail.length > 0) {
+        const checkResponse = await fetch(`/api/auth/google-email-conflict?email=${encodeURIComponent(typedEmail)}`);
+        if (checkResponse.ok) {
+          const conflictResult = (await checkResponse.json()) as GoogleEmailConflictResponse;
+          if (conflictResult.conflict) {
+            setError(true);
+            setErrorMessage(conflictResult.message || "Konto z tym adresem e-mail już istnieje.");
+            return;
+          }
+        }
+      }
       const site = getOAuthRedirectOrigin();
       const frontendCallback = `${site}/auth/callback`;
       // Must match Google Cloud "Authorized redirect URIs" (GET is handled in api/auth/[...path].ts).
