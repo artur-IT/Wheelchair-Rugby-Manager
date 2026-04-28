@@ -175,9 +175,7 @@ export function buildRecipeList() {
                     where: { id: loginStateUser.id },
                     data: nextState,
                   })
-                  .catch((err) => {
-                    console.error("Failed to update login attempt state:", err);
-                  });
+                  .catch(() => undefined);
                 return {
                   ...superTokensResult,
                   remainingAttempts: computeRemainingLoginAttempts(nextState.failedLoginAttempts),

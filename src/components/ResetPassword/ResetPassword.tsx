@@ -9,7 +9,9 @@ if (typeof window !== "undefined") {
 
 export default function ResetPasswordPage() {
   // Pre-built UI reads recipe instances during render, so init must happen synchronously.
-  ensureSuperTokensAuthReactInitialized();
+  if (typeof window !== "undefined") {
+    ensureSuperTokensAuthReactInitialized();
+  }
   return (
     <div>
       <ResetPasswordUsingToken />
