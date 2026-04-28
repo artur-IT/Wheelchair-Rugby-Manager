@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import Dashboard from "./Dashboard";
@@ -22,10 +22,10 @@ describe("Dashboard", () => {
   it("loads and displays default season chip from API", async () => {
     localStorage.setItem("defaultSeasonId", "s1");
     const fetchMock = vi.fn().mockImplementation((url: string) => {
-      if (url === "/api/seasons/s1") {
+      if (url === "/api/seasons") {
         return Promise.resolve({
           ok: true,
-          json: async () => ({ id: "s1", name: "Sezon 1", year: 2026 }),
+          json: async () => [{ id: "s1", name: "Sezon 1", year: 2026 }],
         });
       }
       if (url === "/api/tournaments") {
@@ -43,13 +43,13 @@ describe("Dashboard", () => {
 
     render(<Dashboard />);
 
-    expect(await screen.findByRole("link", { name: "Sezon 1 (2026)" }, { timeout: 10000 })).toHaveAttribute(
-      "href",
-      "/settings"
+    await waitFor(
+      () => {
+        const seasonChipLink = screen.getByRole("link", { name: "Sezon 1 (2026)" });
+        expect(seasonChipLink).toHaveAttribute("href", "/settings");
+      },
+      { timeout: 10000 }
     );
-    expect(fetchMock).toHaveBeenCalledWith(
-      "/api/seasons/s1",
-      expect.objectContaining({ signal: expect.any(AbortSignal) })
-    );
+    expect(fetchMock).toHaveBeenCalledWith("/api/seasons", expect.objectContaining({ signal: expect.any(AbortSignal) }));
   });
 });

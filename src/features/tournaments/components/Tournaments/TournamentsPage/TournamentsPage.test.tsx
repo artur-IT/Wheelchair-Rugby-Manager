@@ -72,7 +72,11 @@ describe("TournamentsPage", () => {
 
     render(<TournamentsPage />);
 
-    expect(await screen.findByText("Zarządzaj wydarzeniami w sezonie: Sezon 2025/2026 (2025).")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText(/Zarządzaj wydarzeniami w sezonie:/i)).toHaveTextContent(
+        "Zarządzaj wydarzeniami w sezonie: Sezon 2025/2026 (2025)."
+      );
+    });
     expect(await screen.findByText("Turniej A")).toBeInTheDocument();
     expect(screen.getByText("Turniej C")).toBeInTheDocument();
     expect(screen.queryByText("Turniej B")).not.toBeInTheDocument();

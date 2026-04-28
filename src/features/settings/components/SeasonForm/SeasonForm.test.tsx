@@ -42,9 +42,10 @@ describe("SeasonForm", () => {
     await user.type(screen.getByLabelText("Opis"), "Opis testowy");
     await user.click(screen.getByRole("button", { name: "Zapisz Sezon" }));
 
-    const [, submitOptions] = fetchMock.mock.calls[0] as [string, RequestInit];
-    expect(fetchMock).toHaveBeenCalledWith(
-      "/api/seasons",
+    const submitCall = fetchMock.mock.calls.find((call) => call[0] === "/api/seasons");
+    expect(submitCall).toBeDefined();
+    const [, submitOptions] = submitCall as [string, RequestInit];
+    expect(submitOptions).toEqual(
       expect.objectContaining({
         method: "POST",
         headers: { "Content-Type": "application/json" },

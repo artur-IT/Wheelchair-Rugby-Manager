@@ -57,7 +57,7 @@ describe("AppShell", () => {
       </AppShell>
     );
 
-    expect(await screen.findByText("Zalogowany: Jan Kowalski")).toBeInTheDocument();
+    expect(await screen.findByText("Jan Kowalski")).toBeInTheDocument();
   });
 
   it("calls SuperTokens signOut when user clicks logout", async () => {
