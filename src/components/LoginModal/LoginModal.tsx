@@ -40,6 +40,11 @@ interface SignInErrorResultWithAttemptMeta {
   lockUntil?: unknown;
 }
 
+interface GoogleEmailConflictResponse {
+  conflict?: boolean;
+  message?: string;
+}
+
 function parseLockUntil(result: unknown): Date | null {
   const maybeResult = result as SignInErrorResultWithAttemptMeta;
   if (maybeResult?.status !== "WRONG_CREDENTIALS_ERROR") {
@@ -131,6 +136,7 @@ export default function LoginModal({ open, onClose, onLoginSuccess }: Props) {
   const [mode, setMode] = useState<Mode>("signin");
   const [signinCredentials, setSigninCredentials] = useState({ email: "", password: "" });
   const [formValues, setFormValues] = useState({ email: "", password: "" });
+  const [showResetPasswordLink, setShowResetPasswordLink] = useState(false);
   const handleLoginSuccess = onLoginSuccess ?? (() => (window.location.href = "/dashboard"));
 
   useEffect(() => {
@@ -146,6 +152,7 @@ export default function LoginModal({ open, onClose, onLoginSuccess }: Props) {
     if (v === "signin") {
       setError(false);
       setErrorMessage(null);
+      setShowResetPasswordLink(false);
     }
   };
 
@@ -155,6 +162,18 @@ export default function LoginModal({ open, onClose, onLoginSuccess }: Props) {
     setLoading(true);
     try {
       ensureSuperTokensFrontendInitialized();
+      const typedEmail = formValues.email.trim().toLowerCase();
+      if (typedEmail.length > 0) {
+        const checkResponse = await fetch(`/api/auth/google-email-conflict?email=${encodeURIComponent(typedEmail)}`);
+        if (checkResponse.ok) {
+          const conflictResult = (await checkResponse.json()) as GoogleEmailConflictResponse;
+          if (conflictResult.conflict) {
+            setError(true);
+            setErrorMessage(conflictResult.message || "Konto z tym adresem e-mail już istnieje.");
+            return;
+          }
+        }
+      }
       const site = getOAuthRedirectOrigin();
       const frontendCallback = `${site}/auth/callback`;
       // Must match Google Cloud "Authorized redirect URIs" (GET is handled in api/auth/[...path].ts).
@@ -176,6 +195,7 @@ export default function LoginModal({ open, onClose, onLoginSuccess }: Props) {
     e.preventDefault();
     setError(false);
     setErrorMessage(null);
+    setShowResetPasswordLink(false);
     setLoading(true);
     const email = formValues.email.trim();
     const password = formValues.password;
@@ -191,12 +211,16 @@ export default function LoginModal({ open, onClose, onLoginSuccess }: Props) {
         const result = await signIn({ formFields });
         if (result.status === "OK") {
           setFailedSigninAttemptsInSession(0);
+          setShowResetPasswordLink(false);
           handleLoginSuccess();
           return;
         }
         const nextFailedAttempts = failedSigninAttemptsInSession + 1;
         setFailedSigninAttemptsInSession(nextFailedAttempts);
         setErrorMessage(buildSigninErrorMessage(result, nextFailedAttempts));
+        if (result.status === "WRONG_CREDENTIALS_ERROR") {
+          setShowResetPasswordLink(true);
+        }
       } else {
         const result = await signUp({ formFields });
         if (result.status === "OK") {
@@ -302,6 +326,19 @@ export default function LoginModal({ open, onClose, onLoginSuccess }: Props) {
             fullWidth
             sx={{ mb: 2 }}
           />
+          {isSignin && showResetPasswordLink && (
+            <Box sx={{ mt: -1, mb: 2 }}>
+              <Button
+                variant="text"
+                size="small"
+                href="/auth/reset-password"
+                onClick={onClose}
+                sx={{ textTransform: "none", px: 0, minWidth: 0 }}
+              >
+                Nie pamiętasz hasła? Zresetuj
+              </Button>
+            </Box>
+          )}
           <Button type="submit" variant="contained" fullWidth disabled={loading}>
             {loading ? "Przetwarzanie…" : isSignin ? "Zaloguj" : "Utwórz konto"}
           </Button>

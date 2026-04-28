@@ -25,7 +25,8 @@ export function ensureSuperTokensInitialized(): void {
       apiDomain: site.origin,
       websiteDomain: site.origin,
       apiBasePath: "/api/auth",
-      websiteBasePath: "/",
+      // Must match the frontend auth base path so generated links (e.g. reset password) open a public route.
+      websiteBasePath: "/auth",
     },
     recipeList: buildRecipeList(),
   });

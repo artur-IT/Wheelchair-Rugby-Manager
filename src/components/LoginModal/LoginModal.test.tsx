@@ -26,6 +26,7 @@ describe("LoginModal", () => {
     signInMock.mockReset();
     signUpMock.mockReset();
     getAuthUrlMock.mockReset();
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({ conflict: false }) }));
   });
 
   afterEach(() => {
@@ -51,6 +52,30 @@ describe("LoginModal", () => {
     await user.click(screen.getByRole("button", { name: "Zaloguj" }));
 
     expect(await screen.findByText("Błędny adres e-mail lub hasło. Spróbuj ponownie.")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Nie pamiętasz hasła? Zresetuj" })).toHaveAttribute(
+      "href",
+      "/auth/reset-password"
+    );
+  });
+
+  it("blocks google redirect when typed email is already used", async () => {
+    const user = userEvent.setup();
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        conflict: true,
+        message: "Konto z tym adresem e-mail już istnieje.",
+      }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<LoginModal open onClose={vi.fn()} />);
+
+    await user.type(screen.getByLabelText(/E-mail/i), "admin@example.com");
+    await user.click(screen.getByRole("button", { name: "Kontynuuj z Google" }));
+
+    expect(await screen.findByText("Konto z tym adresem e-mail już istnieje.")).toBeInTheDocument();
+    expect(getAuthUrlMock).not.toHaveBeenCalled();
   });
 
   it("shows remaining attempts from backend metadata", async () => {

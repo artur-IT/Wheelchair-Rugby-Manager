@@ -175,9 +175,7 @@ export function buildRecipeList() {
                     where: { id: loginStateUser.id },
                     data: nextState,
                   })
-                  .catch((err) => {
-                    console.error("Failed to update login attempt state:", err);
-                  });
+                  .catch(() => undefined);
                 return {
                   ...superTokensResult,
                   remainingAttempts: computeRemainingLoginAttempts(nextState.failedLoginAttempts),
@@ -216,6 +214,49 @@ export function buildRecipeList() {
             await assignDefaultRole(tenantId, superTokensResult.user.id, userContext);
             return superTokensResult;
           },
+          consumePasswordResetToken: async (input) => {
+            const result = await original.consumePasswordResetToken(input);
+            if (result.status !== "OK") {
+              return result;
+            }
+
+            // Keep Prisma lock state aligned with SuperTokens after successful reset.
+            const mapping = await SuperTokens.getUserIdMapping({
+              userId: result.userId,
+              userContext: input.userContext,
+            });
+            if (mapping.status === "OK") {
+              await prisma.user
+                .updateMany({
+                  where: { id: mapping.externalUserId, manualLock: false },
+                  data: {
+                    failedLoginAttempts: 0,
+                    lockUntil: null,
+                  },
+                })
+                .catch(() => undefined);
+              return result;
+            }
+
+            const stUser = await SuperTokens.getUser(result.userId, input.userContext);
+            const stEmail = stUser?.emails?.[0]?.trim().toLowerCase();
+            if (!stEmail) {
+              return result;
+            }
+            await prisma.user
+              .updateMany({
+                where: {
+                  email: { equals: stEmail, mode: "insensitive" },
+                  manualLock: false,
+                },
+                data: {
+                  failedLoginAttempts: 0,
+                  lockUntil: null,
+                },
+              })
+              .catch(() => undefined);
+            return result;
+          },
         }),
       },
     }),
@@ -240,16 +281,27 @@ export function buildRecipeList() {
         functions: (original) => ({
           ...original,
           signInUp: async (input) => {
+            const email = input.email.trim().toLowerCase();
+            const existingPrismaUser = await findUserByEmailInsensitive(email);
             const result = await original.signInUp(input);
             if (result.status !== "OK") {
               return result;
             }
-            const email = input.email.trim().toLowerCase();
             if (!email) {
               return result;
             }
 
-            let prismaUser = await findUserByEmailInsensitive(email);
+            // Block cross-provider takeover: if Google just created a new recipe user but
+            // this email is already used by another account in our DB, cancel the new user.
+            if (result.createdNewRecipeUser && existingPrismaUser) {
+              await SuperTokens.deleteUser(result.user.id).catch(() => undefined);
+              return {
+                status: "SIGN_IN_UP_NOT_ALLOWED" as const,
+                reason: "Konto z tym adresem e-mail już istnieje.",
+              };
+            }
+
+            let prismaUser = existingPrismaUser;
             if (!prismaUser) {
               const placeholder = await randomUnusedPasswordHash();
               prismaUser = await prisma.user.create({

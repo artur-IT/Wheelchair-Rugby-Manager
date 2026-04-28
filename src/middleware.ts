@@ -5,7 +5,12 @@ import { mergeCollectingResponseCookies } from "@/lib/supertokens/collectingResp
 import { ensureSuperTokensInitialized } from "@/lib/supertokens/initSuperTokens";
 import { requestToPreParsedRequest } from "@/lib/supertokens/requestAdapter";
 
-const PUBLIC_PATHS = new Set(["/", "/auth/callback"]);
+const PUBLIC_PATHS = new Set(["/", "/auth/callback", "/auth/reset-password"]);
+
+function isPublicAuthPage(pathname: string) {
+  // Reset password can include query params like ?token=...
+  return pathname === "/auth/reset-password";
+}
 
 function isPublicAuthApi(pathname: string) {
   return pathname.startsWith("/api/auth");
@@ -42,7 +47,12 @@ async function readSuperTokensSession(request: Request): Promise<{ ok: boolean; 
 export const onRequest = defineMiddleware(async (context, next) => {
   const { url, redirect, request } = context;
 
-  if (PUBLIC_PATHS.has(url.pathname) || isPublicAuthApi(url.pathname) || isLikelyAssetPath(url.pathname)) {
+  if (
+    PUBLIC_PATHS.has(url.pathname) ||
+    isPublicAuthPage(url.pathname) ||
+    isPublicAuthApi(url.pathname) ||
+    isLikelyAssetPath(url.pathname)
+  ) {
     return next();
   }
 
