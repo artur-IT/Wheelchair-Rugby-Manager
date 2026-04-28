@@ -51,6 +51,10 @@ describe("LoginModal", () => {
     await user.click(screen.getByRole("button", { name: "Zaloguj" }));
 
     expect(await screen.findByText("Błędny adres e-mail lub hasło. Spróbuj ponownie.")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Nie pamiętasz hasła? Zresetuj" })).toHaveAttribute(
+      "href",
+      "/auth/reset-password"
+    );
   });
 
   it("shows remaining attempts from backend metadata", async () => {

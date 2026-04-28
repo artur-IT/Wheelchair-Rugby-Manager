@@ -131,6 +131,7 @@ export default function LoginModal({ open, onClose, onLoginSuccess }: Props) {
   const [mode, setMode] = useState<Mode>("signin");
   const [signinCredentials, setSigninCredentials] = useState({ email: "", password: "" });
   const [formValues, setFormValues] = useState({ email: "", password: "" });
+  const [showResetPasswordLink, setShowResetPasswordLink] = useState(false);
   const handleLoginSuccess = onLoginSuccess ?? (() => (window.location.href = "/dashboard"));
 
   useEffect(() => {
@@ -146,6 +147,7 @@ export default function LoginModal({ open, onClose, onLoginSuccess }: Props) {
     if (v === "signin") {
       setError(false);
       setErrorMessage(null);
+      setShowResetPasswordLink(false);
     }
   };
 
@@ -176,6 +178,7 @@ export default function LoginModal({ open, onClose, onLoginSuccess }: Props) {
     e.preventDefault();
     setError(false);
     setErrorMessage(null);
+    setShowResetPasswordLink(false);
     setLoading(true);
     const email = formValues.email.trim();
     const password = formValues.password;
@@ -191,12 +194,16 @@ export default function LoginModal({ open, onClose, onLoginSuccess }: Props) {
         const result = await signIn({ formFields });
         if (result.status === "OK") {
           setFailedSigninAttemptsInSession(0);
+          setShowResetPasswordLink(false);
           handleLoginSuccess();
           return;
         }
         const nextFailedAttempts = failedSigninAttemptsInSession + 1;
         setFailedSigninAttemptsInSession(nextFailedAttempts);
         setErrorMessage(buildSigninErrorMessage(result, nextFailedAttempts));
+        if (result.status === "WRONG_CREDENTIALS_ERROR") {
+          setShowResetPasswordLink(true);
+        }
       } else {
         const result = await signUp({ formFields });
         if (result.status === "OK") {
@@ -302,6 +309,19 @@ export default function LoginModal({ open, onClose, onLoginSuccess }: Props) {
             fullWidth
             sx={{ mb: 2 }}
           />
+          {isSignin && showResetPasswordLink && (
+            <Box sx={{ mt: -1, mb: 2 }}>
+              <Button
+                variant="text"
+                size="small"
+                href="/auth/reset-password"
+                onClick={onClose}
+                sx={{ textTransform: "none", px: 0, minWidth: 0 }}
+              >
+                Nie pamiętasz hasła? Zresetuj
+              </Button>
+            </Box>
+          )}
           <Button type="submit" variant="contained" fullWidth disabled={loading}>
             {loading ? "Przetwarzanie…" : isSignin ? "Zaloguj" : "Utwórz konto"}
           </Button>
