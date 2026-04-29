@@ -11,12 +11,6 @@ export interface UpdateCurrentUserProfileBody {
   lastName: string;
 }
 
-/** GET /api/users/me -> logged-in user's display name. */
-export async function fetchCurrentUserName(signal?: AbortSignal): Promise<string> {
-  const profile = await fetchCurrentUserProfile(signal);
-  return `${profile.firstName} ${profile.lastName}`.trim();
-}
-
 /** GET /api/users/me -> logged-in user's profile fields. */
 export async function fetchCurrentUserProfile(signal?: AbortSignal): Promise<CurrentUserProfile> {
   const res = await fetch("/api/users/me", { signal });

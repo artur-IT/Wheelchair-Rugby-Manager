@@ -1,21 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { fetchCurrentUserName, fetchCurrentUserProfile, updateCurrentUserProfile } from "@/lib/api/users";
+import { fetchCurrentUserProfile, updateCurrentUserProfile } from "@/lib/api/users";
 
-describe("fetchCurrentUserName", () => {
+describe("users api", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
-  });
-
-  it("returns user name from api", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockResolvedValue({
-        ok: true,
-        json: async () => ({ firstName: "Jan", lastName: "Kowalski", email: "jan@example.com" }),
-      })
-    );
-
-    await expect(fetchCurrentUserName()).resolves.toBe("Jan Kowalski");
   });
 
   it("returns user profile from api", async () => {
@@ -60,7 +48,7 @@ describe("fetchCurrentUserName", () => {
       })
     );
 
-    await expect(fetchCurrentUserName()).rejects.toThrow("Brak autoryzacji");
+    await expect(fetchCurrentUserProfile()).rejects.toThrow("Brak autoryzacji");
   });
 
   it("updates user profile via api", async () => {

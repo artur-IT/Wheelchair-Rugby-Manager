@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import type { ReactNode } from "react";
 import { LayoutDashboard, Trophy, Settings, Building2, LogOut, Menu, X, UserCircle } from "lucide-react";
 import { signOut } from "supertokens-web-js/recipe/session";
-import { fetchCurrentUserName } from "@/lib/api/users";
+import { fetchCurrentUserProfile } from "@/lib/api/users";
 import { ensureSuperTokensFrontendInitialized } from "@/lib/supertokens/initFrontend";
 import {
   Box,
@@ -169,7 +169,8 @@ export default function AppShell({ children, currentPath, containerMaxWidth = "l
   useEffect(() => {
     const abortController = new AbortController();
     const loadCurrentUserName = async () => {
-      const name = await fetchCurrentUserName(abortController.signal);
+      const profile = await fetchCurrentUserProfile(abortController.signal);
+      const name = `${profile.firstName} ${profile.lastName}`.trim();
       setUserName(name);
     };
 
