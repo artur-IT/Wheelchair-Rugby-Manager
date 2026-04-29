@@ -17,6 +17,7 @@ import {
 } from "@/lib/supertokens/loginAttemptPolicy";
 import Dashboard from "supertokens-node/recipe/dashboard";
 import UserRoles from "supertokens-node/recipe/userroles";
+import UserMetadata from "supertokens-node/recipe/usermetadata";
 
 // Load via require: Vite SSR turns `import Google from ".../google.js"` into a broken default interop
 // ("default is not a function"). Node's require keeps the real CJS export.
@@ -85,6 +86,7 @@ export function buildRecipeList() {
     }),
     Dashboard.init(),
     UserRoles.init(),
+    UserMetadata.init(),
     EmailPassword.init({
       signUpFeature: {
         formFields: [

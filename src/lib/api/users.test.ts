@@ -1,21 +1,41 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { fetchCurrentUserName } from "@/lib/api/users";
+import { fetchCurrentUserProfile, updateCurrentUserProfile } from "@/lib/api/users";
 
-describe("fetchCurrentUserName", () => {
+describe("users api", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
   });
 
-  it("returns user name from api", async () => {
+  it("returns user profile from api", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue({
         ok: true,
-        json: async () => ({ name: "Jan Kowalski" }),
+        json: async () => ({ firstName: "Jan", lastName: "Kowalski", email: "jan@example.com" }),
       })
     );
 
-    await expect(fetchCurrentUserName()).resolves.toBe("Jan Kowalski");
+    await expect(fetchCurrentUserProfile()).resolves.toEqual({
+      firstName: "Jan",
+      lastName: "Kowalski",
+      email: "jan@example.com",
+    });
+  });
+
+  it("allows empty names when email exists", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ firstName: "", lastName: "", email: "jan@example.com" }),
+      })
+    );
+
+    await expect(fetchCurrentUserProfile()).resolves.toEqual({
+      firstName: "",
+      lastName: "",
+      email: "jan@example.com",
+    });
   });
 
   it("throws when api returns non-ok response", async () => {
@@ -28,6 +48,25 @@ describe("fetchCurrentUserName", () => {
       })
     );
 
-    await expect(fetchCurrentUserName()).rejects.toThrow("Brak autoryzacji");
+    await expect(fetchCurrentUserProfile()).rejects.toThrow("Brak autoryzacji");
+  });
+
+  it("updates user profile via api", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ firstName: "Anna", lastName: "Nowak", email: "anna@example.com" }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(updateCurrentUserProfile({ firstName: "Anna", lastName: "Nowak" })).resolves.toEqual({
+      firstName: "Anna",
+      lastName: "Nowak",
+      email: "anna@example.com",
+    });
+    expect(fetchMock).toHaveBeenCalledWith("/api/users/me", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ firstName: "Anna", lastName: "Nowak" }),
+    });
   });
 });
