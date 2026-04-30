@@ -100,17 +100,12 @@ function ProfileContent() {
 
   return (
     <Paper sx={{ p: 4, maxWidth: 500, mx: "auto", borderRadius: 3 }}>
-      <Typography variant="h5" sx={{ fontWeight: "bold", mb: 3 }}>
-        Mój Profil
-      </Typography>
       <Box
         sx={{
           display: "flex",
           alignItems: "center",
           gap: 3,
           pb: 3,
-          borderBottom: "1px solid",
-          borderColor: "divider",
         }}
       >
         <Avatar sx={{ width: 80, height: 80, bgcolor: "primary.main" }}>
