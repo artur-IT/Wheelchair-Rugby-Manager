@@ -17,7 +17,6 @@ import {
 } from "@/lib/supertokens/loginAttemptPolicy";
 import Dashboard from "supertokens-node/recipe/dashboard";
 import UserRoles from "supertokens-node/recipe/userroles";
-import UserMetadata from "supertokens-node/recipe/usermetadata";
 
 // Load via require: Vite SSR turns `import Google from ".../google.js"` into a broken default interop
 // ("default is not a function"). Node's require keeps the real CJS export.
@@ -33,6 +32,86 @@ function nameFromEmail(email: string): string {
   return local && local.length > 0 ? local : "User";
 }
 
+function toNonEmptyString(value: unknown): string | null {
+  return typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
+}
+
+type UnknownRecord = Record<string, unknown>;
+
+const toRecord = (value: unknown): UnknownRecord | null =>
+  value && typeof value === "object" ? (value as UnknownRecord) : null;
+
+function pickFirstNonEmpty(source: UnknownRecord | null, keys: string[]): string | null {
+  if (!source) {
+    return null;
+  }
+
+  for (const key of keys) {
+    const parsed = toNonEmptyString(source[key]);
+    if (parsed) {
+      return parsed;
+    }
+  }
+  return null;
+}
+
+function parseNameParts(primary: UnknownRecord | null, fallback: UnknownRecord | null): string | null {
+  const firstName =
+    pickFirstNonEmpty(primary, ["given_name", "givenName"]) ?? pickFirstNonEmpty(fallback, ["given_name"]);
+  const lastName =
+    pickFirstNonEmpty(primary, ["family_name", "familyName"]) ?? pickFirstNonEmpty(fallback, ["family_name"]);
+
+  if (firstName && lastName) {
+    return `${firstName} ${lastName}`;
+  }
+
+  return pickFirstNonEmpty(primary, ["name"]) ?? pickFirstNonEmpty(fallback, ["name"]);
+}
+
+function parseGoogleProfileName(rawUserInfoFromProvider: unknown): string | null {
+  const provider = toRecord(rawUserInfoFromProvider);
+  if (!provider) {
+    return null;
+  }
+
+  const fromUserInfoAPI = toRecord(provider.fromUserInfoAPI);
+  const userInfoApiPayload = toRecord(fromUserInfoAPI?.userInfo) ?? fromUserInfoAPI;
+  const idTokenPayload = toRecord(provider.fromIdTokenPayload);
+
+  return parseNameParts(userInfoApiPayload, idTokenPayload);
+}
+
+function parseGoogleProfileNameFromUserInfo(userInfo: unknown): string | null {
+  return parseNameParts(toRecord(userInfo), null);
+}
+
+function shouldReplaceGeneratedName(currentName: string, email: string): boolean {
+  const normalizedCurrentName = currentName.trim().toLowerCase();
+  if (!normalizedCurrentName) {
+    return true;
+  }
+
+  return normalizedCurrentName === nameFromEmail(email).trim().toLowerCase();
+}
+
+function getGoogleAccessToken(oAuthTokens: unknown): string | null {
+  if (!oAuthTokens || typeof oAuthTokens !== "object") {
+    return null;
+  }
+  const tokens = oAuthTokens as Record<string, unknown>;
+  return toNonEmptyString(tokens.access_token) ?? toNonEmptyString(tokens.accessToken);
+}
+
+async function fetchGoogleUserInfo(accessToken: string): Promise<unknown> {
+  const response = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (!response.ok) {
+    return null;
+  }
+  return (await response.json()) as unknown;
+}
+
 /** Postgres: match stored email even if DB row used different casing than normalized login input. */
 function findUserByEmailInsensitive(emailLower: string) {
   return prisma.user.findFirst({
@@ -40,6 +119,7 @@ function findUserByEmailInsensitive(emailLower: string) {
     select: {
       id: true,
       email: true,
+      name: true,
       password: true,
       failedLoginAttempts: true,
       lockUntil: true,
@@ -86,7 +166,6 @@ export function buildRecipeList() {
     }),
     Dashboard.init(),
     UserRoles.init(),
-    UserMetadata.init(),
     EmailPassword.init({
       signUpFeature: {
         formFields: [
@@ -273,6 +352,7 @@ export function buildRecipeList() {
                   clientType: "web",
                   clientId: getGoogleClientId(),
                   clientSecret: getGoogleClientSecret(),
+                  scope: ["openid", "email", "profile"],
                 },
               ],
             },
@@ -304,15 +384,27 @@ export function buildRecipeList() {
             }
 
             let prismaUser = existingPrismaUser;
+            let googleProfileName = parseGoogleProfileName(input.rawUserInfoFromProvider);
+            if (!googleProfileName) {
+              const signInInput = input as Record<string, unknown>;
+              const accessToken = getGoogleAccessToken(signInInput.oAuthTokens);
+              const userInfo = accessToken ? await fetchGoogleUserInfo(accessToken).catch(() => null) : null;
+              googleProfileName = parseGoogleProfileNameFromUserInfo(userInfo);
+            }
             if (!prismaUser) {
               const placeholder = await randomUnusedPasswordHash();
               prismaUser = await prisma.user.create({
                 data: {
                   email,
-                  name: nameFromEmail(email),
+                  name: googleProfileName ?? nameFromEmail(email),
                   password: placeholder,
                   role: UserRole.USER,
                 },
+              });
+            } else if (googleProfileName && shouldReplaceGeneratedName(prismaUser.name, email)) {
+              await prisma.user.update({
+                where: { id: prismaUser.id },
+                data: { name: googleProfileName },
               });
             }
             await mapSuperTokensUserToPrismaUser(result.user.id, prismaUser.id, input.userContext);
