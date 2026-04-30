@@ -103,13 +103,18 @@ function getGoogleAccessToken(oAuthTokens: unknown): string | null {
 }
 
 async function fetchGoogleUserInfo(accessToken: string): Promise<unknown> {
-  const response = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
-  if (!response.ok) {
-    return null;
+  try {
+    const response = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!response.ok) {
+      return null;
+    }
+    return (await response.json()) as unknown;
+  } catch {
+    throw new Error("Failed to fetch Google user info");
   }
-  return (await response.json()) as unknown;
 }
 
 /** Postgres: match stored email even if DB row used different casing than normalized login input. */
