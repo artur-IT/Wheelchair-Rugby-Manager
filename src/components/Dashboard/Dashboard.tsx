@@ -30,7 +30,7 @@ const getSeasonChipLabel = (name: string, year?: number | null) => `${name}${yea
 
 const getDashboardGreetingName = (firstName?: string) => {
   const trimmedFirstName = firstName?.trim();
-  return trimmedFirstName?.length ? trimmedFirstName : "";
+  return trimmedFirstName?.length ? trimmedFirstName : "Organizatorze";
 };
 
 function useDashboardSeasonData(seasonId?: string) {

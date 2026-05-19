@@ -49,6 +49,25 @@ describe("ClubPage", () => {
     expect(addClubButton).toBeDisabled();
   });
 
+  it("shows friendly DB connection error when club fetch throws", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url === "/api/club") {
+          throw new Error("Failed to fetch");
+        }
+        return new Response(JSON.stringify({ error: "Not found" }), { status: 404 });
+      })
+    );
+
+    renderWithQuery(<ClubPage />);
+
+    expect(await screen.findByText("Brak połączenia z bazą danych. Spróbuj ponownie.")).toBeInTheDocument();
+    const addClubButton = await screen.findByRole("button", { name: "Dodaj klub" });
+    expect(addClubButton).toBeDisabled();
+  });
+
   it("opens full club form after clicking add button", async () => {
     const user = userEvent.setup();
     vi.stubGlobal(

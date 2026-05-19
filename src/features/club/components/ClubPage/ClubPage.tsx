@@ -53,9 +53,13 @@ const extractApiErrorMessage = (data: unknown, fallback: string): string => {
 };
 
 const fetchClubs = async (): Promise<ClubDto[]> => {
-  const res = await fetch("/api/club");
-  if (!res.ok) throw new Error("Nie udało się pobrać klubów");
-  return res.json();
+  try {
+    const res = await fetch("/api/club");
+    if (!res.ok) throw new Error("Nie udało się pobrać klubów");
+    return res.json();
+  } catch {
+    throw new Error("Brak połączenia z bazą danych. Spróbuj ponownie.");
+  }
 };
 
 const createClub = async (payload: ClubCreatePayload): Promise<ClubDto> => {
