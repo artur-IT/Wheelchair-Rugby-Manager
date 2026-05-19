@@ -9,6 +9,7 @@ export default defineConfig({
     path: "prisma/migrations",
   },
   datasource: {
-    url: process.env["DATABASE_URL"],
+    // Prisma Studio/Client will use this URL (pooled + tuned connection limits).
+    url: process.env["DATABASE_URL_POOL"] ?? process.env["DATABASE_URL"],
   },
 });

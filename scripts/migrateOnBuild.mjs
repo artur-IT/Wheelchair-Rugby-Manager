@@ -9,9 +9,8 @@ function shouldRunMigrations() {
 if (!shouldRunMigrations()) {
   console.log("[prisma] Skip migrate deploy (not production build).");
 } else {
-  // Let Vercel use a separate DB user/role for migrations.
-  // This prevents Prisma Studio (and the app) from being forced to use the
-  // same "migration" role that may have stricter connection limits.
+  // Keep migrations using a dedicated DB URL (if you provide it) so that
+  // migrations don't compete with Studio/app connections.
   const migrationUrl = process.env.MIGRATION_DATABASE_URL ?? process.env.DATABASE_URL;
   if (!migrationUrl)
     throw new Error("MIGRATION_DATABASE_URL or DATABASE_URL is not set (required for prisma migrate deploy).");
