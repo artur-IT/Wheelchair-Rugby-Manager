@@ -31,6 +31,24 @@ describe("ClubPage", () => {
     expect(await screen.findByRole("button", { name: "Dodaj klub" })).toBeInTheDocument();
   });
 
+  it("disables add club button when club list fetch fails (e.g. no DB)", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url === "/api/club") {
+          return new Response(JSON.stringify({ error: "DB unavailable" }), { status: 500 });
+        }
+        return new Response(JSON.stringify({ error: "Not found" }), { status: 404 });
+      })
+    );
+
+    renderWithQuery(<ClubPage />);
+
+    const addClubButton = await screen.findByRole("button", { name: "Dodaj klub" });
+    expect(addClubButton).toBeDisabled();
+  });
+
   it("opens full club form after clicking add button", async () => {
     const user = userEvent.setup();
     vi.stubGlobal(
@@ -90,7 +108,6 @@ describe("ClubPage", () => {
 
     renderWithQuery(<ClubPage />);
     expect(await screen.findByRole("button", { name: "Edytuj" })).toBeInTheDocument();
-
   });
 
   it("shows add team button when club has no teams", async () => {
@@ -156,9 +173,7 @@ describe("ClubPage", () => {
                 name: "Tygrysy A",
                 formula: "WR4",
                 coach: { id: "co1", firstName: "Jan", lastName: "Nowak" },
-                players: [
-                  { player: { id: "p1", firstName: "Adam", lastName: "Kowalski", classification: 2.5 } },
-                ],
+                players: [{ player: { id: "p1", firstName: "Adam", lastName: "Kowalski", classification: 2.5 } }],
               },
             ]),
             { status: 200 }
@@ -186,7 +201,3 @@ describe("ClubPage", () => {
     expect(screen.getByText("2.5")).toBeInTheDocument();
   });
 });
-
-
-
-
