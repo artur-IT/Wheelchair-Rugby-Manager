@@ -4,6 +4,7 @@ vi.mock("@/lib/prisma", () => ({
   prisma: {
     club: {
       findMany: vi.fn(),
+      findFirst: vi.fn(),
       create: vi.fn(),
     },
   },
@@ -47,6 +48,8 @@ describe("club API /api/club", () => {
   it("POST returns 400 for invalid JSON body", async () => {
     const { getSessionPrismaUser } = await import("@/lib/supertokens/sessionFromRequest");
     vi.mocked(getSessionPrismaUser).mockResolvedValue({ userId: "owner-1", tenantId: "public" });
+    const { prisma } = await import("@/lib/prisma");
+    vi.mocked(prisma.club.findFirst).mockResolvedValueOnce(null);
 
     const request = new Request("http://localhost/api/club", {
       method: "POST",

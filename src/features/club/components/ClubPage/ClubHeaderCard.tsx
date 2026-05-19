@@ -8,6 +8,7 @@ interface ClubHeaderCardProps {
   selectedClub: ClubDto | null;
   showClubForm: boolean;
   isEditMode: boolean;
+  addClubButtonDisabled: boolean;
   clubName: string;
   clubLogoPreviewUrl: string;
   logoErrorMessage: string | null;
@@ -27,6 +28,7 @@ export default function ClubHeaderCard({
   selectedClub,
   showClubForm,
   isEditMode,
+  addClubButtonDisabled,
   clubName,
   clubLogoPreviewUrl,
   logoErrorMessage,
@@ -99,7 +101,7 @@ export default function ClubHeaderCard({
         {!isLoading && (!selectedClub || showClubForm) ? (
           <Stack gap={1.5} sx={{ mt: 2 }}>
             {!selectedClub && !showClubForm ? (
-              <Button variant="contained" onClick={onShowClubForm}>
+              <Button variant="contained" onClick={onShowClubForm} disabled={addClubButtonDisabled}>
                 Dodaj klub
               </Button>
             ) : (

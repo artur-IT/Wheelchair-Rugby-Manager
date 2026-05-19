@@ -53,9 +53,13 @@ const extractApiErrorMessage = (data: unknown, fallback: string): string => {
 };
 
 const fetchClubs = async (): Promise<ClubDto[]> => {
-  const res = await fetch("/api/club");
-  if (!res.ok) throw new Error("Nie udało się pobrać klubów");
-  return res.json();
+  try {
+    const res = await fetch("/api/club");
+    if (!res.ok) throw new Error("Nie udało się pobrać klubów");
+    return res.json();
+  } catch {
+    throw new Error("Brak połączenia z bazą danych. Spróbuj ponownie.");
+  }
 };
 
 const createClub = async (payload: ClubCreatePayload): Promise<ClubDto> => {
@@ -216,6 +220,9 @@ function ClubPageContent() {
     queryFn: fetchClubs,
   });
 
+  const userHasClub = (clubsQuery.data?.length ?? 0) > 0;
+  const addClubButtonDisabled = !clubsQuery.isSuccess || userHasClub;
+
   const createClubMutation = useMutation({
     mutationFn: createClub,
     onSuccess: () => {
@@ -329,6 +336,7 @@ function ClubPageContent() {
         selectedClub={selectedClub}
         showClubForm={showClubForm}
         isEditMode={isClubEditMode}
+        addClubButtonDisabled={addClubButtonDisabled}
         clubName={clubName}
         clubLogoPreviewUrl={clubLogoUrl}
         logoErrorMessage={logoErrorMessage}
@@ -338,6 +346,7 @@ function ClubPageContent() {
           (updateClubMutation.error instanceof Error ? updateClubMutation.error.message : null)
         }
         onShowClubForm={() => {
+          if (addClubButtonDisabled) return;
           setIsClubEditMode(false);
           setClubName("");
           setClubLogoUrl("");

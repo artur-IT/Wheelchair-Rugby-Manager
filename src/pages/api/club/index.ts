@@ -22,6 +22,14 @@ export const POST: APIRoute = async ({ request }) => {
   const sessionUser = await getSessionPrismaUser(request);
   if (!sessionUser) return json({ error: "Brak aktywnej sesji użytkownika" }, 401);
 
+  const existingClub = await prisma.club.findFirst({
+    where: { ownerUserId: sessionUser.userId },
+    select: { id: true },
+  });
+  if (existingClub) {
+    return json({ error: "Masz już klub. Edytuj istniejący." }, 409);
+  }
+
   const bodyResult = await parseRequestJson(request);
   if (!bodyResult.ok) return bodyResult.response;
 
