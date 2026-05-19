@@ -1,6 +1,7 @@
 interface ImportMetaEnv {
   readonly OPENROUTER_API_KEY: string;
   readonly DATABASE_URL: string;
+  readonly MIGRATION_DATABASE_URL?: string;
   readonly PUBLIC_SITE_URL: string;
   readonly SUPERTOKENS_CONNECTION_URI: string;
   readonly SUPERTOKENS_API_KEY?: string;

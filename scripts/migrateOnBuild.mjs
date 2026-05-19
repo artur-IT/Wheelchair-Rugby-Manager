@@ -9,16 +9,18 @@ function shouldRunMigrations() {
 if (!shouldRunMigrations()) {
   console.log("[prisma] Skip migrate deploy (not production build).");
 } else {
-  const databaseUrl = process.env.DATABASE_URL;
-  if (!databaseUrl) {
-    throw new Error("DATABASE_URL is not set (required for prisma migrate deploy).");
-  }
+  // Let Vercel use a separate DB user/role for migrations.
+  // This prevents Prisma Studio (and the app) from being forced to use the
+  // same "migration" role that may have stricter connection limits.
+  const migrationUrl = process.env.MIGRATION_DATABASE_URL ?? process.env.DATABASE_URL;
+  if (!migrationUrl)
+    throw new Error("MIGRATION_DATABASE_URL or DATABASE_URL is not set (required for prisma migrate deploy).");
 
   console.log("[prisma] Running prisma migrate deploy...");
   execSync("pnpm prisma migrate deploy", {
     stdio: "inherit",
-    env: process.env,
+    // Prisma CLI uses DATABASE_URL from the environment.
+    env: { ...process.env, DATABASE_URL: migrationUrl },
   });
   console.log("[prisma] prisma migrate deploy done.");
 }
-
