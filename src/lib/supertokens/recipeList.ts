@@ -1,4 +1,3 @@
-import { createRequire } from "node:module";
 import { UserRole } from "@prisma/client";
 import EmailPassword from "supertokens-node/recipe/emailpassword";
 import Session from "supertokens-node/recipe/session";
@@ -18,18 +17,32 @@ import {
 import Dashboard from "supertokens-node/recipe/dashboard";
 import UserRoles from "supertokens-node/recipe/userroles";
 
-// Load via require: Vite SSR turns `import Google from ".../google.js"` into a broken default interop
-// ("default is not a function"). Node's require keeps the real CJS export.
-type GoogleFactory = typeof import("supertokens-node/lib/build/recipe/thirdparty/providers/google.js").default;
-
-const require = createRequire(import.meta.url);
-const Google = require("supertokens-node/lib/build/recipe/thirdparty/providers/google.js").default as GoogleFactory;
 const DEFAULT_APP_ROLE = "USER";
 const ADMIN_APP_ROLE = "ADMIN";
 const googleOAuthConfig = getOptionalGoogleOAuthConfig();
 
 if (!googleOAuthConfig) {
   console.warn("[Auth] Google OAuth disabled: GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET is missing.");
+}
+
+/** Raw provider config — SuperTokens v24 builds Google() lazily after init (not during recipeList). */
+function buildGoogleProviderInput() {
+  if (!googleOAuthConfig) {
+    return null;
+  }
+  return {
+    config: {
+      thirdPartyId: "google",
+      clients: [
+        {
+          clientType: "web",
+          clientId: googleOAuthConfig.clientId,
+          clientSecret: googleOAuthConfig.clientSecret,
+          scope: ["openid", "email", "profile"],
+        },
+      ],
+    },
+  };
 }
 
 function nameFromEmail(email: string): string {
@@ -354,23 +367,10 @@ export function buildRecipeList() {
     ThirdParty.init({
       signInAndUpFeature: {
         // Keep email/password auth available even when Google OAuth env vars are missing.
-        providers: googleOAuthConfig
-          ? [
-              Google({
-                config: {
-                  thirdPartyId: "google",
-                  clients: [
-                    {
-                      clientType: "web",
-                      clientId: googleOAuthConfig.clientId,
-                      clientSecret: googleOAuthConfig.clientSecret,
-                      scope: ["openid", "email", "profile"],
-                    },
-                  ],
-                },
-              }),
-            ]
-          : [],
+        providers: (() => {
+          const googleProvider = buildGoogleProviderInput();
+          return googleProvider ? [googleProvider] : [];
+        })(),
       },
       override: {
         functions: (original) => ({

@@ -124,6 +124,8 @@ const clubPlayerJerseyNumberSchema = z
   )
   .transform((v) => (v === "-" ? null : v));
 
+import { todayLocalIsoDate } from "@/lib/dateFormat";
+
 const optionalBirthDateSchema = z
   .preprocess(
     (val) => {
@@ -135,6 +137,9 @@ const optionalBirthDateSchema = z
     },
     z.union([z.null(), z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data urodzenia musi być w formacie RRRR-MM-DD")])
   )
+  .refine((v) => v === null || v <= todayLocalIsoDate(), {
+    message: "Data urodzenia nie może być w przyszłości",
+  })
   .transform((v) => {
     if (v === null) return null;
     const d = new Date(`${v}T12:00:00.000Z`);
