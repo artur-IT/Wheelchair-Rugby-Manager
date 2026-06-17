@@ -40,6 +40,7 @@ import {
 } from "@/features/club/lib/clubPersonnelHelpers";
 import type { ClubPlayerDto } from "@/features/club/components/ClubPage/types";
 import { resolvePlaceMapsHref } from "@/lib/addressDisplay";
+import { todayLocalIsoDate } from "@/lib/dateFormat";
 import { blurActiveElement } from "@/lib/a11y/blurActiveElement";
 import { CLUB_PLAYER_CLASSIFICATION_VALUES } from "@/lib/clubSchemas";
 import { MAX_LONG_TEXT, MAX_SHORT_TEXT } from "@/lib/validateInputs";
@@ -251,6 +252,8 @@ export default function ClubPlayersPersonnelSection({
   const watchedAddress = useWatch({ control: form.control, name: "contactAddress" });
   const watchedPostal = useWatch({ control: form.control, name: "contactPostalCode" });
   const watchedCity = useWatch({ control: form.control, name: "contactCity" });
+
+  const maxBirthDate = useMemo(() => todayLocalIsoDate(), []);
 
   const ageDisplay = useMemo(() => {
     if (!watchedBirth?.trim()) return "—";
@@ -803,6 +806,7 @@ export default function ClubPlayersPersonnelSection({
                       label="Data urodzenia (opcjonalnie)"
                       type="date"
                       InputLabelProps={{ shrink: true }}
+                      inputProps={{ max: maxBirthDate }}
                       error={Boolean(fieldState.error)}
                       helperText={fieldState.error?.message}
                       onChange={(e) => field.onChange(e.target.value === "" ? null : e.target.value)}
