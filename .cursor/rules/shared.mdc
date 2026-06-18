@@ -27,9 +27,13 @@ Follow this layout when adding or changing code. When you change the structure, 
 - `./src/layouts` - Astro layouts
 - `./src/pages` - Astro pages
 - `./src/pages/api` - API endpoints
-- `./src/middleware/index.ts` - Astro middleware
+- `./src/middleware.ts` - Astro middleware (session, public routes)
 - `./src/types.ts` - Shared types (entities, DTOs) for backend and frontend
 - `./src/features` - Feature-first app modules (business/domain UI and logic)
+- `./src/features/auth` - Login, landing, password reset, OAuth callback
+- `./src/features/dashboard` - Post-login dashboard
+- `./src/features/profile` - User profile and account deletion
+- `./src/features/club` - Sports club module
 - `./src/features/teams` - Teams module
 - `./src/features/tournaments` - Tournaments module
 - `./src/features/settings` - Settings module
@@ -37,6 +41,7 @@ Follow this layout when adding or changing code. When you change the structure, 
 - `./src/components/hooks` - Custom hooks
 - `./src/components/ui` - ui components
 - `./src/lib` - Services and helpers
+- `./src/styles` - Global CSS (`global.css`)
 - `./src/assets` - Static internal assets
 - `./public` - Public assets
 

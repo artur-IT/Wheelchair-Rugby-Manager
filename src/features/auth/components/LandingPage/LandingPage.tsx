@@ -3,7 +3,7 @@ import { Trophy, CalendarDays, Medal, Users, UserCog, Building2, type LucideIcon
 import { motion } from "motion/react";
 import { Button, Grid, Card, CardContent, Box, Typography } from "@mui/material";
 import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
-import LoginModal from "@/components/LoginModal/LoginModal";
+import LoginModal from "@/features/auth/components/LoginModal/LoginModal";
 import { getYear } from "date-fns";
 
 const FEATURES = [

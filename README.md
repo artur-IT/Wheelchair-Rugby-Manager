@@ -29,13 +29,28 @@ A comprehensive web application for managing wheelchair rugby tournaments and sp
 
 ```
 src/
-├── features/              # Feature modules
-│   ├── club/             # Club and team management
-│   ├── tournaments/      # Tournament planning and details
-│   └── settings/         # Application settings
-├── components/           # Shared UI components
-└── lib/                  # Utility functions
+├── features/                 # Feature modules (domain UI + logic)
+│   ├── auth/                 # Login, landing, password reset, OAuth
+│   ├── dashboard/            # Post-login home dashboard
+│   ├── profile/              # User profile and account
+│   ├── club/                 # Sports club and personnel
+│   ├── teams/                # Team forms and details
+│   ├── tournaments/          # Tournament planning and details
+│   └── settings/             # Seasons and global settings
+├── components/               # Shared layout, providers, hooks, generic UI
+│   ├── AppShell/
+│   ├── QueryProvider/
+│   ├── ThemeRegistry/
+│   ├── hooks/
+│   └── ui/
+├── layouts/                  # Astro page layouts
+├── pages/                    # Astro routes (+ pages/api for REST)
+├── lib/                      # Services, API clients, Prisma, auth helpers
+├── styles/                   # global.css
+└── types.ts                  # Shared DTOs and entities
 ```
+
+Astro pages import React screens from `src/features/<module>/components/…` (with `.tsx` extension). Shared shell and reusable widgets stay in `src/components/`.
 
 ## 🎮 Main Features Overview
 
