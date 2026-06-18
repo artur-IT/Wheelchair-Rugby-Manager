@@ -471,7 +471,7 @@ export default function ClubPlayersPersonnelSection({
                   },
                 }}
               >
-                <Stack direction="row" alignItems="baseline" flexWrap="wrap" columnGap={1} rowGap={0.5}>
+                <Stack direction="row" alignItems="center" flexWrap="wrap" columnGap={1} rowGap={0.5}>
                   <Typography component="span" variant="subtitle1" sx={{ fontWeight: 700, marginRight: 0.7 }}>
                     {p.firstName}
                   </Typography>
