@@ -233,7 +233,7 @@ function DashboardContent() {
 
       <Grid container spacing={4}>
         <Grid size={{ xs: 12 }}>
-          <Card sx={{ borderRadius: 3 }}>
+          <Card sx={{ borderRadius: 3, width: "fit-content" }}>
             <CardContent>
               <DashboardSectionHeader title="Zakończone turnieje" href="/tournaments" />
               <Box>

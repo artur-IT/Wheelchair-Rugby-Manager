@@ -136,10 +136,7 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
       }[]
     ) => {
       if (!team) throw new Error("Nie znaleziono drużyny");
-      return updateTeamById(
-        team.id,
-        buildTeamUpdateBody(team, playersPayload) as Parameters<typeof updateTeamById>[1]
-      );
+      return updateTeamById(team.id, buildTeamUpdateBody(team, playersPayload) as Parameters<typeof updateTeamById>[1]);
     },
   });
 
@@ -271,7 +268,9 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
       return;
     }
     const playersPayload = (team.players ?? []).map((p) =>
-      p.id === editingPlayer.id ? { id: p.id, firstName, lastName, classification, number } : buildPlayerPayloadFromEntity(p)
+      p.id === editingPlayer.id
+        ? { id: p.id, firstName, lastName, classification, number }
+        : buildPlayerPayloadFromEntity(p)
     );
     const duplicateNumberError = getDuplicatePlayerNumberError(playersPayload);
     if (duplicateNumberError) {
@@ -403,13 +402,11 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
           </Button>
         </Box>
       </Box>
-
       <Dialog open={editOpen} onClose={handleEditClose} maxWidth="sm" fullWidth disableRestoreFocus>
         <DialogContent sx={{ overflow: "auto", maxHeight: "90vh", p: 0 }}>
           <TeamFormContent mode="edit" initialTeam={team} onSuccess={handleEditSaved} onCancel={handleEditClose} />
         </DialogContent>
       </Dialog>
-
       {/* Add new player dialog */}
       <TeamNewPlayer
         open={addingNewPlayer}
@@ -420,7 +417,6 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
         newPlayerForm={newPlayerForm}
         setNewPlayerForm={setNewPlayerForm}
       />
-
       {/* Edit player dialog */}
       <Dialog open={!!editingPlayer} onClose={handleEditPlayerClose} maxWidth="xs" fullWidth disableRestoreFocus>
         <DialogTitle>Edytuj zawodnika</DialogTitle>
@@ -449,20 +445,24 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
               <TextField
                 label="Klasyfikacja"
                 type="number"
-                inputProps={{ inputMode: "decimal" }}
                 value={editForm.classification}
                 onChange={(e) => setEditForm((f) => (f ? { ...f, classification: e.target.value } : f))}
                 fullWidth
                 size="small"
+                slotProps={{
+                  htmlInput: { inputMode: "decimal" },
+                }}
               />
               <TextField
                 label="Numer"
                 type="number"
-                inputProps={{ inputMode: "numeric" }}
                 value={editForm.number}
                 onChange={(e) => setEditForm((f) => (f ? { ...f, number: e.target.value } : f))}
                 fullWidth
                 size="small"
+                slotProps={{
+                  htmlInput: { inputMode: "numeric" },
+                }}
               />
             </Box>
           )}
@@ -480,7 +480,6 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
           </Button>
         </DialogActions>
       </Dialog>
-
       {/* Delete player dialog */}
       <ConfirmationDialog
         open={Boolean(deleteConfirmPlayer)}
@@ -496,7 +495,6 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
         }
         errorMessage={playerActionError}
       />
-
       <ConfirmationDialog
         open={deleteTeamDialogOpen}
         onClose={handleDeleteTeamClose}
@@ -511,7 +509,6 @@ function TeamDetailsContent({ id }: TeamDetailsProps) {
         errorMessage={deleteTeamErrorMessage}
         confirmLabel="Usuń drużynę"
       />
-
       <Box
         sx={{
           display: "grid",

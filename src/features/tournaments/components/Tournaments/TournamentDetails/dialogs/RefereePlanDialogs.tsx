@@ -104,7 +104,6 @@ export function AddRefereePlanDialog({ addRefereePlan, tournament, personDisplay
           ))}
         </TextField>
       </DialogTitle>
-
       <DialogContent dividers>
         {addRefereePlan.error ? (
           <Alert severity="error" sx={{ mb: 2 }}>
@@ -142,17 +141,21 @@ export function AddRefereePlanDialog({ addRefereePlan, tournament, personDisplay
               label="Start"
               value={addRefereePlan.startTime}
               onChange={(e) => addRefereePlan.setStartTime(e.target.value)}
-              InputLabelProps={{ shrink: true }}
               size="small"
+              slotProps={{
+                inputLabel: { shrink: true },
+              }}
             />
 
             <TextField
               type="time"
               label="Koniec"
               value={addRefereePlan.endTime}
-              InputLabelProps={{ shrink: true }}
-              InputProps={{ readOnly: true }}
               size="small"
+              slotProps={{
+                input: { readOnly: true },
+                inputLabel: { shrink: true },
+              }}
             />
 
             <TextField
@@ -289,7 +292,6 @@ export function AddRefereePlanDialog({ addRefereePlan, tournament, personDisplay
           </Box>
         </Box>
       </DialogContent>
-
       <DialogActions>
         <Button onClick={addRefereePlan.closeDialog} disabled={addRefereePlan.loading}>
           Anuluj
@@ -350,7 +352,6 @@ export function EditRefereePlanDialog({
           ))}
         </TextField>
       </DialogTitle>
-
       <DialogContent dividers>
         {editRefereePlan.error ? (
           <Alert severity="error" sx={{ mb: 2 }}>
@@ -419,7 +420,6 @@ export function EditRefereePlanDialog({
                         </Box>
                       </Tooltip>
                     </TableCell>
-
                     <TableCell>
                       <TextField
                         select
@@ -453,7 +453,6 @@ export function EditRefereePlanDialog({
                         ))}
                       </TextField>
                     </TableCell>
-
                     <TableCell>
                       <TextField
                         type="time"
@@ -466,22 +465,24 @@ export function EditRefereePlanDialog({
                             prev.map((d, i) => (i === idx ? { ...d, startTime: nextStart, endTime: nextEnd } : d))
                           );
                         }}
-                        InputLabelProps={{ shrink: true }}
                         size="small"
+                        slotProps={{
+                          inputLabel: { shrink: true },
+                        }}
                       />
                     </TableCell>
-
                     <TableCell>
                       <TextField
                         type="time"
                         label="Koniec"
                         value={draft.endTime}
-                        InputLabelProps={{ shrink: true }}
-                        InputProps={{ readOnly: true }}
                         size="small"
+                        slotProps={{
+                          input: { readOnly: true },
+                          inputLabel: { shrink: true },
+                        }}
                       />
                     </TableCell>
-
                     <TableCell>
                       <TextField
                         select
@@ -503,7 +504,6 @@ export function EditRefereePlanDialog({
                         ))}
                       </TextField>
                     </TableCell>
-
                     <TableCell>
                       <TextField
                         select
@@ -521,7 +521,6 @@ export function EditRefereePlanDialog({
                         <MenuItem value="2">2</MenuItem>
                       </TextField>
                     </TableCell>
-
                     <TableCell>
                       <Tooltip title={refereeLockTooltip} disableHoverListener={!refereesLocked}>
                         <span style={{ display: "block", width: "100%" }}>
@@ -556,7 +555,6 @@ export function EditRefereePlanDialog({
                         </span>
                       </Tooltip>
                     </TableCell>
-
                     <TableCell>
                       <Tooltip title={refereeLockTooltip} disableHoverListener={!refereesLocked}>
                         <span style={{ display: "block", width: "100%" }}>
@@ -591,7 +589,6 @@ export function EditRefereePlanDialog({
                         </span>
                       </Tooltip>
                     </TableCell>
-
                     <TableCell>
                       <Tooltip title={refereeLockTooltip} disableHoverListener={!refereesLocked}>
                         <span style={{ display: "block", width: "100%" }}>
@@ -626,7 +623,6 @@ export function EditRefereePlanDialog({
                         </span>
                       </Tooltip>
                     </TableCell>
-
                     <TableCell>
                       <Tooltip title={refereeLockTooltip} disableHoverListener={!refereesLocked}>
                         <span style={{ display: "block", width: "100%" }}>
@@ -674,7 +670,6 @@ export function EditRefereePlanDialog({
           </Button>
         </Box>
       </DialogContent>
-
       <DialogActions>
         <Button onClick={editRefereePlan.closeDialog} disabled={editRefereePlan.loading}>
           Anuluj

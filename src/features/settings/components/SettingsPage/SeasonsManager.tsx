@@ -27,7 +27,7 @@ interface SeasonsManagerProps {
 
 export default function SeasonsManager({ onSeasonChange }: SeasonsManagerProps) {
   const queryClient = useQueryClient();
-  const [selectedId, setSelectedId] = useState("");
+  const [manualSelectedId, setManualSelectedId] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const { defaultSeasonId, saveDefault } = useDefaultSeason();
 
@@ -48,11 +48,7 @@ export default function SeasonsManager({ onSeasonChange }: SeasonsManagerProps) 
       queryClient.setQueryData<Season[]>(queryKeys.seasons.list(), (old) =>
         (old ?? []).filter((season) => season.id !== deletedId)
       );
-      setSelectedId((prev) => {
-        if (prev !== deletedId) return prev;
-        const remaining = queryClient.getQueryData<Season[]>(queryKeys.seasons.list()) ?? [];
-        return remaining[0]?.id ?? "";
-      });
+      setManualSelectedId((prev) => (prev === deletedId ? null : prev));
       void queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.all });
     },
   });
@@ -60,14 +56,14 @@ export default function SeasonsManager({ onSeasonChange }: SeasonsManagerProps) 
   const seasons = useMemo(() => seasonsData ?? [], [seasonsData]);
   const loadError = seasonsQueryFailed && seasonsQueryError instanceof Error ? seasonsQueryError.message : null;
 
-  useEffect(() => {
-    if (seasons.length === 0) {
-      setSelectedId("");
-      return;
+  const selectedId = useMemo(() => {
+    if (seasons.length === 0) return "";
+    if (manualSelectedId && seasons.some((season) => season.id === manualSelectedId)) {
+      return manualSelectedId;
     }
     const savedExists = Boolean(defaultSeasonId && seasons.some((season) => season.id === defaultSeasonId));
-    setSelectedId(savedExists ? (defaultSeasonId ?? "") : seasons[0].id);
-  }, [defaultSeasonId, seasons]);
+    return savedExists ? (defaultSeasonId ?? "") : seasons[0].id;
+  }, [manualSelectedId, defaultSeasonId, seasons]);
 
   useEffect(() => {
     if (!selectedId) return;
@@ -111,7 +107,7 @@ export default function SeasonsManager({ onSeasonChange }: SeasonsManagerProps) 
           <Select
             label="Sezon"
             value={selectedId}
-            onChange={(event: SelectChangeEvent) => setSelectedId(event.target.value)}
+            onChange={(event: SelectChangeEvent) => setManualSelectedId(event.target.value)}
           >
             {seasons.map((season) => (
               <MenuItem key={season.id} value={season.id}>

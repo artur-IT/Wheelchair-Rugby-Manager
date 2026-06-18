@@ -78,7 +78,6 @@ export function AddClassifierPlanDialog({ addClassifierPlan, tournament }: AddCl
           ))}
         </TextField>
       </DialogTitle>
-
       <DialogContent dividers>
         {addClassifierPlan.error ? (
           <Alert severity="error" sx={{ mb: 2 }}>
@@ -101,24 +100,30 @@ export function AddClassifierPlanDialog({ addClassifierPlan, tournament }: AddCl
                 ? `${players.find((p) => p.id === addClassifierPlan.playerId)?.firstName} ${players.find((p) => p.id === addClassifierPlan.playerId)?.lastName}`
                 : ""
             }
-            InputProps={{ readOnly: true }}
             size="small"
+            slotProps={{
+              input: { readOnly: true },
+            }}
           />
           <TextField
             type="time"
             label="Start"
             value={addClassifierPlan.startTime}
             onChange={(e) => addClassifierPlan.setStartTime(e.target.value)}
-            InputLabelProps={{ shrink: true }}
             size="small"
+            slotProps={{
+              inputLabel: { shrink: true },
+            }}
           />
           <TextField
             type="time"
             label="Koniec"
             value={addClassifierPlan.endTime}
             onChange={(e) => addClassifierPlan.setEndTime(e.target.value)}
-            InputLabelProps={{ shrink: true }}
             size="small"
+            slotProps={{
+              inputLabel: { shrink: true },
+            }}
           />
           <TextField
             type="number"
@@ -126,7 +131,9 @@ export function AddClassifierPlanDialog({ addClassifierPlan, tournament }: AddCl
             value={addClassifierPlan.classification}
             onChange={(e) => addClassifierPlan.setClassification(e.target.value)}
             size="small"
-            inputProps={{ step: "0.5", min: "0", max: "4" }}
+            slotProps={{
+              htmlInput: { step: "0.5", min: "0", max: "4" },
+            }}
           />
           <TextField
             select
@@ -179,7 +186,6 @@ export function AddClassifierPlanDialog({ addClassifierPlan, tournament }: AddCl
           </Table>
         </TableContainer>
       </DialogContent>
-
       <DialogActions>
         <Button onClick={addClassifierPlan.closeDialog} disabled={addClassifierPlan.loading}>
           Anuluj
@@ -226,7 +232,6 @@ export function EditClassifierPlanDialog({ editClassifierPlan, tournament }: Edi
           ))}
         </TextField>
       </DialogTitle>
-
       <DialogContent dividers>
         {editClassifierPlan.error ? (
           <Alert severity="error" sx={{ mb: 2 }}>
@@ -308,8 +313,10 @@ export function EditClassifierPlanDialog({ editClassifierPlan, tournament }: Edi
                           prev.map((d, i) => (i === idx ? { ...d, startTime, endTime: end } : d))
                         );
                       }}
-                      InputLabelProps={{ shrink: true }}
                       size="small"
+                      slotProps={{
+                        inputLabel: { shrink: true },
+                      }}
                     />
                   </TableCell>
                   <TableCell>
@@ -322,8 +329,10 @@ export function EditClassifierPlanDialog({ editClassifierPlan, tournament }: Edi
                           prev.map((d, i) => (i === idx ? { ...d, endTime: e.target.value } : d))
                         )
                       }
-                      InputLabelProps={{ shrink: true }}
                       size="small"
+                      slotProps={{
+                        inputLabel: { shrink: true },
+                      }}
                     />
                   </TableCell>
                   <TableCell>
@@ -337,7 +346,9 @@ export function EditClassifierPlanDialog({ editClassifierPlan, tournament }: Edi
                         )
                       }
                       size="small"
-                      inputProps={{ step: "0.5", min: "0", max: "4" }}
+                      slotProps={{
+                        htmlInput: { step: "0.5", min: "0", max: "4" },
+                      }}
                     />
                   </TableCell>
                   <TableCell>
@@ -371,7 +382,6 @@ export function EditClassifierPlanDialog({ editClassifierPlan, tournament }: Edi
           </Button>
         </Box>
       </DialogContent>
-
       <DialogActions>
         <Button onClick={editClassifierPlan.closeDialog} disabled={editClassifierPlan.loading}>
           Anuluj

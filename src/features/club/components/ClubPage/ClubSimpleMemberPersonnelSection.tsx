@@ -216,13 +216,11 @@ export default function ClubSimpleMemberPersonnelSection({
           {config.emptyMessage}
         </Alert>
       ) : null}
-
       {deleteMutation.isError && deleteMutation.error instanceof Error ? (
         <Box sx={{ mb: 2 }}>
           <MutationErrorAlert error={deleteMutation.error} fallbackMessage="Nie udało się usunąć" />
         </Box>
       ) : null}
-
       <PersonnelTable
         title={config.listTitle}
         data={tableRows}
@@ -246,7 +244,6 @@ export default function ClubSimpleMemberPersonnelSection({
         }}
         deletingId={deleteMutation.isPending ? (deleteTarget?.id ?? null) : null}
       />
-
       <Dialog
         open={dialogOpen}
         onClose={() => {
@@ -280,7 +277,9 @@ export default function ClubSimpleMemberPersonnelSection({
                   required
                   error={Boolean(fieldState.error)}
                   helperText={fieldState.error?.message}
-                  inputProps={{ maxLength: MAX_SHORT_TEXT }}
+                  slotProps={{
+                    htmlInput: { maxLength: MAX_SHORT_TEXT },
+                  }}
                 />
               )}
             />
@@ -295,7 +294,9 @@ export default function ClubSimpleMemberPersonnelSection({
                   required={config.lastNameRequired}
                   error={Boolean(fieldState.error)}
                   helperText={fieldState.error?.message}
-                  inputProps={{ maxLength: MAX_SHORT_TEXT }}
+                  slotProps={{
+                    htmlInput: { maxLength: MAX_SHORT_TEXT },
+                  }}
                 />
               )}
             />
@@ -311,7 +312,9 @@ export default function ClubSimpleMemberPersonnelSection({
                     type="email"
                     error={Boolean(fieldState.error)}
                     helperText={fieldState.error?.message}
-                    inputProps={{ maxLength: MAX_SHORT_TEXT }}
+                    slotProps={{
+                      htmlInput: { maxLength: MAX_SHORT_TEXT },
+                    }}
                   />
                 )}
               />
@@ -349,7 +352,6 @@ export default function ClubSimpleMemberPersonnelSection({
           </Button>
         </DialogActions>
       </Dialog>
-
       <ConfirmationDialog
         open={Boolean(deleteTarget)}
         onClose={() => !deleteMutation.isPending && setDeleteTarget(null)}

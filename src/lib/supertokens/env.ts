@@ -31,7 +31,10 @@ export function getPublicSiteUrl(): string {
   // Vercel provides host without scheme (e.g. `my-app.vercel.app`).
   const vercelUrl = readEnv("VERCEL_URL");
   if (vercelUrl) {
-    const host = vercelUrl.replace(/^https?:\/\//i, "").split("/")[0]?.trim();
+    const host = vercelUrl
+      .replace(/^https?:\/\//i, "")
+      .split("/")[0]
+      ?.trim();
     if (host) {
       const scheme = host.split(":")[0] === "localhost" ? "http" : "https";
       return `${scheme}://${host}`;

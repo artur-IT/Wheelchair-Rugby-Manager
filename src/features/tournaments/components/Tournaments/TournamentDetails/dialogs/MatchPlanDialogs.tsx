@@ -90,7 +90,6 @@ export function AddMatchDialog({ addMatch, tournament }: AddMatchDialogProps) {
           ))}
         </TextField>
       </DialogTitle>
-
       <DialogContent dividers>
         {addMatch.error ? (
           <Alert severity="error" sx={{ mb: 2 }}>
@@ -146,19 +145,23 @@ export function AddMatchDialog({ addMatch, tournament }: AddMatchDialogProps) {
             label="Start"
             value={addMatch.startTime}
             onChange={(e) => addMatch.setStartTime(e.target.value)}
-            InputLabelProps={{ shrink: true }}
             size="small"
             sx={{ minWidth: 120 }}
+            slotProps={{
+              inputLabel: { shrink: true },
+            }}
           />
 
           <TextField
             type="time"
             label="Koniec"
             value={addMatch.endTime}
-            InputLabelProps={{ shrink: true }}
-            InputProps={{ readOnly: true }}
             size="small"
             sx={{ minWidth: 120 }}
+            slotProps={{
+              input: { readOnly: true },
+              inputLabel: { shrink: true },
+            }}
           />
 
           <TextField
@@ -179,9 +182,11 @@ export function AddMatchDialog({ addMatch, tournament }: AddMatchDialogProps) {
             label="Wynik A"
             value={addMatch.scoreA}
             onChange={(e) => addMatch.setScoreA(e.target.value)}
-            InputLabelProps={{ shrink: true }}
             size="small"
             sx={{ minWidth: 105 }}
+            slotProps={{
+              inputLabel: { shrink: true },
+            }}
           />
 
           <TextField
@@ -189,9 +194,11 @@ export function AddMatchDialog({ addMatch, tournament }: AddMatchDialogProps) {
             label="Wynik B"
             value={addMatch.scoreB}
             onChange={(e) => addMatch.setScoreB(e.target.value)}
-            InputLabelProps={{ shrink: true }}
             size="small"
             sx={{ minWidth: 105 }}
+            slotProps={{
+              inputLabel: { shrink: true },
+            }}
           />
         </Box>
 
@@ -257,7 +264,6 @@ export function AddMatchDialog({ addMatch, tournament }: AddMatchDialogProps) {
           </Box>
         </Box>
       </DialogContent>
-
       <DialogActions>
         <Button onClick={addMatch.closeDialog} disabled={addMatch.loading}>
           Anuluj
@@ -323,7 +329,6 @@ export function EditMatchDialog({
           ))}
         </TextField>
       </DialogTitle>
-
       <DialogContent dividers>
         {editMatch.error ? (
           <Alert severity="error" sx={{ mb: 2 }}>
@@ -447,10 +452,12 @@ export function EditMatchDialog({
                           prev.map((d, i) => (i === idx ? { ...d, scoreA: e.target.value } : d))
                         )
                       }
-                      InputLabelProps={{ shrink: true }}
                       size="small"
                       fullWidth
                       sx={{ minWidth: 90 }}
+                      slotProps={{
+                        inputLabel: { shrink: true },
+                      }}
                     />
                   </TableCell>
 
@@ -466,8 +473,10 @@ export function EditMatchDialog({
                           prev.map((d, i) => (i === idx ? { ...d, startTime: nextStart, endTime: nextEnd } : d))
                         );
                       }}
-                      InputLabelProps={{ shrink: true }}
                       size="small"
+                      slotProps={{
+                        inputLabel: { shrink: true },
+                      }}
                     />
                   </TableCell>
 
@@ -476,9 +485,11 @@ export function EditMatchDialog({
                       type="time"
                       label="Koniec"
                       value={draft.endTime}
-                      InputLabelProps={{ shrink: true }}
-                      InputProps={{ readOnly: true }}
                       size="small"
+                      slotProps={{
+                        input: { readOnly: true },
+                        inputLabel: { shrink: true },
+                      }}
                     />
                   </TableCell>
 
@@ -492,10 +503,12 @@ export function EditMatchDialog({
                           prev.map((d, i) => (i === idx ? { ...d, scoreB: e.target.value } : d))
                         )
                       }
-                      InputLabelProps={{ shrink: true }}
                       size="small"
                       fullWidth
                       sx={{ minWidth: 90 }}
+                      slotProps={{
+                        inputLabel: { shrink: true },
+                      }}
                     />
                   </TableCell>
 
@@ -642,7 +655,6 @@ export function EditMatchDialog({
           </Button>
         </Box>
       </DialogContent>
-
       <DialogActions>
         <Button onClick={editMatch.closeDialog} disabled={editMatch.loading}>
           Anuluj

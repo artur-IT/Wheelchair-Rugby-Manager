@@ -79,10 +79,7 @@ export const mapPrismaError = (
   map: Partial<Record<"P2002" | "P2003", { message: string; status: number }>>
 ): Response | null => {
   const code =
-    error &&
-    typeof error === "object" &&
-    "code" in error &&
-    typeof (error as { code?: unknown }).code === "string"
+    error && typeof error === "object" && "code" in error && typeof (error as { code?: unknown }).code === "string"
       ? ((error as { code: string }).code as "P2002" | "P2003")
       : null;
   if (!code) return null;

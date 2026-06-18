@@ -515,4 +515,3 @@ describe("TeamForm", () => {
     expect(document.activeElement).not.toBe(submitButton);
   });
 });
-

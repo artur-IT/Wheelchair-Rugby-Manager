@@ -329,12 +329,9 @@ async function seedDb() {
 
 try {
   const ids = await seedDb();
-  // eslint-disable-next-line no-console, no-undef
   console.log("✅ Seed completed.", ids);
 } catch (err) {
-  // eslint-disable-next-line no-console, no-undef
   console.error("❌ Failed to seed database:", err);
-  // eslint-disable-next-line no-undef
   process.exitCode = 1;
 } finally {
   await prisma.$disconnect();

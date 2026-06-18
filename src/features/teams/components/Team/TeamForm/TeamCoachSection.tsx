@@ -58,9 +58,11 @@ export default function TeamCoachSection({
             label="Telefon"
             {...coachPhoneField}
             placeholder="9 cyfr"
-            inputProps={{ inputMode: "numeric" }}
             error={Boolean(touchedFields.coachPhone && errors.coachPhone)}
             helperText={touchedFields.coachPhone ? errors.coachPhone?.message : undefined}
+            slotProps={{
+              htmlInput: { inputMode: "numeric" },
+            }}
           />
         </Grid>
       </Grid>

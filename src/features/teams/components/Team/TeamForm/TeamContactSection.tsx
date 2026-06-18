@@ -59,10 +59,12 @@ export default function TeamContactSection({
             label="Telefon"
             {...contactPhoneField}
             placeholder="9 cyfr"
-            inputProps={{ inputMode: "numeric" }}
             error={Boolean(touchedFields.contactPhone && errors.contactPhone)}
             helperText={touchedFields.contactPhone ? errors.contactPhone?.message : undefined}
             sx={requiredFieldSx}
+            slotProps={{
+              htmlInput: { inputMode: "numeric" },
+            }}
           />
         </Grid>
       </Grid>

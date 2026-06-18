@@ -15,6 +15,21 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const gitignorePath = path.resolve(__dirname, ".gitignore");
 
+// Build and generated output — keep ESLint off artifacts even without .gitignore
+const buildOutputIgnores = {
+  ignores: ["dist/**", ".vercel/**", ".astro/**", "generated/**", "coverage/**"],
+};
+
+const nodeScriptsConfig = tseslint.config({
+  files: ["scripts/**/*.{js,mjs}", "src/**/*.mjs"],
+  languageOptions: {
+    globals: {
+      process: "readonly",
+      console: "readonly",
+    },
+  },
+});
+
 const baseConfig = tseslint.config({
   extends: [eslint.configs.recommended, tseslint.configs.strict, tseslint.configs.stylistic],
   rules: {
@@ -57,7 +72,9 @@ const reactConfig = tseslint.config({
 });
 
 export default tseslint.config(
+  buildOutputIgnores,
   includeIgnoreFile(gitignorePath),
+  nodeScriptsConfig,
   baseConfig,
   jsxA11yConfig,
   reactConfig,

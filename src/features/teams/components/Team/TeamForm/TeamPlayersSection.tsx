@@ -75,12 +75,14 @@ export default function TeamPlayersSection({
                 fullWidth
                 size="small"
                 type="number"
-                inputProps={{ inputMode: "decimal" }}
                 label="Klasyfikacja"
                 value={p.classification}
                 onChange={(e) => updatePlayer(p.id, "classification", e.target.value)}
                 error={Boolean(classificationErrors[p.id])}
                 helperText={classificationErrors[p.id]}
+                slotProps={{
+                  htmlInput: { inputMode: "decimal" },
+                }}
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 3 }}>
@@ -88,12 +90,14 @@ export default function TeamPlayersSection({
                 fullWidth
                 size="small"
                 type="number"
-                inputProps={{ inputMode: "numeric" }}
                 label="Numer"
                 value={p.number}
                 onChange={(e) => updatePlayer(p.id, "number", e.target.value)}
                 error={Boolean(numberErrors[p.id])}
                 helperText={numberErrors[p.id]}
+                slotProps={{
+                  htmlInput: { inputMode: "numeric" },
+                }}
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 2 }}>

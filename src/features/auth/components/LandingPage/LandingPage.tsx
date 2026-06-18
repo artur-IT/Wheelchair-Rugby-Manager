@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Trophy, CalendarDays, Medal, Users, UserCog, Building2, type LucideIcon } from "lucide-react";
 import { motion } from "motion/react";
 import { Button, Grid, Card, CardContent, Box, Typography } from "@mui/material";
@@ -125,15 +125,15 @@ interface LandingPageProps {
   initialLoginOpen?: boolean;
 }
 
+function hasLoginQueryParam(): boolean {
+  if (typeof window === "undefined") return false;
+  return new URLSearchParams(window.location.search).has("login");
+}
+
 export default function LandingPage({ initialLoginOpen = false }: LandingPageProps) {
-  const [loginOpen, setLoginOpen] = useState(initialLoginOpen);
+  const [loginOpen, setLoginOpen] = useState(() => initialLoginOpen || hasLoginQueryParam());
   const openLogin = () => setLoginOpen(true);
   const closeLogin = () => setLoginOpen(false);
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.has("login")) openLogin();
-  }, []);
 
   return (
     <ThemeRegistry>

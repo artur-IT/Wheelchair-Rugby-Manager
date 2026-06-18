@@ -78,4 +78,3 @@ describe("clubApiHelpers", () => {
     if (!result.ok) expect(result.response.status).toBe(403);
   });
 });
-

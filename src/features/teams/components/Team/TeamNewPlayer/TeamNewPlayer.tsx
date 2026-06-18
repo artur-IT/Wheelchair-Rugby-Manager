@@ -84,7 +84,13 @@ export default function TeamNewPlayer({
   };
 
   return (
-    <Dialog open={open} onClose={playerActionLoading ? undefined : handleClose} maxWidth="xs" fullWidth disableRestoreFocus>
+    <Dialog
+      open={open}
+      onClose={playerActionLoading ? undefined : handleClose}
+      maxWidth="xs"
+      fullWidth
+      disableRestoreFocus
+    >
       <DialogTitle>Dodaj zawodnika</DialogTitle>
       <DialogContent>
         {playerActionError && (
@@ -126,7 +132,6 @@ export default function TeamNewPlayer({
               <TextField
                 label="Klasyfikacja"
                 type="number"
-                inputProps={{ inputMode: "decimal" }}
                 value={newPlayerForm.classification ?? ""}
                 onChange={(e) => {
                   const numericValue = parseOptionalNumber(e.target.value) ?? null;
@@ -137,13 +142,15 @@ export default function TeamNewPlayer({
                 size="small"
                 error={!!formErrors.classification}
                 helperText={formErrors.classification}
+                slotProps={{
+                  htmlInput: { inputMode: "decimal" },
+                }}
               />
             </Grid>
             <Grid size={{ xs: 12, sm: 6 }}>
               <TextField
                 label="Numer"
                 type="number"
-                inputProps={{ inputMode: "numeric" }}
                 value={newPlayerForm.number}
                 onChange={(e) => {
                   const val = e.target.value;
@@ -154,6 +161,9 @@ export default function TeamNewPlayer({
                 size="small"
                 error={!!formErrors.number}
                 helperText={formErrors.number}
+                slotProps={{
+                  htmlInput: { inputMode: "numeric" },
+                }}
               />
             </Grid>
           </Grid>

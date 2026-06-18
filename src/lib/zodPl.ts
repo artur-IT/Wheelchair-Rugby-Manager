@@ -1,6 +1,20 @@
 import { z } from "zod";
 
-const zodPlErrorMap = (issue: any, ctx: any) => {
+interface ZodPlIssue {
+  code?: string;
+  received?: string;
+  validation?: string;
+  type?: string;
+  minimum?: number;
+  maximum?: number;
+  message?: string;
+}
+
+interface ZodPlErrorCtx {
+  defaultError?: string;
+}
+
+const zodPlErrorMap = (issue: ZodPlIssue, ctx: ZodPlErrorCtx) => {
   if (issue?.code === "invalid_type" && issue?.received === "undefined") return { message: "To pole jest wymagane" };
   if (issue?.code === "invalid_string") {
     if (issue?.validation === "email") return { message: "Nieprawidłowy adres e-mail" };
@@ -20,7 +34,6 @@ const zodPlErrorMap = (issue: any, ctx: any) => {
   return { message: ctx?.defaultError ?? "Nieprawidłowa wartość" };
 };
 
-z.setErrorMap(zodPlErrorMap as any);
+z.setErrorMap(zodPlErrorMap);
 
 export { z };
-
