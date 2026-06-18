@@ -23,7 +23,7 @@ A comprehensive web application for managing wheelchair rugby tournaments and sp
 - **Testing**: Vitest - Unit tests for key components, React Testing Library - UI tests for components
 - **State Management**: React hooks and context
 - **Authentication**: SuperTokens
-- **Hosting**: 1Free.eu
+- **Hosting**: Vercel
 
 ## 📁 Project Structure
 

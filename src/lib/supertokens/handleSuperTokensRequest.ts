@@ -18,6 +18,7 @@ function logSuperTokensFailure(context: string, err: unknown): void {
  * Run SuperTokens middleware for a single incoming Request (Astro API catch-all).
  */
 export async function handleSuperTokensRequest(request: Request): Promise<Response> {
+  const pathname = new URL(request.url).pathname;
   try {
     ensureSuperTokensInitialized();
   } catch (err) {
@@ -32,15 +33,17 @@ export async function handleSuperTokensRequest(request: Request): Promise<Respon
   try {
     const result = await stMiddleware(req, res);
     if ("error" in result && result.error) {
-      logSuperTokensFailure(`middleware error for ${new URL(request.url).pathname}`, result.error);
+      logSuperTokensFailure(`middleware error for ${pathname}`, result.error);
       return new Response("Authentication service error", { status: 500 });
     }
     if (!result.handled) {
       return new Response("Not found", { status: 404 });
     }
-    return collectingResponseToResponse(res);
+    const response = collectingResponseToResponse(res);
+
+    return response;
   } catch (err) {
-    logSuperTokensFailure(`unhandled exception for ${new URL(request.url).pathname}`, err);
+    logSuperTokensFailure(`unhandled exception for ${pathname}`, err);
     return new Response("Authentication service error", { status: 500 });
   }
 }
