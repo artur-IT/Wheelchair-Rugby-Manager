@@ -29,14 +29,7 @@ const CLUB_PLAYER_FIELD_LABELS: Record<string, string> = {
   tactics: "Taktyka",
 };
 
-const CLUB_PLAYER_SKILL_API_KEYS = new Set([
-  "speed",
-  "strength",
-  "endurance",
-  "technique",
-  "mentality",
-  "tactics",
-]);
+const CLUB_PLAYER_SKILL_API_KEYS = new Set(["speed", "strength", "endurance", "technique", "mentality", "tactics"]);
 
 /** API sometimes returns Zod’s generic "Nieprawidłowa wartość" — map to a concrete hint per field. */
 export function resolveClubPlayerFieldErrorMessage(fieldKey: string, rawMessage: string): string {
@@ -65,7 +58,9 @@ export function buildClubPlayerValidationBanner(fieldMessages: Record<string, st
   const entries = Object.entries(fieldMessages);
   if (entries.length === 0) return "Nie udało się zapisać danych.";
   if (entries.length === 1) {
-    const [key, msg] = entries[0]!;
+    const firstEntry = entries[0];
+    if (!firstEntry) return "Nie udało się zapisać danych.";
+    const [key, msg] = firstEntry;
     const label = CLUB_PLAYER_FIELD_LABELS[key] ?? key;
     return `${label}: ${msg}`;
   }
@@ -126,7 +121,8 @@ export function extractClubApiErrorMessage(data: unknown, fallback: string): str
       }
       const keys = Object.keys(allResolved);
       if (keys.length === 1) {
-        const key = keys[0]!;
+        const key = keys[0];
+        if (!key) return fallback;
         const label = CLUB_PLAYER_FIELD_LABELS[key] ?? key;
         return `${label}: ${allResolved[key]}`;
       }

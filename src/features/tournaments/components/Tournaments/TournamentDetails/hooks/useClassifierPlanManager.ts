@@ -109,6 +109,24 @@ function toDayTimestamp(iso: string) {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
 }
 
+function readSavedEmptyDays(storageKey: string | null): number[] {
+  if (!storageKey) return [];
+  try {
+    const raw = localStorage.getItem(storageKey);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as unknown;
+    return Array.isArray(parsed) ? parsed.filter((value) => typeof value === "number") : [];
+  } catch {
+    return [];
+  }
+}
+
+function filterSavedEmptyDays(days: number[], matchDayOptions: MatchDayOption[]): number[] {
+  if (matchDayOptions.length === 0) return days;
+  const allowed = new Set(matchDayOptions.map((option) => option.timestamp));
+  return days.filter((timestamp) => allowed.has(timestamp));
+}
+
 export default function useClassifierPlanManager({
   tournament,
   matchDayOptions,
@@ -135,6 +153,22 @@ export default function useClassifierPlanManager({
     classifierPlanQueryError && classifierPlanErr instanceof Error ? classifierPlanErr.message : null;
 
   const [savedEmptyDays, setSavedEmptyDays] = useState<number[]>([]);
+  const [loadedStorageKey, setLoadedStorageKey] = useState<string | null>(null);
+  const [appliedMatchDayKey, setAppliedMatchDayKey] = useState("");
+  const matchDayKey = matchDayOptions.map((option) => option.timestamp).join(",");
+
+  if (storageKey !== loadedStorageKey) {
+    setLoadedStorageKey(storageKey);
+    setSavedEmptyDays(readSavedEmptyDays(storageKey));
+  }
+
+  if (storageKey && matchDayOptions.length > 0 && matchDayKey !== appliedMatchDayKey) {
+    setAppliedMatchDayKey(matchDayKey);
+    setSavedEmptyDays((prev) => {
+      const next = filterSavedEmptyDays(prev, matchDayOptions);
+      return next.length === prev.length ? prev : next;
+    });
+  }
 
   const [addOpen, setAddOpen] = useState(false);
   const [addError, setAddError] = useState<string | null>(null);
@@ -204,30 +238,6 @@ export default function useClassifierPlanManager({
     },
     [queryClient]
   );
-
-  useEffect(() => {
-    if (!storageKey) return;
-    try {
-      const raw = localStorage.getItem(storageKey);
-      if (!raw) {
-        setSavedEmptyDays([]);
-        return;
-      }
-      const parsed = JSON.parse(raw) as unknown;
-      const arr = Array.isArray(parsed) ? parsed.filter((v) => typeof v === "number") : [];
-      setSavedEmptyDays(arr);
-    } catch {
-      setSavedEmptyDays([]);
-    }
-  }, [storageKey]);
-
-  useEffect(() => {
-    // When tournament dates change, drop empty days that are no longer in the allowed tournament window.
-    // Real saved rows are kept (they come from API), only UI "empty placeholders" are cleaned up.
-    if (!storageKey || matchDayOptions.length === 0) return;
-    const allowed = new Set(matchDayOptions.map((o) => o.timestamp));
-    setSavedEmptyDays((prev) => prev.filter((ts) => allowed.has(ts)));
-  }, [matchDayOptions, storageKey]);
 
   useEffect(() => {
     if (!storageKey) return;

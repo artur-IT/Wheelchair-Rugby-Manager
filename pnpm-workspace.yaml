@@ -1,5 +1,5 @@
 allowBuilds:
-  '@prisma/engines': true
+  "@prisma/engines": true
   argon2: true
   browser-tabs-lock: true
   esbuild: true
@@ -7,17 +7,17 @@ allowBuilds:
   sharp: true
   unrs-resolver: true
 minimumReleaseAgeExclude:
-  - '@typescript-eslint/eslint-plugin@8.61.1'
-  - '@typescript-eslint/parser@8.61.1'
-  - '@typescript-eslint/project-service@8.61.1'
-  - '@typescript-eslint/scope-manager@8.61.1'
-  - '@typescript-eslint/tsconfig-utils@8.61.1'
-  - '@typescript-eslint/type-utils@8.61.1'
-  - '@typescript-eslint/types@8.61.1'
-  - '@typescript-eslint/typescript-estree@8.61.1'
-  - '@typescript-eslint/utils@8.61.1'
-  - '@typescript-eslint/visitor-keys@8.61.1'
+  - "@typescript-eslint/eslint-plugin@8.61.1"
+  - "@typescript-eslint/parser@8.61.1"
+  - "@typescript-eslint/project-service@8.61.1"
+  - "@typescript-eslint/scope-manager@8.61.1"
+  - "@typescript-eslint/tsconfig-utils@8.61.1"
+  - "@typescript-eslint/type-utils@8.61.1"
+  - "@typescript-eslint/types@8.61.1"
+  - "@typescript-eslint/typescript-estree@8.61.1"
+  - "@typescript-eslint/utils@8.61.1"
+  - "@typescript-eslint/visitor-keys@8.61.1"
   - typescript-eslint@8.61.1
 onlyBuiltDependencies:
-  - '@prisma/engines'
+  - "@prisma/engines"
   - prisma

@@ -9,10 +9,7 @@ import { z } from "@/lib/zodPl";
 /** Optional 1–5 rating in the form; empty string means not set (stored as null in DB). */
 const skillRatingFromForm = z.preprocess(
   (v) => (v === null || v === undefined ? "" : v),
-  z.union([
-    z.literal(""),
-    z.number().int().min(1, "Ocena od 1 do 5").max(5, "Ocena od 1 do 5"),
-  ])
+  z.union([z.literal(""), z.number().int().min(1, "Ocena od 1 do 5").max(5, "Ocena od 1 do 5")])
 );
 
 /**

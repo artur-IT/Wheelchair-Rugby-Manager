@@ -22,6 +22,7 @@
     "sync:st-prisma": "tsx scripts/sync_supertokens-prisma.ts"
   },
   "dependencies": {
+    "@astrojs/check": "^0.9.9",
     "@astrojs/react": "^5.0.7",
     "@astrojs/vercel": "^10.0.8",
     "@emotion/react": "^11.14.0",
@@ -48,11 +49,12 @@
     "supertokens-auth-react": "^0.51.2",
     "supertokens-node": "^24.0.2",
     "supertokens-web-js": "^0.16.0",
+    "typescript": "^6.0.3",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@eslint/compat": "2.1.0",
-    "@eslint/js": "10.0.1",
+    "@eslint/js": "9.39.4",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
@@ -65,7 +67,7 @@
     "@vitest/coverage-v8": "^4.1.9",
     "concurrently": "^10.0.3",
     "dotenv": "^17.4.2",
-    "eslint": "10.5.0",
+    "eslint": "9.39.4",
     "eslint-config-prettier": "10.1.8",
     "eslint-import-resolver-typescript": "4.4.5",
     "eslint-plugin-astro": "1.7.0",
@@ -74,7 +76,7 @@
     "eslint-plugin-prettier": "5.5.6",
     "eslint-plugin-react": "7.37.5",
     "eslint-plugin-react-compiler": "19.1.0-rc.2",
-    "eslint-plugin-react-hooks": "7.1.1",
+    "eslint-plugin-react-hooks": "7.0.0",
     "jsdom": "^29.1.1",
     "lint-staged": "17.0.7",
     "prettier": "^3.8.4",

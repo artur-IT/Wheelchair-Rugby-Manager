@@ -37,4 +37,3 @@ describe("ClubUpsertSchema / ClubTeamSchema (name fields)", () => {
     expect(parsed.name).toBe("wR tEaM");
   });
 });
-

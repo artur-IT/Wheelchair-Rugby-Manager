@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Box } from "@mui/material";
 import AppShell from "@/components/AppShell/AppShell";
@@ -206,7 +206,6 @@ function ClubPageContent() {
   const [logoErrorMessage, setLogoErrorMessage] = useState<string | null>(null);
   const [showClubForm, setShowClubForm] = useState(false);
   const [isClubEditMode, setIsClubEditMode] = useState(false);
-  const [selectedClubId, setSelectedClubId] = useState("");
   const [teamName, setTeamName] = useState("");
   const [teamFormula, setTeamFormula] = useState<"WR4" | "WR5">("WR4");
   const [teamCoachId, setTeamCoachId] = useState("");
@@ -247,45 +246,46 @@ function ClubPageContent() {
     () => [...(clubsQuery.data ?? [])].sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
     [clubsQuery.data]
   );
+  const activeClubId = useMemo(() => sortedClubs[0]?.id ?? "", [sortedClubs]);
   const selectedClub = useMemo(
-    () => sortedClubs.find((club) => club.id === selectedClubId) ?? null,
-    [sortedClubs, selectedClubId]
+    () => sortedClubs.find((club) => club.id === activeClubId) ?? null,
+    [sortedClubs, activeClubId]
   );
 
   const coachesQuery = useQuery({
-    queryKey: ["club", "coaches", selectedClubId],
-    queryFn: () => fetchCoaches(selectedClubId),
-    enabled: selectedClubId.length > 0,
+    queryKey: ["club", "coaches", activeClubId],
+    queryFn: () => fetchCoaches(activeClubId),
+    enabled: activeClubId.length > 0,
   });
 
   const playersQuery = useQuery({
-    queryKey: ["club", "players", selectedClubId],
-    queryFn: () => fetchPlayers(selectedClubId),
-    enabled: selectedClubId.length > 0,
+    queryKey: ["club", "players", activeClubId],
+    queryFn: () => fetchPlayers(activeClubId),
+    enabled: activeClubId.length > 0,
   });
 
   const teamsQuery = useQuery({
-    queryKey: ["club", "teams", selectedClubId],
-    queryFn: () => fetchTeams(selectedClubId),
-    enabled: selectedClubId.length > 0,
+    queryKey: ["club", "teams", activeClubId],
+    queryFn: () => fetchTeams(activeClubId),
+    enabled: activeClubId.length > 0,
   });
 
   const volunteersQuery = useQuery({
-    queryKey: ["club", "volunteers", selectedClubId],
-    queryFn: () => fetchVolunteers(selectedClubId),
-    enabled: selectedClubId.length > 0,
+    queryKey: ["club", "volunteers", activeClubId],
+    queryFn: () => fetchVolunteers(activeClubId),
+    enabled: activeClubId.length > 0,
   });
 
   const refereesQuery = useQuery({
-    queryKey: ["club", "referees", selectedClubId],
-    queryFn: () => fetchReferees(selectedClubId),
-    enabled: selectedClubId.length > 0,
+    queryKey: ["club", "referees", activeClubId],
+    queryFn: () => fetchReferees(activeClubId),
+    enabled: activeClubId.length > 0,
   });
 
   const staffQuery = useQuery({
-    queryKey: ["club", "staff", selectedClubId],
-    queryFn: () => fetchStaff(selectedClubId),
-    enabled: selectedClubId.length > 0,
+    queryKey: ["club", "staff", activeClubId],
+    queryFn: () => fetchStaff(activeClubId),
+    enabled: activeClubId.length > 0,
   });
 
   const createTeamMutation = useMutation({
@@ -321,12 +321,6 @@ function ClubPageContent() {
       await queryClient.invalidateQueries({ queryKey: ["club", "teams", variables.clubId] });
     },
   });
-
-  useEffect(() => {
-    if (!selectedClubId && sortedClubs.length > 0) {
-      setSelectedClubId(sortedClubs[0].id);
-    }
-  }, [selectedClubId, sortedClubs]);
 
   return (
     <Box sx={{ maxWidth: 980, mx: "auto", display: "flex", flexDirection: "column", gap: 3 }}>
@@ -418,11 +412,11 @@ function ClubPageContent() {
         }}
       />
 
-      {selectedClubId ? (
+      {activeClubId ? (
         <ClubNextBirthdayStrip players={playersQuery.data ?? []} isLoading={playersQuery.isPending} />
       ) : null}
 
-      {selectedClubId ? (
+      {activeClubId ? (
         <TeamsSectionCard
           teams={teamsQuery.data ?? []}
           isTeamsLoading={teamsQuery.isPending}
@@ -458,7 +452,7 @@ function ClubPageContent() {
             if (editingTeamId) {
               updateTeamMutation.mutate({
                 teamId: editingTeamId,
-                clubId: selectedClubId,
+                clubId: activeClubId,
                 name: teamName.trim(),
                 formula: teamFormula,
                 coachId: teamCoachId || undefined,
@@ -467,7 +461,7 @@ function ClubPageContent() {
               return;
             }
             createTeamMutation.mutate({
-              clubId: selectedClubId,
+              clubId: activeClubId,
               name: teamName.trim(),
               formula: teamFormula,
               coachId: teamCoachId || undefined,
@@ -498,15 +492,15 @@ function ClubPageContent() {
           }}
           onConfirmDeleteTeam={() => {
             if (teamPendingDelete) {
-              deleteTeamMutation.mutate({ clubId: selectedClubId, teamId: teamPendingDelete.id });
+              deleteTeamMutation.mutate({ clubId: activeClubId, teamId: teamPendingDelete.id });
             }
           }}
         />
       ) : null}
 
-      {selectedClubId ? (
+      {activeClubId ? (
         <ClubPersonnelTabsSection
-          clubId={selectedClubId}
+          clubId={activeClubId}
           players={playersQuery.data ?? []}
           playersLoading={playersQuery.isPending}
           playersError={playersQuery.error instanceof Error ? playersQuery.error.message : null}

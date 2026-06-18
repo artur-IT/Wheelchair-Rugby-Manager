@@ -54,9 +54,11 @@ export default function TeamRefereeSection({
             label="Telefon"
             {...refereePhoneField}
             placeholder="9 cyfr"
-            inputProps={{ inputMode: "numeric" }}
             error={Boolean(touchedFields.refereePhone && errors.refereePhone)}
             helperText={touchedFields.refereePhone ? errors.refereePhone?.message : undefined}
+            slotProps={{
+              htmlInput: { inputMode: "numeric" },
+            }}
           />
         </Grid>
       </Grid>

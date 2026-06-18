@@ -6,8 +6,9 @@ alwaysApply: false
 
 ### Guidelines for Astro
 
+- Import React feature screens from `src/features/<module>/components/…` with the `.tsx` extension (e.g. `@/features/auth/components/LandingPage/LandingPage.tsx`).
+- Keep shared layout/providers in `src/components/`; domain pages belong in `src/features/`.
 - Leverage View Transitions API for smooth page transitions (use ClientRouter)
-- Use content collections with type safety for blog posts, documentation, etc.
 - Leverage Server Endpoints for API routes
 - Use POST, GET - uppercase format for endpoint handlers
 - Use `export const prerender = false` for API routes

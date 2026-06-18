@@ -319,7 +319,6 @@ describe("TournamentDetails", () => {
     expect(await screen.findByText("Hotel Sport")).toBeInTheDocument();
     expect(await screen.findByText("Hotel + Catering na hali")).toBeInTheDocument();
     expect(await screen.findByText("Brak przypisanych drużyn.")).toBeInTheDocument();
-    const teamsSection = screen.getByRole("heading", { name: /Drużyny/ }).closest("div");
     expect(screen.getByRole("button", { name: "Dodaj drużyny do turnieju" })).toBeInTheDocument();
   });
 
@@ -328,7 +327,6 @@ describe("TournamentDetails", () => {
     render(<TournamentDetails id="t1" />);
 
     await screen.findByRole("heading", { name: "Turniej Otwarcia Sezonu" });
-    const teamsSection = screen.getByRole("heading", { name: /Drużyny/ }).closest("div");
     await user.click(screen.getByRole("button", { name: "Dodaj drużyny do turnieju" }));
 
     const dialog = await screen.findByRole("dialog");
@@ -349,7 +347,6 @@ describe("TournamentDetails", () => {
     render(<TournamentDetails id="t1" />);
 
     await screen.findByRole("heading", { name: "Turniej Otwarcia Sezonu" });
-    const teamsSection = screen.getByRole("heading", { name: /Drużyny/ }).closest("div") as HTMLElement;
 
     // First add two teams
     await user.click(screen.getByRole("button", { name: "Dodaj drużyny do turnieju" }));
@@ -380,7 +377,6 @@ describe("TournamentDetails", () => {
     render(<TournamentDetails id="t1" />);
 
     await screen.findByRole("heading", { name: "Turniej Otwarcia Sezonu" });
-    const teamsSection = screen.getByRole("heading", { name: /Drużyny/ }).closest("div");
     await user.click(screen.getByRole("button", { name: "Dodaj drużyny do turnieju" }));
 
     const addDialog = await screen.findByRole("dialog");
@@ -407,7 +403,6 @@ describe("TournamentDetails", () => {
     render(<TournamentDetails id="t1" />);
 
     await screen.findByRole("heading", { name: "Turniej Otwarcia Sezonu" });
-    const teamsSection = screen.getByRole("heading", { name: /Drużyny/ }).closest("div") as HTMLElement;
     await user.click(screen.getByRole("button", { name: "Dodaj drużyny do turnieju" }));
 
     const addDialog = await screen.findByRole("dialog");
@@ -437,7 +432,6 @@ describe("TournamentDetails", () => {
     await screen.findByRole("heading", { name: "Turniej Otwarcia Sezonu" });
 
     // Add teams so dialog has valid options.
-    const teamsSection = screen.getByRole("heading", { name: /Drużyny/ }).closest("div") as HTMLElement;
     await user.click(screen.getByRole("button", { name: "Dodaj drużyny do turnieju" }));
 
     const addTeamsDialog = await screen.findByRole("dialog");
@@ -478,7 +472,6 @@ describe("TournamentDetails", () => {
     await screen.findByRole("heading", { name: "Turniej Otwarcia Sezonu" });
 
     // Add teams (fixture includes players only after teamsAdded).
-    const teamsSection = screen.getByRole("heading", { name: /Drużyny/ }).closest("div") as HTMLElement;
     await user.click(screen.getByRole("button", { name: "Dodaj drużyny do turnieju" }));
     const addTeamsDialog = await screen.findByRole("dialog");
     await user.click(within(addTeamsDialog).getByText("Warsaw Raptors"));
@@ -507,7 +500,6 @@ describe("TournamentDetails", () => {
     await screen.findByRole("heading", { name: "Turniej Otwarcia Sezonu" });
 
     // Add teams so dialog has valid options.
-    const teamsSection = screen.getByRole("heading", { name: /Drużyny/ }).closest("div") as HTMLElement;
     await user.click(screen.getByRole("button", { name: "Dodaj drużyny do turnieju" }));
 
     const addTeamsDialog = await screen.findByRole("dialog");
@@ -549,7 +541,6 @@ describe("TournamentDetails", () => {
     await screen.findByRole("heading", { name: "Turniej Otwarcia Sezonu" });
 
     // Add teams so dialog has valid options.
-    const teamsSection = screen.getByRole("heading", { name: /Drużyny/ }).closest("div") as HTMLElement;
     await user.click(screen.getByRole("button", { name: "Dodaj drużyny do turnieju" }));
 
     const addTeamsDialog = await screen.findByRole("dialog");
@@ -588,7 +579,6 @@ describe("TournamentDetails", () => {
     await screen.findByRole("heading", { name: "Turniej Otwarcia Sezonu" });
 
     // Add teams so dialog has valid options.
-    const teamsSection = screen.getByRole("heading", { name: /Drużyny/ }).closest("div") as HTMLElement;
     await user.click(screen.getByRole("button", { name: "Dodaj drużyny do turnieju" }));
 
     const addTeamsDialog = await screen.findByRole("dialog");
@@ -714,6 +704,3 @@ describe("TournamentDetails", () => {
     expect(await screen.findByRole("heading", { name: "Plan Klasyfikatorów" })).toBeInTheDocument();
   });
 });
-
-
-

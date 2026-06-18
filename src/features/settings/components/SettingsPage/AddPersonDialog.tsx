@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { ChangeEvent } from "react";
 import {
   Alert,
@@ -44,12 +44,13 @@ export default function AddPersonDialog({
 }: AddPersonDialogProps) {
   const [form, setForm] = useState<PersonFormFields>(personDialogInitialState);
   const [localError, setLocalError] = useState<string | null>(null);
+  const [dialogSnapshot, setDialogSnapshot] = useState({ open, initialValues });
 
-  useEffect(() => {
-    if (!open) return;
+  if (open && (dialogSnapshot.open !== open || dialogSnapshot.initialValues !== initialValues)) {
+    setDialogSnapshot({ open, initialValues });
     setForm(initialValues ?? personDialogInitialState);
     setLocalError(null);
-  }, [initialValues, open]);
+  }
 
   const handleFieldChange = (field: keyof PersonFormFields) => (event: ChangeEvent<HTMLInputElement>) => {
     const rawValue = event.target.value;

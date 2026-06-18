@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { SetStateAction } from "react";
 import {
   buildMatchDayOptions,
@@ -64,10 +64,11 @@ export default function useTournamentDetails(id: string): UseTournamentDetailsRe
 
   const matchesError = matchesQueryError && matchesErr instanceof Error ? matchesErr.message : null;
 
-  useEffect(() => {
-    if (!tournamentId) return;
+  const [trackedTournamentId, setTrackedTournamentId] = useState(tournamentId);
+  if (tournamentId !== trackedTournamentId) {
+    setTrackedTournamentId(tournamentId);
     setScheduleDayTimestamps([]);
-  }, [tournamentId]);
+  }
 
   const refetchTournament = useCallback(() => {
     void queryClient.invalidateQueries({ queryKey: queryKeys.tournaments.detail(id) });

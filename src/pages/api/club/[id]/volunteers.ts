@@ -2,7 +2,13 @@ import type { APIRoute } from "astro";
 import { json } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
 import { ClubVolunteerPersonSchema } from "@/lib/clubSchemas";
-import { ensureClubAccess, ensureClubExists, parseRequestJson, parseWithSchema, requiredId } from "@/lib/clubApiHelpers";
+import {
+  ensureClubAccess,
+  ensureClubExists,
+  parseRequestJson,
+  parseWithSchema,
+  requiredId,
+} from "@/lib/clubApiHelpers";
 
 export const GET: APIRoute = async ({ params, request }) => {
   const clubIdResult = requiredId(params.id, "Brak id klubu");

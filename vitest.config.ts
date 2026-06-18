@@ -18,8 +18,7 @@ export default defineConfig({
     alias: {
       "@": resolve(__dirname, "./src"),
       // MUI v9 imports this path as a directory; Vitest/Node ESM on Windows needs a file target.
-      "react-transition-group/TransitionGroupContext":
-        "react-transition-group/cjs/TransitionGroupContext.js",
+      "react-transition-group/TransitionGroupContext": "react-transition-group/cjs/TransitionGroupContext.js",
     },
   },
 });

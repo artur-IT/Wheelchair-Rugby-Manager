@@ -44,7 +44,7 @@ describe("ClubPlayersPersonnelSection", () => {
         players={[samplePlayer]}
         isLoading={false}
         loadError={null}
-        onRetry={() => {}}
+        onRetry={vi.fn()}
       />
     );
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, type ChangeEvent } from "react";
+import { useState, useMemo, type ChangeEvent } from "react";
 import { useForm, type FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "@/lib/zodPl";
@@ -430,8 +430,14 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
     defaultValues: defaultFormValues,
   });
 
-  useEffect(() => {
-    if (!seasons.length) return;
+  const teamFormInitKey =
+    isEdit && initialTeam
+      ? `edit:${initialTeam.id}:${seasons.map((season) => season.id).join()}`
+      : `create:${seasons[0]?.id ?? "none"}`;
+  const [appliedInitKey, setAppliedInitKey] = useState<string | null>(null);
+
+  if (seasons.length > 0 && teamFormInitKey !== appliedInitKey) {
+    setAppliedInitKey(teamFormInitKey);
     if (isEdit && initialTeam) {
       setSeasonId(initialTeam.seasonId ?? "");
       setPlayers((initialTeam.players ?? []).map(toPlayerRow));
@@ -439,12 +445,12 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
       reset(toDefaultValues(initialTeam));
       setPlayerClassificationErrors({});
       setPlayerNumberErrors({});
-    } else if (seasons.length > 0 && !isEdit) {
+    } else if (!isEdit) {
       setSeasonId(seasons[0].id);
       setPlayerClassificationErrors({});
       setPlayerNumberErrors({});
     }
-  }, [seasons, isEdit, initialTeam, reset, setPlayers, setStaff]);
+  }
 
   const submitMutation = useMutation({
     mutationFn: async (data: TeamFormValues) => {
@@ -609,7 +615,7 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
             value={seasonId ?? ""}
             onChange={(e: SelectChangeEvent) => setSeasonId(e.target.value)}
             readOnly={isEdit && seasons.length <= 1}
-            inputProps={{ id: "season-select" }}
+            slotProps={{ htmlInput: { id: "season-select" } }}
           >
             {seasons.map((s) => (
               <MenuItem key={s.id} value={s.id}>

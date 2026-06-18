@@ -1,6 +1,7 @@
-import { useState, useCallback, useEffect } from "react";
+import { useCallback, useSyncExternalStore } from "react";
 
 const STORAGE_KEY = "defaultSeasonId";
+const storageListeners = new Set<() => void>();
 
 /** Returns null if localStorage is unavailable (e.g. Safari private mode) */
 function readStorage(): string | null {
@@ -19,18 +20,24 @@ function writeStorage(id: string): void {
   }
 }
 
+function subscribeStorage(listener: () => void): () => void {
+  storageListeners.add(listener);
+  return () => {
+    storageListeners.delete(listener);
+  };
+}
+
+function notifyStorageListeners(): void {
+  storageListeners.forEach((listener) => listener());
+}
+
 /** Reads and writes the default season ID to localStorage */
 export function useDefaultSeason() {
-  // Start as null so SSR and the first client render match; read storage after mount (hydration-safe).
-  const [defaultSeasonId, setDefaultSeasonId] = useState<string | null>(null);
-
-  useEffect(() => {
-    setDefaultSeasonId(readStorage());
-  }, []);
+  const defaultSeasonId = useSyncExternalStore(subscribeStorage, readStorage, () => null);
 
   const saveDefault = useCallback((id: string) => {
     writeStorage(id);
-    setDefaultSeasonId(id);
+    notifyStorageListeners();
   }, []);
 
   return { defaultSeasonId, saveDefault };
