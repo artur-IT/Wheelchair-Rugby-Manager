@@ -469,13 +469,13 @@ export default function ClubPlayersPersonnelSection({
                 }}
               >
                 <Stack direction="row" alignItems="baseline" flexWrap="wrap" columnGap={1} rowGap={0.5}>
-                  <Typography component="span" variant="subtitle1" sx={{ fontWeight: 700 }}>
+                  <Typography component="span" variant="subtitle1" sx={{ fontWeight: 700, marginRight: 0.7 }}>
                     {p.firstName}
                   </Typography>
-                  <Typography component="span" variant="subtitle1" sx={{ fontWeight: 700 }}>
+                  <Typography component="span" variant="subtitle1" sx={{ fontWeight: 700, marginRight: 0.7 }}>
                     {p.lastName}
                   </Typography>
-                  <Typography component="span" variant="body2" color="text.secondary">
+                  <Typography component="span" variant="body" color="text.secondary">
                     {classificationDisplay}
                   </Typography>
                 </Stack>
@@ -534,6 +534,7 @@ export default function ClubPlayersPersonnelSection({
                   <Button
                     size="small"
                     variant="outlined"
+                    marginRight={1}
                     onClick={(e) => {
                       e.stopPropagation();
                       blurActiveElement();
