@@ -48,21 +48,16 @@ export default function ClubHeaderCard({
         {errorMessage ? <Typography color="error.main">{errorMessage}</Typography> : null}
 
         {!isLoading && selectedClub && !showClubForm ? (
-          <Stack
-            direction={{ xs: "column", md: "row" }}
-            alignItems={{ xs: "center", md: "center" }}
-            gap={{ xs: 1.5, md: 1 }}
-            sx={{ mt: 2 }}
-          >
+          <Stack direction={{ xs: "column", md: "row" }} spacing={{ xs: 2 }} sx={{ mt: 2 }}>
             <Stack
               direction="row"
-              alignItems="center"
-              gap={1}
+              spacing={{ xs: 1 }}
               sx={{
                 alignSelf: { xs: "stretch", md: "auto" },
                 flex: { md: 1 },
                 minWidth: 0,
                 width: { xs: "100%", md: "auto" },
+                alignItems: "center",
               }}
             >
               {selectedClub.logoUrl ? (
@@ -99,13 +94,13 @@ export default function ClubHeaderCard({
         ) : null}
 
         {!isLoading && (!selectedClub || showClubForm) ? (
-          <Stack gap={1.5} sx={{ mt: 2 }}>
+          <Stack spacing={{ xs: 2 }} sx={{ mt: 2 }}>
             {!selectedClub && !showClubForm ? (
               <Button variant="contained" onClick={onShowClubForm} disabled={addClubButtonDisabled}>
                 Dodaj klub
               </Button>
             ) : (
-              <Stack gap={2}>
+              <Stack spacing={{ xs: 2 }}>
                 <TextField
                   label="Nazwa klubu"
                   value={clubName}
@@ -116,7 +111,6 @@ export default function ClubHeaderCard({
                   label="Logo klubu"
                   value=""
                   type="file"
-                  inputProps={{ accept: "image/png,image/jpeg,image/webp" }}
                   onChange={(e) => {
                     const input = e.target as HTMLInputElement;
                     onClubLogoFileChange(input.files?.[0] ?? null);
@@ -124,7 +118,7 @@ export default function ClubHeaderCard({
                   error={Boolean(logoErrorMessage)}
                   helperText={logoErrorMessage ?? "Dozwolone: PNG, JPG, WEBP. Maks. 2MB."}
                   fullWidth
-                  slotProps={{ inputLabel: { shrink: true } }}
+                  slotProps={{ inputLabel: { shrink: true }, htmlInput: { accept: "image/png,image/jpeg,image/webp" } }}
                 />
                 {clubLogoPreviewUrl ? (
                   <Box
@@ -134,7 +128,7 @@ export default function ClubHeaderCard({
                     sx={{ width: "6em", height: "6em", objectFit: "contain" }}
                   />
                 ) : null}
-                <Stack direction={{ xs: "column", md: "row" }} gap={2}>
+                <Stack direction={{ xs: "column", md: "row" }} spacing={{ xs: 2 }}>
                   <Button
                     variant="contained"
                     disabled={!clubName.trim() || isCreatePending || Boolean(logoErrorMessage)}

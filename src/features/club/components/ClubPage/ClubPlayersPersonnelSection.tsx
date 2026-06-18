@@ -416,9 +416,7 @@ export default function ClubPlayersPersonnelSection({
       <Stack
         component="ul"
         direction="row"
-        flexWrap="wrap"
         spacing={1}
-        useFlexGap
         sx={{ listStyle: "none", m: 0, p: 0, alignItems: "flex-start", width: "100%" }}
       >
         {players.map((p) => {
@@ -471,14 +469,14 @@ export default function ClubPlayersPersonnelSection({
                   },
                 }}
               >
-                <Stack direction="row" alignItems="center" flexWrap="wrap" columnGap={1} rowGap={0.5}>
-                  <Typography component="span" variant="subtitle1" sx={{ fontWeight: 700, marginRight: 0.7 }}>
+                <Stack direction="row" spacing={{ xs: 1 }} sx={{ alignItems: "center" }}>
+                  <Typography component="span" variant="subtitle1" sx={{ fontWeight: 700 }}>
                     {p.firstName}
                   </Typography>
-                  <Typography component="span" variant="subtitle1" sx={{ fontWeight: 700, marginRight: 0.7 }}>
+                  <Typography component="span" variant="subtitle1" sx={{ fontWeight: 700 }}>
                     {p.lastName}
                   </Typography>
-                  <Typography component="span" variant="body" color="text.secondary">
+                  <Typography component="span" variant="body2" color="text.secondary">
                     {classificationDisplay}
                   </Typography>
                 </Stack>
@@ -533,11 +531,10 @@ export default function ClubPlayersPersonnelSection({
                     </Typography>
                   )}
                 </Box>
-                <Stack direction="row" flexWrap="wrap" gap={1} useFlexGap sx={{ pt: 0.25 }}>
+                <Stack direction="row" spacing={{ xs: 1 }} sx={{ pt: 0.25 }}>
                   <Button
                     size="small"
                     variant="outlined"
-                    marginRight={1}
                     onClick={(e) => {
                       e.stopPropagation();
                       blurActiveElement();
@@ -645,7 +642,7 @@ export default function ClubPlayersPersonnelSection({
                       required
                       error={Boolean(fieldState.error)}
                       helperText={fieldState.error?.message}
-                      inputProps={{ maxLength: MAX_SHORT_TEXT }}
+                      slotProps={{ htmlInput: { maxLength: MAX_SHORT_TEXT } }}
                     />
                   )}
                 />
@@ -662,7 +659,7 @@ export default function ClubPlayersPersonnelSection({
                       required
                       error={Boolean(fieldState.error)}
                       helperText={fieldState.error?.message}
-                      inputProps={{ maxLength: MAX_SHORT_TEXT }}
+                      slotProps={{ htmlInput: { maxLength: MAX_SHORT_TEXT } }}
                     />
                   )}
                 />
@@ -710,7 +707,7 @@ export default function ClubPlayersPersonnelSection({
                       required
                       error={Boolean(fieldState.error)}
                       helperText={fieldState.error?.message ?? "Od 1 do 99 albo znak „-”, jeśli nie ma numeru."}
-                      inputProps={{ maxLength: 3 }}
+                      slotProps={{ htmlInput: { maxLength: 3 } }}
                       onFocus={() => {
                         if (field.value === "-") field.onChange("");
                       }}
@@ -806,8 +803,10 @@ export default function ClubPlayersPersonnelSection({
                       value={field.value ?? ""}
                       label="Data urodzenia (opcjonalnie)"
                       type="date"
-                      InputLabelProps={{ shrink: true }}
-                      inputProps={{ max: maxBirthDate }}
+                      slotProps={{
+                        inputLabel: { shrink: true },
+                        htmlInput: { max: maxBirthDate },
+                      }}
                       error={Boolean(fieldState.error)}
                       helperText={fieldState.error?.message}
                       onChange={(e) => field.onChange(e.target.value === "" ? null : e.target.value)}
@@ -832,7 +831,7 @@ export default function ClubPlayersPersonnelSection({
                       type="email"
                       error={Boolean(fieldState.error)}
                       helperText={fieldState.error?.message}
-                      inputProps={{ maxLength: MAX_SHORT_TEXT }}
+                      slotProps={{ htmlInput: { maxLength: MAX_SHORT_TEXT } }}
                     />
                   )}
                 />
@@ -875,7 +874,7 @@ export default function ClubPlayersPersonnelSection({
                       placeholder="Ulica"
                       error={Boolean(fieldState.error)}
                       helperText={fieldState.error?.message}
-                      inputProps={{ maxLength: MAX_LONG_TEXT }}
+                      slotProps={{ htmlInput: { maxLength: MAX_LONG_TEXT } }}
                     />
                   )}
                 />
@@ -910,7 +909,7 @@ export default function ClubPlayersPersonnelSection({
                       label="Miasto"
                       error={Boolean(fieldState.error)}
                       helperText={fieldState.error?.message}
-                      inputProps={{ maxLength: MAX_SHORT_TEXT }}
+                      slotProps={{ htmlInput: { maxLength: MAX_SHORT_TEXT } }}
                     />
                   )}
                 />
@@ -926,7 +925,7 @@ export default function ClubPlayersPersonnelSection({
                       fullWidth
                       value={field.value ?? ""}
                       label="Link do Mapy"
-                      InputProps={{ readOnly: true }}
+                      slotProps={{ input: { readOnly: true } }}
                       helperText="Uzupełnij ulicę, kod i miasto — link zaktualizuje się automatycznie (Google Maps)."
                     />
                   )}

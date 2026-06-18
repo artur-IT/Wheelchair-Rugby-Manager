@@ -68,7 +68,7 @@ export default function TeamTile({
           },
         }}
       >
-        <Stack direction="row" justifyContent="space-between" alignItems="center" gap={2} flexWrap="wrap">
+        <Stack direction="row" spacing={{ xs: 2 }}>
           <Typography sx={{ fontWeight: 700 }}>{team.name}</Typography>
           <Chip label={team.formula === "WR4" ? "WR'4" : "WR'5"} size="small" />
         </Stack>
@@ -88,7 +88,7 @@ export default function TeamTile({
             "brak"
           )}
         </Typography>
-        <Stack direction="row" flexWrap="wrap" gap={1} useFlexGap sx={{ pt: 0.25 }}>
+        <Stack direction="row" spacing={{ xs: 1 }} sx={{ pt: 0.25 }}>
           <Button
             size="small"
             variant="outlined"
@@ -146,7 +146,12 @@ export default function TeamTile({
               <Box sx={{ flex: "0 0 5.5rem", textAlign: "right" }}>Klasyfikacja</Box>
             </Stack>
             {team.players.map(({ player }) => (
-              <Stack key={player.id} direction="row" spacing={1} alignItems="baseline" sx={{ typography: "body2" }}>
+              <Stack
+                key={player.id}
+                direction="row"
+                spacing={{ xs: 1 }}
+                sx={{ typography: "body2", alignItems: "center" }}
+              >
                 <Typography component="span" sx={{ flex: "1 1 28%", minWidth: 0, fontWeight: 600 }}>
                   {player.firstName}
                 </Typography>
