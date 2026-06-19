@@ -59,7 +59,7 @@ const teamOptionalEmailSchema = z
 const teamOptionalPhoneSchema = z
   .string()
   .refine((v) => !v || v.length === 9, { message: teamFieldMessage })
-  .optional();
+  .refine((v) => v?.length === 9, { message: teamFieldMessage });
 
 const teamOptionalFirstNameSchema = z.string().max(MAX_SHORT_TEXT, teamFieldMessage).optional();
 
