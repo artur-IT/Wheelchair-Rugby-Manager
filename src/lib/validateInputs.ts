@@ -1,5 +1,8 @@
 import { z } from "@/lib/zodPl";
 
+/** Universal validation message for required / invalid form fields. */
+export const FIELD_REQUIRED_MESSAGE = "Pole wymagane";
+
 // ─── Text normalisation ────────────────────────────────────────────────────────
 
 /** Capitalises the first letter of every word; lowercases the rest. Handles Polish characters. */

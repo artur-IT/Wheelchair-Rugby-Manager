@@ -80,8 +80,8 @@ export default function TeamCreateForm({
   );
 
   return (
-    <Stack gap={2} sx={{ mb: 3 }}>
-      <Stack direction={{ xs: "column", md: "row" }} gap={2} sx={{ alignItems: { md: "flex-start" } }}>
+    <Stack sx={{ mb: 3, bgcolor: "#f5f5f5", p: 2, borderRadius: 2 }}>
+      <Stack direction={{ xs: "column", md: "row" }} sx={{ alignItems: { md: "flex-start" } }}>
         <TextField
           label="Nazwa drużyny"
           value={teamName}
@@ -93,11 +93,11 @@ export default function TeamCreateForm({
         {coachField}
       </Stack>
       <Box>
-        <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+        <Typography variant="subtitle2" sx={{ fontWeight: 600, mt: 1 }}>
           Zawodnicy w drużynie
         </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-          Zaznacz checkbox przy osobach, które mają być w składzie.
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5, fontSize: "0.75rem", fontStyle: "italic" }}>
+          (Zaznacz checkbox przy osobach, które mają być w składzie.)
         </Typography>
         {players.length === 0 ? (
           <Typography variant="body2" color="text.disabled">
@@ -113,7 +113,6 @@ export default function TeamCreateForm({
               borderColor: "divider",
               borderRadius: 1,
               p: 1,
-              bgcolor: (theme) => (theme.palette.mode === "dark" ? "action.hover" : theme.palette.grey[50]),
             }}
           >
             {players.map((player) => {
@@ -125,6 +124,7 @@ export default function TeamCreateForm({
                   control={
                     <Checkbox
                       size="small"
+                      sx={{ py: 0.25 }}
                       checked={checked}
                       onChange={() => {
                         onTeamPlayersChange(
@@ -134,19 +134,19 @@ export default function TeamCreateForm({
                     />
                   }
                   label={label}
-                  sx={{ mr: 0, alignItems: "center", py: 0.25 }}
+                  sx={{ mr: 0, alignItems: "center", py: 0 }}
                 />
               );
             })}
           </FormGroup>
         )}
       </Box>
-      <Stack direction="row" gap={1.5} flexWrap="wrap">
+      <Stack direction="row" sx={{ mt: 2, gap: 1 }}>
         <Button variant="outlined" disabled={isPending} onClick={onCancelTeamForm}>
           Anuluj
         </Button>
         <Button variant="contained" disabled={!teamName.trim() || isPending} onClick={onCreateTeam}>
-          {isEditing ? "Zapisz zmiany" : "Zapisz drużynę"}
+          {isEditing ? "Zapisz" : "Zapisz drużynę"}
         </Button>
       </Stack>
       {errorMessage ? <Typography color="error.main">{errorMessage}</Typography> : null}

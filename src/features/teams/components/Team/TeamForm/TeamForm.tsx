@@ -41,50 +41,60 @@ import { ApiValidationError, firstApiFieldErrorKey } from "@/lib/apiHttp";
 import { blurActiveElement } from "@/lib/a11y/blurActiveElement";
 import {
   sanitizePhone,
-  optionalPhoneSchema,
-  requiredPhoneSchema,
-  requiredFirstNameSchema,
-  requiredLastNameSchema,
-  requiredEmailSchema,
-  optionalFirstNameSchema,
-  optionalLastNameSchema,
-  optionalEmailSchema,
-  requiredTeamNameSchema,
-  requiredAddressSchema,
-  requiredCitySchema,
-  requiredPostalCodeSchema,
-  optionalWebsiteUrlSchema,
+  FIELD_REQUIRED_MESSAGE,
+  LOOSE_URL_REGEX,
+  POSTAL_CODE_REGEX,
   playerClassificationSchema,
   playerNumberSchema,
+  MAX_LONG_TEXT,
   MAX_SHORT_TEXT,
 } from "@/lib/validateInputs";
 
+const teamFieldMessage = FIELD_REQUIRED_MESSAGE;
+
+const teamOptionalEmailSchema = z
+  .union([z.string().email(teamFieldMessage).max(MAX_SHORT_TEXT, teamFieldMessage), z.literal("")])
+  .optional();
+
+const teamOptionalPhoneSchema = z
+  .string()
+  .refine((v) => !v || v.length === 9, { message: teamFieldMessage })
+  .optional();
+
+const teamOptionalFirstNameSchema = z.string().max(MAX_SHORT_TEXT, teamFieldMessage).optional();
+
+const teamOptionalLastNameSchema = z.string().max(MAX_SHORT_TEXT, teamFieldMessage).optional();
+
+const teamOptionalWebsiteUrlSchema = z
+  .union([
+    z.literal(""),
+    z
+      .string()
+      .max(MAX_LONG_TEXT, teamFieldMessage)
+      .refine((v) => LOOSE_URL_REGEX.test(v), teamFieldMessage),
+  ])
+  .optional();
+
 const teamSchema = z.object({
-  name: requiredTeamNameSchema,
-  address: requiredAddressSchema,
-  city: requiredCitySchema,
-  postalCode: requiredPostalCodeSchema,
-  contactFirstName: requiredFirstNameSchema,
-  contactLastName: requiredLastNameSchema,
-  contactEmail: requiredEmailSchema,
-  contactPhone: requiredPhoneSchema,
-  websiteUrl: optionalWebsiteUrlSchema,
-  coachFirstName: z
-    .string()
-    .min(1, "Imię trenera jest wymagane")
-    .max(MAX_SHORT_TEXT, `Imię nie może przekraczać ${MAX_SHORT_TEXT} znaków`),
-  coachLastName: z
-    .string()
-    .min(1, "Nazwisko trenera jest wymagane")
-    .max(MAX_SHORT_TEXT, `Nazwisko nie może przekraczać ${MAX_SHORT_TEXT} znaków`),
-  coachEmail: optionalEmailSchema,
-  coachPhone: optionalPhoneSchema,
-  refereeFirstName: optionalFirstNameSchema,
-  refereeLastName: optionalLastNameSchema,
-  refereeEmail: optionalEmailSchema,
-  refereePhone: optionalPhoneSchema,
-  staffFirstName: optionalFirstNameSchema,
-  staffLastName: optionalLastNameSchema,
+  name: z.string().min(1, teamFieldMessage).max(MAX_LONG_TEXT, teamFieldMessage),
+  address: z.string().min(1, teamFieldMessage).max(MAX_LONG_TEXT, teamFieldMessage),
+  city: z.string().min(1, teamFieldMessage).max(MAX_LONG_TEXT, teamFieldMessage),
+  postalCode: z.string().min(1, teamFieldMessage).regex(POSTAL_CODE_REGEX, teamFieldMessage),
+  contactFirstName: z.string().min(1, teamFieldMessage).max(MAX_SHORT_TEXT, teamFieldMessage),
+  contactLastName: z.string().min(1, teamFieldMessage).max(MAX_SHORT_TEXT, teamFieldMessage),
+  contactEmail: z.string().min(1, teamFieldMessage).email(teamFieldMessage).max(MAX_SHORT_TEXT, teamFieldMessage),
+  contactPhone: z.string().min(1, teamFieldMessage).length(9, teamFieldMessage),
+  websiteUrl: teamOptionalWebsiteUrlSchema,
+  coachFirstName: z.string().min(1, teamFieldMessage).max(MAX_SHORT_TEXT, teamFieldMessage),
+  coachLastName: z.string().min(1, teamFieldMessage).max(MAX_SHORT_TEXT, teamFieldMessage),
+  coachEmail: teamOptionalEmailSchema,
+  coachPhone: teamOptionalPhoneSchema,
+  refereeFirstName: teamOptionalFirstNameSchema,
+  refereeLastName: teamOptionalLastNameSchema,
+  refereeEmail: teamOptionalEmailSchema,
+  refereePhone: teamOptionalPhoneSchema,
+  staffFirstName: teamOptionalFirstNameSchema,
+  staffLastName: teamOptionalLastNameSchema,
 });
 
 export type TeamFormValues = z.infer<typeof teamSchema>;
@@ -395,13 +405,13 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
         : undefined;
       const result = playerClassificationSchema.optional().safeParse(parsedClassification);
       if (!result.success) {
-        nextClassificationErrors[player.id] = result.error.issues[0]?.message ?? "Nieprawidłowa klasyfikacja";
+        nextClassificationErrors[player.id] = FIELD_REQUIRED_MESSAGE;
       }
 
       const parsedNumber = player.number.trim() ? Number(player.number.trim()) : undefined;
       const numberResult = playerNumberSchema.optional().safeParse(parsedNumber);
       if (!numberResult.success) {
-        nextNumberErrors[player.id] = numberResult.error.issues[0]?.message ?? "Nieprawidłowy numer";
+        nextNumberErrors[player.id] = FIELD_REQUIRED_MESSAGE;
       }
     }
 
@@ -421,7 +431,7 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
     register,
     handleSubmit,
     setFocus,
-    formState: { errors, touchedFields, isSubmitting },
+    formState: { errors, touchedFields, submitCount, isSubmitting },
     reset,
   } = useForm<TeamFormValues>({
     resolver: zodResolver(teamSchema as never),
@@ -568,6 +578,8 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
     focusFirstFieldError(invalidErrors, setFocus);
   };
 
+  const showAllErrors = submitCount > 0;
+
   const makePhoneField = (name: "contactPhone" | "coachPhone" | "refereePhone") => {
     const field = register(name);
     return {
@@ -615,7 +627,7 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
             value={seasonId ?? ""}
             onChange={(e: SelectChangeEvent) => setSeasonId(e.target.value)}
             readOnly={isEdit && seasons.length <= 1}
-            slotProps={{ htmlInput: { id: "season-select" } }}
+            slotProps={{ input: { id: "season-select" } }}
           >
             {seasons.map((s) => (
               <MenuItem key={s.id} value={s.id}>
@@ -637,8 +649,8 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
               fullWidth
               label="Nazwa Drużyny"
               {...register("name")}
-              error={Boolean(touchedFields.name && errors.name)}
-              helperText={touchedFields.name ? errors.name?.message : undefined}
+              error={Boolean((touchedFields.name || showAllErrors) && errors.name)}
+              helperText={(touchedFields.name || showAllErrors) && errors.name ? FIELD_REQUIRED_MESSAGE : undefined}
               sx={requiredFieldSx}
             />
           </Grid>
@@ -647,8 +659,10 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
               fullWidth
               label="Ulica"
               {...register("address")}
-              error={Boolean(touchedFields.address && errors.address)}
-              helperText={touchedFields.address ? errors.address?.message : undefined}
+              error={Boolean((touchedFields.address || showAllErrors) && errors.address)}
+              helperText={
+                (touchedFields.address || showAllErrors) && errors.address ? FIELD_REQUIRED_MESSAGE : undefined
+              }
               sx={requiredFieldSx}
             />
           </Grid>
@@ -658,8 +672,10 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
               label="Kod pocztowy"
               placeholder="00-000"
               {...register("postalCode")}
-              error={Boolean(touchedFields.postalCode && errors.postalCode)}
-              helperText={touchedFields.postalCode ? errors.postalCode?.message : undefined}
+              error={Boolean((touchedFields.postalCode || showAllErrors) && errors.postalCode)}
+              helperText={
+                (touchedFields.postalCode || showAllErrors) && errors.postalCode ? FIELD_REQUIRED_MESSAGE : undefined
+              }
               sx={requiredFieldSx}
             />
           </Grid>
@@ -668,8 +684,8 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
               fullWidth
               label="Miasto"
               {...register("city")}
-              error={Boolean(touchedFields.city && errors.city)}
-              helperText={touchedFields.city ? errors.city?.message : undefined}
+              error={Boolean((touchedFields.city || showAllErrors) && errors.city)}
+              helperText={(touchedFields.city || showAllErrors) && errors.city ? FIELD_REQUIRED_MESSAGE : undefined}
               sx={requiredFieldSx}
             />
           </Grid>
@@ -679,8 +695,10 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
               fullWidth
               label="Strona internetowa (opcjonalnie)"
               {...register("websiteUrl")}
-              error={Boolean(touchedFields.websiteUrl && errors.websiteUrl)}
-              helperText={touchedFields.websiteUrl ? errors.websiteUrl?.message : undefined}
+              error={Boolean((touchedFields.websiteUrl || showAllErrors) && errors.websiteUrl)}
+              helperText={
+                (touchedFields.websiteUrl || showAllErrors) && errors.websiteUrl ? FIELD_REQUIRED_MESSAGE : undefined
+              }
             />
           </Grid>
         </Grid>
@@ -689,6 +707,7 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
           register={register}
           errors={errors}
           touchedFields={touchedFields}
+          showAllErrors={showAllErrors}
           contactPhoneField={contactPhoneField}
           requiredFieldSx={requiredFieldSx}
         />
@@ -699,6 +718,7 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
           register={register}
           errors={errors}
           touchedFields={touchedFields}
+          showAllErrors={showAllErrors}
           coachPhoneField={coachPhoneField}
           requiredFieldSx={requiredFieldSx}
         />
@@ -707,6 +727,7 @@ export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess
           register={register}
           errors={errors}
           touchedFields={touchedFields}
+          showAllErrors={showAllErrors}
           refereePhoneField={refereePhoneField}
         />
 

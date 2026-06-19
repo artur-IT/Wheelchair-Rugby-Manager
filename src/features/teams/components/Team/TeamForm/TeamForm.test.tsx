@@ -35,7 +35,8 @@ describe("TeamForm", () => {
     await screen.findByRole("button", { name: "Zapisz Drużynę" });
     await user.click(screen.getByRole("button", { name: "Zapisz Drużynę" }));
 
-    expect(await screen.findByText("Nazwa drużyny jest wymagana")).toBeInTheDocument();
+    expect(screen.getByLabelText("Nazwa Drużyny")).toBeInvalid();
+    expect(screen.getAllByText("Pole wymagane").length).toBeGreaterThan(1);
   });
 
   it("sends team payload with selected season id after valid submit", async () => {
@@ -120,7 +121,7 @@ describe("TeamForm", () => {
     await user.type(screen.getAllByLabelText("Klasyfikacja")[0], "0.7");
     await user.click(screen.getByRole("button", { name: "Zapisz Drużynę" }));
 
-    expect(await screen.findByText("Klasyfikacja: 0.5–3.5")).toBeInTheDocument();
+    expect(await screen.findByText("Pole wymagane")).toBeInTheDocument();
     expect(fetchMock.mock.calls.some((call) => call[0] === "/api/teams")).toBe(false);
   });
 
@@ -147,7 +148,7 @@ describe("TeamForm", () => {
     await user.type(screen.getAllByLabelText("Numer")[0], "0");
     await user.click(screen.getByRole("button", { name: "Zapisz Drużynę" }));
 
-    expect(await screen.findByText("Numer: 1–99")).toBeInTheDocument();
+    expect(await screen.findByText("Pole wymagane")).toBeInTheDocument();
     expect(fetchMock.mock.calls.some((call) => call[0] === "/api/teams")).toBe(false);
   });
 

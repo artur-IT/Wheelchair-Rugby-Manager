@@ -704,7 +704,6 @@ export default function ClubPlayersPersonnelSection({
                       fullWidth
                       value={field.value ?? "-"}
                       label="Numer koszulki"
-                      required
                       error={Boolean(fieldState.error)}
                       helperText={fieldState.error?.message ?? "Od 1 do 99 albo znak „-”, jeśli nie ma numeru."}
                       slotProps={{ htmlInput: { maxLength: 3 } }}

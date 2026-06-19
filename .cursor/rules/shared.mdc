@@ -7,7 +7,7 @@ alwaysApply: true
 ## Tech stack
 
 - **Frontend**: HTML5, CSS3, JavaScript, TypeScript 5, React 19.2, Astro 5
-- **Backend**: Node.js, pnpm, TypeScript
+- **Backend**: Node.js, pnpm, TypeScript 5
 - **Routing**: Astro
 - **Fetching API**: Tanstack Query
 - **Forms**: React Hook Form + Zod (on the backend to validate requests)
@@ -21,7 +21,7 @@ alwaysApply: true
 
 ## Project structure
 
-Follow this layout when adding or changing code. When you change the structure, update this section and `.cursor/rules` if needed.
+Follow this layout when adding or changing code.
 
 - `./src` - Source code
 - `./src/layouts` - Astro layouts
