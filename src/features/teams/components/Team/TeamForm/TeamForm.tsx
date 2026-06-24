@@ -19,12 +19,11 @@ import {
 } from "@mui/material";
 import type { SelectChangeEvent } from "@mui/material";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
+import { withAppProviders } from "@/components/AppProviders/withAppProviders";
 import AppShell from "@/components/AppShell/AppShell";
 import TeamCoachSection from "@/features/teams/components/Team/TeamForm/TeamCoachSection";
 import TeamContactSection from "@/features/teams/components/Team/TeamForm/TeamContactSection";
 import TeamPlayersSection from "@/features/teams/components/Team/TeamForm/TeamPlayersSection";
-import QueryProvider from "@/components/QueryProvider/QueryProvider";
 import TeamRefereeSection from "@/features/teams/components/Team/TeamForm/TeamRefereeSection";
 import TeamStaffSection from "@/features/teams/components/Team/TeamForm/TeamStaffSection";
 import { buildPlayerPayloadFromRow, normalizeText } from "@/features/teams/components/Team/shared/teamFormUtils";
@@ -56,10 +55,7 @@ const teamOptionalEmailSchema = z
   .union([z.string().email(teamFieldMessage).max(MAX_SHORT_TEXT, teamFieldMessage), z.literal("")])
   .optional();
 
-const teamOptionalPhoneSchema = z
-  .string()
-  .refine((v) => !v || v.length === 9, { message: teamFieldMessage })
-  .refine((v) => v?.length === 9, { message: teamFieldMessage });
+const teamOptionalPhoneSchema = z.string().refine((v) => !v || v.length === 9, { message: teamFieldMessage });
 
 const teamOptionalFirstNameSchema = z.string().max(MAX_SHORT_TEXT, teamFieldMessage).optional();
 
@@ -322,17 +318,13 @@ async function resolvePersonnelId({
   return createdPerson.id;
 }
 
-export default function TeamForm() {
+export default withAppProviders(function TeamForm() {
   return (
-    <QueryProvider>
-      <ThemeRegistry>
-        <AppShell currentPath="/settings">
-          <TeamFormContent />
-        </AppShell>
-      </ThemeRegistry>
-    </QueryProvider>
+    <AppShell currentPath="/settings">
+      <TeamFormContent />
+    </AppShell>
   );
-}
+});
 
 export function TeamFormContent({ mode = "create", initialTeam = null, onSuccess, onCancel }: TeamFormContentProps) {
   const queryClient = useQueryClient();

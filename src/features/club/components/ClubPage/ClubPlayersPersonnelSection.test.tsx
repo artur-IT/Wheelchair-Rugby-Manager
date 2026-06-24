@@ -2,13 +2,13 @@ import type { ReactNode } from "react";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import QueryProvider from "@/components/QueryProvider/QueryProvider";
+import AppProviders from "@/components/AppProviders/AppProviders";
 import type { ClubPlayerDto } from "@/features/club/components/ClubPage/types";
 
 import ClubPlayersPersonnelSection from "./ClubPlayersPersonnelSection";
 
-function renderWithQuery(ui: ReactNode) {
-  return render(<QueryProvider>{ui}</QueryProvider>);
+function renderWithAppProviders(ui: ReactNode) {
+  return render(<AppProviders>{ui}</AppProviders>);
 }
 
 const samplePlayer: ClubPlayerDto = {
@@ -38,7 +38,7 @@ describe("ClubPlayersPersonnelSection", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-06-01T12:00:00.000Z"));
 
-    renderWithQuery(
+    renderWithAppProviders(
       <ClubPlayersPersonnelSection
         clubId="c1"
         players={[samplePlayer]}

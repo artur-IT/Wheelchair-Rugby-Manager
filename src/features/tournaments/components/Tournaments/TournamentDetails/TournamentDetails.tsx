@@ -2,8 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Alert, Box, Collapse, Typography, CircularProgress } from "@mui/material";
 import { ChevronDown } from "lucide-react";
-import QueryProvider from "@/components/QueryProvider/QueryProvider";
-import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
+import { withAppProviders } from "@/components/AppProviders/withAppProviders";
 import AppShell from "@/components/AppShell/AppShell";
 import DataLoadAlert from "@/components/ui/DataLoadAlert";
 import TournamentDetailsDialogs from "@/features/tournaments/components/Tournaments/TournamentDetails/TournamentDetailsDialogs";
@@ -43,17 +42,13 @@ interface TournamentDetailsProps {
   id: string;
 }
 
-export default function TournamentDetails({ id }: TournamentDetailsProps) {
+export default withAppProviders(function TournamentDetails({ id }: TournamentDetailsProps) {
   return (
-    <ThemeRegistry>
-      <AppShell currentPath="/tournaments" containerMaxWidth="xl">
-        <QueryProvider>
-          <TournamentDetailsContent id={id} />
-        </QueryProvider>
-      </AppShell>
-    </ThemeRegistry>
+    <AppShell currentPath="/tournaments" containerMaxWidth="xl">
+      <TournamentDetailsContent id={id} />
+    </AppShell>
   );
-}
+});
 
 function TournamentDetailsContent({ id }: TournamentDetailsProps) {
   const [showPostEditDateHint, setShowPostEditDateHint] = useState(false);

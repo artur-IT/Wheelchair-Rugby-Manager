@@ -93,3 +93,13 @@ Astro pages import React screens from `src/features/<module>/components/…` (wi
 ---
 
 **Built for the wheelchair rugby community** 🏆
+
+---
+
+### 📝 Conclusions:
+
+1. I think it's too much tests
+2. Astro + MUI = bad idea in this projiect. Astro doing only routing. Project has much interactions and logic, instead static content pages wchich Astro liked.
+3. I think AI generated too much code.
+4. MUI has it's own named components, then I have trouble to find correct component in React DevTools.
+5. React Hook Form + Tanstack Query + Zod = I think it's too much for this project, but maybe I'm wrong.

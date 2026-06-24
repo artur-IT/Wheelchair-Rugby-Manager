@@ -3,8 +3,7 @@ import { useMemo } from "react";
 import { Trophy, Users, UserCircle, Calendar, ChevronRight, Plus } from "lucide-react";
 import { Box, Button, Grid, Card, CardContent, Typography, Chip, CircularProgress } from "@mui/material";
 import AppShell from "@/components/AppShell/AppShell";
-import QueryProvider from "@/components/QueryProvider/QueryProvider";
-import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
+import { withAppProviders } from "@/components/AppProviders/withAppProviders";
 import DataLoadAlert from "@/components/ui/DataLoadAlert";
 import { useDefaultSeason } from "@/components/hooks/useDefaultSeason";
 import { fetchCurrentUserProfile } from "@/lib/api/users";
@@ -344,14 +343,10 @@ function DashboardTournamentRow({
   );
 }
 
-export default function Dashboard() {
+export default withAppProviders(function Dashboard() {
   return (
-    <QueryProvider>
-      <ThemeRegistry>
-        <AppShell currentPath="/dashboard">
-          <DashboardContent />
-        </AppShell>
-      </ThemeRegistry>
-    </QueryProvider>
+    <AppShell currentPath="/dashboard">
+      <DashboardContent />
+    </AppShell>
   );
-}
+});

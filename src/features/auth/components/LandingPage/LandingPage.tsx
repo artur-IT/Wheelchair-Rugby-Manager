@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Trophy, CalendarDays, Medal, Users, UserCog, Building2, type LucideIcon } from "lucide-react";
 import { motion } from "motion/react";
 import { Button, Grid, Card, CardContent, Box, Typography } from "@mui/material";
-import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
+import { withAppProviders } from "@/components/AppProviders/withAppProviders";
 import LoginModal from "@/features/auth/components/LoginModal/LoginModal";
 import { getYear } from "date-fns";
 
@@ -130,13 +130,13 @@ function hasLoginQueryParam(): boolean {
   return new URLSearchParams(window.location.search).has("login");
 }
 
-export default function LandingPage({ initialLoginOpen = false }: LandingPageProps) {
+export default withAppProviders(function LandingPage({ initialLoginOpen = false }: LandingPageProps) {
   const [loginOpen, setLoginOpen] = useState(() => initialLoginOpen || hasLoginQueryParam());
   const openLogin = () => setLoginOpen(true);
   const closeLogin = () => setLoginOpen(false);
 
   return (
-    <ThemeRegistry>
+    <>
       <LoginModal open={loginOpen} onClose={closeLogin} />
       <Box sx={PAGE_SX}>
         <Box component="nav" sx={NAV_SX}>
@@ -267,6 +267,6 @@ export default function LandingPage({ initialLoginOpen = false }: LandingPagePro
           &copy; {getYear(new Date())} Wheelchair Rugby Manager. Wszystkie prawa zastrzeżone.
         </Box>
       </Box>
-    </ThemeRegistry>
+    </>
   );
-}
+});

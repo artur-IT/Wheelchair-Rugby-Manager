@@ -15,9 +15,8 @@ import {
   MenuItem,
   FormHelperText,
 } from "@mui/material";
-import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
+import { withAppProviders } from "@/components/AppProviders/withAppProviders";
 import AppShell from "@/components/AppShell/AppShell";
-import QueryProvider from "@/components/QueryProvider/QueryProvider";
 import { useEffect, useState } from "react";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -43,17 +42,13 @@ function redirectToTournamentsList() {
   window.location.assign("/tournaments");
 }
 
-export default function TournamentForm({ tournamentId }: Props) {
+export default withAppProviders(function TournamentForm({ tournamentId }: Props) {
   return (
-    <QueryProvider>
-      <ThemeRegistry>
-        <AppShell currentPath="/tournaments">
-          <TournamentFormContent tournamentId={tournamentId} />
-        </AppShell>
-      </ThemeRegistry>
-    </QueryProvider>
+    <AppShell currentPath="/tournaments">
+      <TournamentFormContent tournamentId={tournamentId} />
+    </AppShell>
   );
-}
+});
 
 function TournamentFormContent({ tournamentId }: Props) {
   const queryClient = useQueryClient();

@@ -6,10 +6,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import TournamentForm from "./TournamentForm";
 
-vi.mock("@/components/ThemeRegistry/ThemeRegistry", () => ({
-  default: ({ children }: { children: ReactNode }) => <>{children}</>,
-}));
-
 vi.mock("@/components/AppShell/AppShell", () => ({
   default: ({ children }: { children: ReactNode }) => <>{children}</>,
 }));

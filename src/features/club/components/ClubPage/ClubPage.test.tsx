@@ -3,12 +3,10 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import QueryProvider from "@/components/QueryProvider/QueryProvider";
-
 import ClubPage from "./ClubPage";
 
-function renderWithQuery(ui: ReactNode) {
-  return render(<QueryProvider>{ui}</QueryProvider>);
+function renderClubPage(ui: ReactNode = <ClubPage />) {
+  return render(ui);
 }
 
 describe("ClubPage", () => {
@@ -26,7 +24,7 @@ describe("ClubPage", () => {
       })
     );
 
-    renderWithQuery(<ClubPage />);
+    renderClubPage(<ClubPage />);
 
     expect(await screen.findByRole("button", { name: "Dodaj klub" })).toBeInTheDocument();
   });
@@ -43,7 +41,7 @@ describe("ClubPage", () => {
       })
     );
 
-    renderWithQuery(<ClubPage />);
+    renderClubPage(<ClubPage />);
 
     const addClubButton = await screen.findByRole("button", { name: "Dodaj klub" });
     expect(addClubButton).toBeDisabled();
@@ -61,7 +59,7 @@ describe("ClubPage", () => {
       })
     );
 
-    renderWithQuery(<ClubPage />);
+    renderClubPage(<ClubPage />);
 
     expect(await screen.findByText("Brak połączenia z bazą danych. Spróbuj ponownie.")).toBeInTheDocument();
     const addClubButton = await screen.findByRole("button", { name: "Dodaj klub" });
@@ -79,7 +77,7 @@ describe("ClubPage", () => {
       })
     );
 
-    renderWithQuery(<ClubPage />);
+    renderClubPage(<ClubPage />);
     await user.click(await screen.findByRole("button", { name: "Dodaj klub" }));
 
     expect(screen.getByLabelText("Nazwa klubu")).toBeInTheDocument();
@@ -125,7 +123,7 @@ describe("ClubPage", () => {
       })
     );
 
-    renderWithQuery(<ClubPage />);
+    renderClubPage(<ClubPage />);
     expect(await screen.findByRole("button", { name: "Edytuj" })).toBeInTheDocument();
   });
 
@@ -156,7 +154,7 @@ describe("ClubPage", () => {
       })
     );
 
-    renderWithQuery(<ClubPage />);
+    renderClubPage(<ClubPage />);
 
     expect(await screen.findByText("Tygrysy")).toBeInTheDocument();
     expect(await screen.findByRole("button", { name: "Dodaj drużynę" })).toBeInTheDocument();
@@ -203,7 +201,7 @@ describe("ClubPage", () => {
     );
 
     const user = userEvent.setup();
-    renderWithQuery(<ClubPage />);
+    renderClubPage(<ClubPage />);
 
     expect(await screen.findByText("Tygrysy A")).toBeInTheDocument();
     expect(await screen.findByRole("button", { name: "Dodaj drużynę" })).toBeInTheDocument();

@@ -5,7 +5,7 @@ interface QueryProviderProps {
   children: ReactNode;
 }
 
-/** Wraps client islands that use TanStack Query (one provider per Astro island is fine). */
+/** TanStack Query client for a React subtree; prefer AppProviders at page boundaries. */
 export default function QueryProvider({ children }: QueryProviderProps) {
   const [client] = useState(
     () =>

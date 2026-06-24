@@ -3,8 +3,7 @@ import { CardContent, Paper, Tab, Tabs, Typography, Box, useMediaQuery } from "@
 import type { TabProps } from "@mui/material";
 import { UserCircle, Users } from "lucide-react";
 import AppShell from "@/components/AppShell/AppShell";
-import QueryProvider from "@/components/QueryProvider/QueryProvider";
-import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
+import { withAppProviders } from "@/components/AppProviders/withAppProviders";
 import { CLASSIFIERS_CONFIG, REFEREES_CONFIG } from "@/features/settings/components/SettingsPage/SettingsPage.config";
 import PersonnelTab from "@/features/settings/components/SettingsPage/PersonnelTab";
 import SeasonsManager from "@/features/settings/components/SettingsPage/SeasonsManager";
@@ -69,14 +68,10 @@ function SettingsContent() {
   );
 }
 
-export default function SettingsPage() {
+export default withAppProviders(function SettingsPage() {
   return (
-    <QueryProvider>
-      <ThemeRegistry>
-        <AppShell currentPath="/settings">
-          <SettingsContent />
-        </AppShell>
-      </ThemeRegistry>
-    </QueryProvider>
+    <AppShell currentPath="/settings">
+      <SettingsContent />
+    </AppShell>
   );
-}
+});

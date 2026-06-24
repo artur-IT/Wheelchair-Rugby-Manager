@@ -23,13 +23,12 @@ import {
   Link,
 } from "@mui/material";
 import AppShell from "@/components/AppShell/AppShell";
-import QueryProvider from "@/components/QueryProvider/QueryProvider";
+import { withAppProviders } from "@/components/AppProviders/withAppProviders";
 import {
   buildPlayerPayloadFromEntity,
   parseOptionalNumber,
   toWebsiteHref,
 } from "@/features/teams/components/Team/shared/teamFormUtils";
-import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
 import { TeamFormContent } from "@/features/teams/components/Team/TeamForm/TeamForm";
 import TeamNewPlayer, { type PlayerRow } from "@/features/teams/components/Team/TeamNewPlayer/TeamNewPlayer";
 import ConfirmationDialog from "@/components/ui/ConfirmationDialog";
@@ -92,17 +91,13 @@ interface TeamDetailsProps {
   id: string;
 }
 
-export default function TeamDetails({ id }: TeamDetailsProps) {
+export default withAppProviders(function TeamDetails({ id }: TeamDetailsProps) {
   return (
-    <QueryProvider>
-      <ThemeRegistry>
-        <AppShell currentPath="/settings">
-          <TeamDetailsContent id={id} />
-        </AppShell>
-      </ThemeRegistry>
-    </QueryProvider>
+    <AppShell currentPath="/settings">
+      <TeamDetailsContent id={id} />
+    </AppShell>
   );
-}
+});
 
 function TeamDetailsContent({ id }: TeamDetailsProps) {
   const queryClient = useQueryClient();

@@ -47,7 +47,9 @@ export default function TeamCoachSection({
             {...register("coachLastName")}
             error={Boolean((touchedFields.coachLastName || showAllErrors) && errors.coachLastName)}
             helperText={
-              (touchedFields.coachLastName || showAllErrors) && errors.coachLastName ? FIELD_REQUIRED_MESSAGE : undefined
+              (touchedFields.coachLastName || showAllErrors) && errors.coachLastName
+                ? FIELD_REQUIRED_MESSAGE
+                : undefined
             }
             sx={requiredFieldSx}
           />

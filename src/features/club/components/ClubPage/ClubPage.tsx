@@ -2,8 +2,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Box } from "@mui/material";
 import AppShell from "@/components/AppShell/AppShell";
-import QueryProvider from "@/components/QueryProvider/QueryProvider";
-import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
+import { withAppProviders } from "@/components/AppProviders/withAppProviders";
 import ClubHeaderCard from "@/features/club/components/ClubPage/ClubHeaderCard";
 import ClubNextBirthdayStrip from "@/features/club/components/ClubPage/ClubNextBirthdayStrip";
 import ClubPersonnelTabsSection from "@/features/club/components/ClubPage/ClubPersonnelTabsSection";
@@ -527,14 +526,10 @@ function ClubPageContent() {
   );
 }
 
-export default function ClubPage() {
+export default withAppProviders(function ClubPage() {
   return (
-    <QueryProvider>
-      <ThemeRegistry>
-        <AppShell currentPath="/club">
-          <ClubPageContent />
-        </AppShell>
-      </ThemeRegistry>
-    </QueryProvider>
+    <AppShell currentPath="/club">
+      <ClubPageContent />
+    </AppShell>
   );
-}
+});

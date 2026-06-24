@@ -4,9 +4,8 @@ import { useForm, type FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "@/lib/zodPl";
 import { Box, Button, TextField, Typography, Paper, CircularProgress } from "@mui/material";
-import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
+import { withAppProviders } from "@/components/AppProviders/withAppProviders";
 import AppShell from "@/components/AppShell/AppShell";
-import QueryProvider from "@/components/QueryProvider/QueryProvider";
 import DataLoadAlert from "@/components/ui/DataLoadAlert";
 import MutationErrorAlert from "@/components/ui/MutationErrorAlert";
 import { createSeason, fetchSeasonById, updateSeason, type SeasonUpsertBody } from "@/lib/api/seasons";
@@ -39,17 +38,13 @@ const toSeasonUpsertBody = (data: SeasonFormValues): SeasonUpsertBody => ({
   description: data.description,
 });
 
-export default function SeasonForm({ id }: Props) {
+export default withAppProviders(function SeasonForm({ id }: Props) {
   return (
-    <QueryProvider>
-      <ThemeRegistry>
-        <AppShell currentPath="/settings">
-          <SeasonFormContent id={id} />
-        </AppShell>
-      </ThemeRegistry>
-    </QueryProvider>
+    <AppShell currentPath="/settings">
+      <SeasonFormContent id={id} />
+    </AppShell>
   );
-}
+});
 
 function SeasonFormContent({ id }: Props) {
   const queryClient = useQueryClient();

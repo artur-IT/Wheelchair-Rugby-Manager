@@ -19,7 +19,7 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
+import { withAppProviders } from "@/components/AppProviders/withAppProviders";
 import AppShell from "@/components/AppShell/AppShell";
 import { z } from "@/lib/zodPl";
 import { deleteCurrentUserAccount, fetchCurrentUserProfile, updateCurrentUserProfile } from "@/lib/api/users";
@@ -310,12 +310,10 @@ function ProfileContent() {
   );
 }
 
-export default function ProfilePage() {
+export default withAppProviders(function ProfilePage() {
   return (
-    <ThemeRegistry>
-      <AppShell currentPath="/profile">
-        <ProfileContent />
-      </AppShell>
-    </ThemeRegistry>
+    <AppShell currentPath="/profile">
+      <ProfileContent />
+    </AppShell>
   );
-}
+});

@@ -15,8 +15,7 @@ import {
   Tooltip,
 } from "@mui/material";
 import AppShell from "@/components/AppShell/AppShell";
-import QueryProvider from "@/components/QueryProvider/QueryProvider";
-import ThemeRegistry from "@/components/ThemeRegistry/ThemeRegistry";
+import { withAppProviders } from "@/components/AppProviders/withAppProviders";
 import { useDefaultSeason } from "@/components/hooks/useDefaultSeason";
 import ConfirmationDialog from "@/components/ui/ConfirmationDialog";
 import DataLoadAlert from "@/components/ui/DataLoadAlert";
@@ -27,17 +26,13 @@ import { formatDateRangePl } from "@/lib/dateFormat";
 import { queryKeys } from "@/lib/queryKeys";
 import type { Tournament } from "@/types";
 
-export default function TournamentsPage() {
+export default withAppProviders(function TournamentsPage() {
   return (
-    <QueryProvider>
-      <ThemeRegistry>
-        <AppShell currentPath="/tournaments">
-          <TournamentsContent />
-        </AppShell>
-      </ThemeRegistry>
-    </QueryProvider>
+    <AppShell currentPath="/tournaments">
+      <TournamentsContent />
+    </AppShell>
   );
-}
+});
 
 function TournamentsContent() {
   const { defaultSeasonId } = useDefaultSeason();
