@@ -13,7 +13,7 @@ export default function TournamentHeader({ id, tournament }: TournamentHeaderPro
       sx={{
         display: "flex",
         justifyContent: "space-between",
-        alignItems: "flex-start",
+        alignItems: "center",
       }}
     >
       <Box>
@@ -33,7 +33,7 @@ export default function TournamentHeader({ id, tournament }: TournamentHeaderPro
           &larr; Powrót do listy
         </MuiLink>
         <Typography
-          variant="h3"
+          variant="h4"
           sx={{
             fontWeight: 900,
             // Smaller title on narrow portrait so long names fit without dominating the screen.

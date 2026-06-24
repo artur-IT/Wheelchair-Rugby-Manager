@@ -47,7 +47,6 @@ export default function TournamentTeamsPanel({
             sx={{
               display: "flex",
               flexDirection: "column",
-              gap: 1,
               width: "100%",
               minWidth: 0,
               alignItems: "stretch",
