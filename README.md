@@ -9,6 +9,12 @@ A comprehensive web application for managing wheelchair rugby tournaments and sp
 ![Wheelchair Rugby Manager](./public/tournaments.png)
 ![Wheelchair Rugby Manager](./public/print.png)
 
+![Lighthouse scores](./public/lighthouse_home.png)
+![Lighthouse scores](./public/lighthouse_dashboard.png)
+![Lighthouse scores](./public/lighthouse_club.png)
+![Lighthouse scores](./public/lighthouse_settings.png)
+![Lighthouse scores](./public/lighthouse_tournaments.png)
+
 ## ✨ Key Features
 
 - 🎯 **Tournament Management** - Create and manage wheelchair rugby tournaments with detailed scheduling and match tracking
